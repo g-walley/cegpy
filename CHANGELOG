@@ -1,0 +1,4 @@
+-- 0.0.1
+- Repository configured and setup with initial project commits.
+- Sphinx docs added to project
+- package settings configured for distribution of pyceg package

@@ -1,5 +1,6 @@
 from event_tree import EventTree
 
+
 class TestEventTree:
     """Runs unit tests for the event tree class"""
 

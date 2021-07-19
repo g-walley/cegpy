@@ -1,5 +1,5 @@
-from staged_tree import StagedTree
+# from staged_tree import StagedTree
 
 
 def test_some_func() -> None:
-	pass
+	assert 1 == 1

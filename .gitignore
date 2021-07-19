@@ -1,4 +1,5 @@
 dist/
 logs/
+data/
 *.pyc
 .vscode/settings.json

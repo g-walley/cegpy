@@ -2,34 +2,6 @@ from collections import defaultdict
 import pandas as pd
 import numpy as np
 
-def create_edges(edge_information) -> defaultdict(int):
-	# _edge_creation
-	return defaultdict(int)
-
-def check_list_contains_strings(str_list) -> bool:
-	for tup in str_list:
-		if not isinstance(tup, str):
-			return False
-	
-	return True
-
-def check_sampling_zero_paths_param(sampling_zero_paths) -> list[tuple]:
-	"""Check param 'sampling_zero_paths' is in the correct format"""
-	for tup in sampling_zero_paths:
-		if not isinstance(tup, tuple):
-			return None
-		else:
-			if not check_tuple_contains_strings(tup):
-				return None
-	
-	return sampling_zero_paths
-
-def check_tuple_contains_strings(tup) -> bool:
-	"""Check each element of the tuple to ensure it is a string""" 
-	for elem in tup:
-		if not isinstance(elem, str):
-			return False
-	return True
 
 class EventTree(object):
 	"""Creates event trees from pandas dataframe."""
@@ -81,6 +53,35 @@ class EventTree(object):
 		Added functionality to remove NaN/null edge labels assuming they are structural zeroes'''
 		return defaultdict(int)
 
+
+def create_edges(edge_information) -> defaultdict(int):
+	# _edge_creation
+	return defaultdict(int)
+
+def check_list_contains_strings(str_list) -> bool:
+	for tup in str_list:
+		if not isinstance(tup, str):
+			return False
+	
+	return True
+
+def check_sampling_zero_paths_param(sampling_zero_paths) -> list[tuple]:
+	"""Check param 'sampling_zero_paths' is in the correct format"""
+	for tup in sampling_zero_paths:
+		if not isinstance(tup, tuple):
+			return None
+		else:
+			if not check_tuple_contains_strings(tup):
+				return None
+	
+	return sampling_zero_paths
+
+def check_tuple_contains_strings(tup) -> bool:
+	"""Check each element of the tuple to ensure it is a string""" 
+	for elem in tup:
+		if not isinstance(elem, str):
+			return False
+	return True
 
 
 if __name__ == "__main__":

@@ -14,14 +14,22 @@ class TestEventTree():
 	
 	def test_check_sampling_zero_paths_param(self) -> None:
 		"""Tests the function that is checking the sampling zero paths param"""
-		sz_paths = [('edge_2',),('edge_1', 'edge_3')]
-		assert self.et._check_sampling_zero_paths_param(sz_paths) == sz_paths
+		szp = [('edge_2',),('edge_1', 'edge_3')]
+		assert self.et._check_sampling_zero_paths_param(szp) == szp
 		
-		sz_paths = [1,2,3,4]
-		assert self.et._check_sampling_zero_paths_param(sz_paths) == None
+		szp = [1,2,3,4]
+		assert self.et._check_sampling_zero_paths_param(szp) == None
 
-		sz_paths = [('path', 'to'), (123, 'something'), 'path/to']
-		assert self.et._check_sampling_zero_paths_param(sz_paths) == None
+		szp = [('path', 'to'), (123, 'something'), 'path/to']
+		assert self.et._check_sampling_zero_paths_param(szp) == None
+
+	def test_check_sampling_zero_get_and_set(self) -> None:
+		assert self.et.get_sampling_zero_paths() == None
+
+		szp = [('edge_2',),('edge_1', 'edge_3')]
+		self.et.set_sampling_zero_paths(szp)
+		assert self.et.get_sampling_zero_paths() == szp
+
 
 	def test_create_node_list_from_paths(self) -> None:
 		paths = defaultdict(int)

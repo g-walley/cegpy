@@ -7,6 +7,7 @@ from ceg_util import CegUtil as util
 class EventTree(object):
 	"""Creates event trees from pandas dataframe."""
 	def __init__(self, params) -> None:
+		self.sampling_zero_paths = None
 		# pandas dataframe passed via parameters 
 		self.dataframe = params.get("dataframe")
 		try:
@@ -14,8 +15,6 @@ class EventTree(object):
 		except:
 			print("No Dataframe provided")
 			
-
-		self.sampling_zero_paths = None
 		# sampling zeros paths added manually via parameters 
 		self.set_sampling_zero_paths(params.get('sampling_zero_paths'))
 
@@ -29,6 +28,9 @@ class EventTree(object):
 		# print(self._create_initial_nodes())
 
 	def get_sampling_zero_paths(self):
+		if not self.sampling_zero_paths:
+			print("EventTree.get_sampling_zero_paths() called but no paths have been set.")
+		
 		return self.sampling_zero_paths
 
 	def set_sampling_zero_paths(self, sz_paths):
@@ -41,7 +43,7 @@ class EventTree(object):
 				[('edge_1', 'edge_2', 'edge_3'), ('edge_4',), ...]"
 				raise ValueError(error_str)
 			else:
-				self.sampling_zero_paths = None
+				self.sampling_zero_paths = sz_paths
 
 	def _create_path_dict_entries(self) -> defaultdict(int):
 		'''Create path dict entries for each path, including the sampling zero paths if any.

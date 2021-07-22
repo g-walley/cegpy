@@ -1,6 +1,6 @@
 dist/
 logs/
-data/
+data/CHDS.latentexample1.xlsx
 out/
 *.pyc
 .vscode/settings.json

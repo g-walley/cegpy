@@ -1,4 +1,4 @@
-import ceg_util
+from ceg_util import CegUtil
 from event_tree import EventTree
 from staged_tree import StagedTree
 from chain_event_graph import ChainEventGraph

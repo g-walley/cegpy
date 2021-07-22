@@ -1,12 +1,14 @@
 from event_tree import EventTree
 from collections import defaultdict
 import pandas as pd
-from ceg_util import CegUtil as util
+# from ceg_util import CegUtil as util
+from pathlib import Path
 
 
 class TestEventTree():
     def setup(self):
-        df_path = "%s/data/medical_dm_modified.xlsx" % util.get_package_root()
+        df_path = Path(__file__).resolve().parent.parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
 
         self.df = pd.read_excel(df_path)
         self.et = EventTree({'dataframe': self.df})

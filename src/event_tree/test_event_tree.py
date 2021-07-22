@@ -14,7 +14,7 @@ class TestEventTree():
 	
 	def test_check_sampling_zero_paths_param(self) -> None:
 		"""Tests the function that is checking the sampling zero paths param"""
-		szp = [('edge_2',),('edge_1', 'edge_3')]
+		szp = [('Medium',),('Medium', 'High')]
 		assert self.et._check_sampling_zero_paths_param(szp) == szp
 		
 		szp = [1,2,3,4]
@@ -26,11 +26,11 @@ class TestEventTree():
 	def test_check_sampling_zero_get_and_set(self) -> None:
 		assert self.et.get_sampling_zero_paths() == None
 
-		szp = [('edge_2',),('edge_1', 'edge_3')]
-		self.et.set_sampling_zero_paths(szp)
+		szp = [('Medium',),('Medium', 'High')]
+		self.et._set_sampling_zero_paths(szp)
 		assert self.et.get_sampling_zero_paths() == szp
 
-
+	
 	def test_create_node_list_from_paths(self) -> None:
 		paths = defaultdict(int)
 		paths[('path',)] += 1
@@ -50,7 +50,18 @@ class TestEventTree():
 
 	def test_construct_event_tree(self) -> None:
 		"""Tests the construction of an event tree from a set of paths, nodes, and ..."""
-		paths = []
-		node_list = []
-		event_tree = self.et._construct_event_tree(paths, node_list)
+		event_tree = self.et._construct_event_tree()
 		assert isinstance(event_tree, defaultdict)
+		for key, value in event_tree.items():
+			assert isinstance(key, tuple)
+			for elem in key:
+				assert isinstance(elem, tuple)
+				
+				for sub_elem in elem[0]:
+					assert isinstance(sub_elem, str)
+			
+			# Check the edge data in the key is exactly 2 long.
+			assert len(key[1]) == 2 
+
+				
+			

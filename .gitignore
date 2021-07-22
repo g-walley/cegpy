@@ -1,5 +1,7 @@
 dist/
 logs/
 data/
+out/
 *.pyc
 .vscode/settings.json
+src/main.py

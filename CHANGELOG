@@ -1,3 +1,6 @@
+-- 0.0.2.1
+- Fixed bug with filename in image generation
+
 -- 0.0.2
 - Dev fixes for test files
 - Fixed internal references to the package

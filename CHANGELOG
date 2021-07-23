@@ -1,3 +1,7 @@
+-- 0.0.2
+- Dev fixes for test files
+- Fixed internal references to the package
+
 -- 0.0.1
 - Event Trees can be generated from compatible datasets
 - Event Tree can be printed to a .png file for human readability 

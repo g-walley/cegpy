@@ -1,4 +1,6 @@
-from chain_event_graph import ChainEventGraph
+
+
+from cegpy.graphs.ceg import ChainEventGraph
 
 
 class CTChainEventGraph(ChainEventGraph):

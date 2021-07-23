@@ -8,3 +8,5 @@ src/main.py
 docs/
 .vscode/launch.json
 .vscode/workspace.code-workspace
+src/cegpy.egg-info/*
+.dist_old/*

@@ -4,10 +4,9 @@ from collections import defaultdict
 import numpy as np
 import pydotplus as pdp
 import logging
-from ceg_util import CegUtil as util
+from cegpy.utilities.util import Util
 from IPython.display import Image
-# from pathlib import Path
-
+import os
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
@@ -15,7 +14,7 @@ logger = logging.getLogger('pyceg.event_tree')
 class EventTree(object):
     """Creates event trees from pandas dataframe."""
     def __init__(self, params) -> None:
-        logger.info('EventTree: Initialising')
+        logger.info('Initialising')
         self.params = params
         self.sampling_zero_paths = None
         self.node_list = []
@@ -29,17 +28,17 @@ class EventTree(object):
         self.dataframe = params.get("dataframe")
         try:
             self.variables = list(self.dataframe.columns)
-            logger.info('EventTree: Variables extracted from dataframe were:')
+            logger.info('Variables extracted from dataframe were:')
             logger.info(self.variables)
         except AttributeError:
-            logger.critical('EventTree: A require parameter \
+            logger.critical('A require parameter \
                             (dataframe) was not provided!')
             raise ValueError("Required Parameter: No Dataframe provided. ")
 
         # Format of event_tree dict:
 
         self.event_tree = self._construct_event_tree()
-        logger.info('EventTree: Initialisation complete!')
+        logger.info('Initialisation complete!')
 
     def get_sampling_zero_paths(self):
         if not self.sampling_zero_paths:
@@ -47,6 +46,63 @@ class EventTree(object):
                         called but no paths have been set.")
 
         return self.sampling_zero_paths
+
+    def get_edge_labels(self) -> list:
+        """Once event tree dict has been populated, a list of all
+        edge labels can be obtained with this function"""
+        if self.event_tree:
+            return [key[0] for key in list(self.event_tree.keys())]
+        else:
+            return []
+
+    def get_edges(self) -> list:
+        """Once event tree dict has been populated, a list of all
+        edges can be obtained with this function"""
+        if self.event_tree:
+            return [key[1] for key in list(self.event_tree.keys())]
+        else:
+            return []
+
+    def get_node_list(self) -> list:
+        """Returns node list"""
+        return self.node_list
+
+    def create_figure(self, filename):
+        """Draws the event tree for the process described by the dataset,
+        and saves it to <filename>.png"""
+
+        q = filename.parent
+        if not q.is_dir():
+            os.mkdir(str(q))
+
+        event_tree_graph = pdp.Dot(graph_type='digraph', rankdir='LR')
+
+        for key, count in self.event_tree.items():
+            # edge_index = self.edges.index(edge)
+            path = key[0]
+            edge = key[1]
+            edge_details = str(path[-1]) + '\n' + str(count)
+
+            event_tree_graph.add_edge(
+                pdp.Edge(
+                    edge[0],
+                    edge[1],
+                    label=edge_details,
+                    labelfontcolor="#009933",
+                    fontsize="10.0",
+                    color="black"
+                )
+            )
+
+        for node in self.node_list:
+            event_tree_graph.add_node(
+                pdp.Node(
+                    name=node,
+                    label=node,
+                    style="filled"))
+
+        event_tree_graph.write_png(str(filename) + '.png')
+        return Image(event_tree_graph.create_png())
 
     def _set_sampling_zero_paths(self, sz_paths):
         """Use this function to set the sampling zero paths.
@@ -109,7 +165,7 @@ class EventTree(object):
         self.unsorted_paths = self._create_unsorted_paths_dict()
 
         if self.sampling_zero_paths is not None:
-            self.unsorted_paths = util.create_sampling_zeros(
+            self.unsorted_paths = Util.create_sampling_zeros(
                 self.sampling_zero_paths, self.unsorted_paths)
 
         depth = len(max(list(self.unsorted_paths.keys()), key=len))
@@ -129,7 +185,7 @@ class EventTree(object):
             if not isinstance(tup, tuple):
                 return None
             else:
-                if not util.check_tuple_contains_strings(tup):
+                if not Util.check_tuple_contains_strings(tup):
                     return None
 
         return sampling_zero_paths
@@ -143,10 +199,6 @@ class EventTree(object):
 
         return node_list
 
-    def get_node_list(self) -> list:
-        """Returns node list"""
-        return self.node_list
-
     def _construct_event_tree(self) -> defaultdict:
         """Constructs event_tree dictionary.
         Format of the dictionary is:
@@ -157,7 +209,7 @@ class EventTree(object):
 
         A key constructed from a tuple containing a tuple(path to leaf),
         and a tuple(eminating node, terminating node)."""
-        logger.info('EventTree: Starting construction of event tree')
+        logger.info('Starting construction of event tree')
         self._set_sampling_zero_paths(self.params.get('sampling_zero_paths'))
         self._create_path_dict_entries()
         node_list = self._create_node_list_from_paths(self.sorted_paths)
@@ -182,51 +234,3 @@ class EventTree(object):
             event_tree[((*path,),
                        (*edges_list[-1],))] = self.sorted_paths[tuple(path)]
         return event_tree
-
-    def get_edge_labels(self) -> list:
-        """Once event tree dict has been populated, a list of all
-        edge labels can be obtained with this function"""
-        if self.event_tree:
-            return [key[0] for key in list(self.event_tree.keys())]
-        else:
-            return []
-
-    def get_edges(self) -> list:
-        """Once event tree dict has been populated, a list of all
-        edges can be obtained with this function"""
-        if self.event_tree:
-            return [key[1] for key in list(self.event_tree.keys())]
-        else:
-            return []
-
-    def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
-        event_tree_graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-
-        for key, count in self.event_tree.items():
-            # edge_index = self.edges.index(edge)
-            path = key[0]
-            edge = key[1]
-            edge_details = str(path[-1]) + '\n' + str(count)
-
-            event_tree_graph.add_edge(
-                pdp.Edge(
-                    edge[0],
-                    edge[1],
-                    label=edge_details,
-                    labelfontcolor="#009933",
-                    fontsize="10.0",
-                    color="black"
-                )
-            )
-
-        for node in self.node_list:
-            event_tree_graph.add_node(
-                pdp.Node(
-                    name=node,
-                    label=node,
-                    style="filled"))
-
-        event_tree_graph.write_png(str(filename) + '.png')
-        return Image(event_tree_graph.create_png())

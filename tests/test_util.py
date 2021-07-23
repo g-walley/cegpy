@@ -1,5 +1,5 @@
 from collections import defaultdict
-from ceg_util import CegUtil as util
+from cegpy.utilities.util import Util
 
 
 class TestCegUtil(object):
@@ -24,15 +24,15 @@ class TestCegUtil(object):
         str_list = ['blah', 'path/to/node', '123', '~$%^']
         non_str_list = [123, 'path/to/node', True]
 
-        assert util.check_list_contains_strings(str_list) is True
-        assert util.check_list_contains_strings(non_str_list) is False
+        assert Util.check_list_contains_strings(str_list) is True
+        assert Util.check_list_contains_strings(non_str_list) is False
 
     def test_create_sampling_zeros(self) -> None:
-        """Tests function util.create_sampling_zeros().
+        """Tests function Util.create_sampling_zeros().
         Passes the new sampling zero list of tree path tuples, and a sample
         dictionary that does not contain those paths. It then checks that the
         keys exist, and that their values are zero."""
-        test_path_dict = util.create_sampling_zeros(
+        test_path_dict = Util.create_sampling_zeros(
             self.sampling_zero_list,
             self.sample_path_dict
             )
@@ -42,14 +42,14 @@ class TestCegUtil(object):
             assert test_path_dict[key] == 0
 
     def test_check_tuple_contains_strings(self) -> None:
-        """Tests function util.check_tuple_contains_strings().
+        """Tests function Util.check_tuple_contains_strings().
         Passes various tuples that contain different types,
         and verifies output"""
         tup = ('string thing',)
-        assert util.check_tuple_contains_strings(tup) is True
+        assert Util.check_tuple_contains_strings(tup) is True
         tup = ('string thing')  # Not a tuple, missing comma
-        assert util.check_tuple_contains_strings(tup) is False
+        assert Util.check_tuple_contains_strings(tup) is False
         tup = ('string one', 'string two')
-        assert util.check_tuple_contains_strings(tup) is True
+        assert Util.check_tuple_contains_strings(tup) is True
         tup = (1, '2')
-        assert util.check_tuple_contains_strings(tup) is False
+        assert Util.check_tuple_contains_strings(tup) is False

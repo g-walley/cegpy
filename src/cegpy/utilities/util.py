@@ -2,7 +2,7 @@ import os
 from collections import defaultdict
 
 
-class CegUtil:
+class Util:
     def check_list_contains_strings(str_list) -> bool:
         """Ensure that a list only contains strings"""
         for tup in str_list:

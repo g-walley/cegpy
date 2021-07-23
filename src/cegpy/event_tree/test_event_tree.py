@@ -7,7 +7,8 @@ from pathlib import Path
 
 class TestEventTree():
     def setup(self):
-        df_path = Path(__file__).resolve().parent.parent.parent.joinpath(
+        df_path = Path(__file__).resolve(
+            ).parent.parent.parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
 
         self.df = pd.read_excel(df_path)

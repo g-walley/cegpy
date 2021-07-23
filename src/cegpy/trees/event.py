@@ -71,9 +71,14 @@ class EventTree(object):
         """Draws the event tree for the process described by the dataset,
         and saves it to <filename>.png"""
 
-        q = filename.parent
-        if not q.is_dir():
-            os.mkdir(str(q))
+        logger.debug("Filename %s" % str(filename))
+
+        try:
+            q = filename.parent
+            if not q.is_dir():
+                os.mkdir(str(q))
+        except AttributeError:
+            pass
 
         event_tree_graph = pdp.Dot(graph_type='digraph', rankdir='LR')
 
@@ -100,8 +105,9 @@ class EventTree(object):
                     name=node,
                     label=node,
                     style="filled"))
-
-        event_tree_graph.write_png(str(filename) + '.png')
+        png_filename = str(filename) + '.png'
+        logger.debug(png_filename)
+        event_tree_graph.write_png(png_filename)
         return Image(event_tree_graph.create_png())
 
     def _set_sampling_zero_paths(self, sz_paths):

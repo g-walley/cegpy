@@ -1,4 +1,4 @@
-from event_tree import EventTree
+from cegpy.event_tree import EventTree
 from collections import defaultdict
 import pandas as pd
 # from ceg_util import CegUtil as util

@@ -1,4 +1,3 @@
 -- 0.0.1
-- Repository configured and setup with initial project commits.
-- Sphinx docs added to project
-- package settings configured for distribution of pyceg package
+- Event Trees can be generated from compatible datasets
+- Event Tree can be printed to a .png file for human readability 

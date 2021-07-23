@@ -4,7 +4,7 @@ from collections import defaultdict
 import numpy as np
 import pydotplus as pdp
 import logging
-from cegpy.utilities.util import Util
+from ..utilities.util import Util
 from IPython.display import Image
 import os
 # create logger object for this module

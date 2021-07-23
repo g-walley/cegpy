@@ -1,4 +1,4 @@
-from cegpy.trees.staged import StagedTree
+from ..src.cegpy.trees.staged import StagedTree
 
 
 def TestStagedTrees(object):

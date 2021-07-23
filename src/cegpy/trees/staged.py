@@ -1,4 +1,4 @@
-from cegpy.trees.event import EventTree
+from ..trees.event import EventTree
 
 
 class StagedTree(EventTree):

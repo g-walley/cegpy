@@ -25,6 +25,7 @@ class TestEventTree():
         assert self.et._check_sampling_zero_paths_param(szp) is None
 
     def test_check_sampling_zero_get_and_set(self) -> None:
+        """Tests the functions that set and get the sampling zeros"""
         assert self.et.get_sampling_zero_paths() is None
 
         szp = [('Medium',), ('Medium', 'High')]

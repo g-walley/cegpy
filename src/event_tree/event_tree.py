@@ -3,17 +3,23 @@ from collections import defaultdict
 # import pandas as pd
 import numpy as np
 import pydotplus as pdp
+import logging
 from ceg_util import CegUtil as util
 from IPython.display import Image
 # from pathlib import Path
+
+# create logger object for this module
+logger = logging.getLogger('pyceg.event_tree')
 
 
 class EventTree(object):
     """Creates event trees from pandas dataframe."""
     def __init__(self, params) -> None:
+        logger.info('EventTree: Initialising')
         self.params = params
         self.sampling_zero_paths = None
         self.node_list = []
+
         # Paths taken from dataframe in order of occurance
         self.unsorted_paths = defaultdict(int)
         # Paths sorted alphabetically in order of length
@@ -23,17 +29,22 @@ class EventTree(object):
         self.dataframe = params.get("dataframe")
         try:
             self.variables = list(self.dataframe.columns)
+            logger.info('EventTree: Variables extracted from dataframe were:')
+            logger.info(self.variables)
         except AttributeError:
+            logger.critical('EventTree: A require parameter \
+                            (dataframe) was not provided!')
             raise ValueError("Required Parameter: No Dataframe provided. ")
 
         # Format of event_tree dict:
 
         self.event_tree = self._construct_event_tree()
+        logger.info('EventTree: Initialisation complete!')
 
     def get_sampling_zero_paths(self):
         if not self.sampling_zero_paths:
-            print("EventTree.get_sampling_zero_paths() \
-                called but no paths have been set.")
+            logger.info("EventTree.get_sampling_zero_paths() \
+                        called but no paths have been set.")
 
         return self.sampling_zero_paths
 
@@ -49,9 +60,12 @@ class EventTree(object):
             if sz_paths:
                 self.sampling_zero_paths = sz_paths
             else:
-                error_str = "Parameter 'sampling_zero_paths' should be a list of tuples like so:\n \
-                [('edge_1', 'edge_2'), ('edge_1',), ...]"
-                raise ValueError(error_str)
+                error_str = "Parameter 'sampling_zero_paths' not in expected format. \
+                             Should be a list of tuples like so:\n \
+                             [('edge_1',), ('edge_1', 'edge_2'), ...]"
+                if logger.getEffectiveLevel() is logging.DEBUG:
+                    logger.debug(error_str)
+                    raise ValueError(error_str)
 
     def _create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,
@@ -109,8 +123,7 @@ class EventTree(object):
         for key in sorted_keys:
             self.sorted_paths[key] = self.unsorted_paths[key]
 
-    def _check_sampling_zero_paths_param(self,
-                                         sampling_zero_paths) -> list[tuple]:
+    def _check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
         """Check param 'sampling_zero_paths' is in the correct format"""
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
@@ -121,7 +134,7 @@ class EventTree(object):
 
         return sampling_zero_paths
 
-    def _create_node_list_from_paths(self, paths) -> list[str]:
+    def _create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
         node_list = ['s0']  # root node
 
@@ -144,7 +157,7 @@ class EventTree(object):
 
         A key constructed from a tuple containing a tuple(path to leaf),
         and a tuple(eminating node, terminating node)."""
-
+        logger.info('EventTree: Starting construction of event tree')
         self._set_sampling_zero_paths(self.params.get('sampling_zero_paths'))
         self._create_path_dict_entries()
         node_list = self._create_node_list_from_paths(self.sorted_paths)

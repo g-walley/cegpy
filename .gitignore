@@ -5,3 +5,6 @@ out/
 *.pyc
 .vscode/settings.json
 src/main.py
+docs/
+.vscode/launch.json
+.vscode/workspace.code-workspace

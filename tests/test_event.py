@@ -65,3 +65,40 @@ class TestEventTree():
 
             # Check the edge data in the key is exactly 2 long.
             assert len(key[1]) == 2
+
+    def test_get_functions_producing_expected_data(self) -> None:
+        edge_labels = self.et.get_edge_labels()
+        assert isinstance(edge_labels, list)
+        for path in edge_labels:
+            assert isinstance(path, tuple)
+            for edge_label in path:
+                assert isinstance(edge_label, str)
+
+        edges = self.et.get_edges()
+        assert isinstance(edges, list)
+        for edge in edges:
+            assert isinstance(edge, tuple)
+            assert len(edge) == 2
+            assert isinstance(edge[0], str)
+            assert isinstance(edge[1], str)
+
+        nodes = self.et.get_nodes()
+        check_list_contains_strings(nodes)
+
+        situations = self.et.get_situations()
+        check_list_contains_strings(situations)
+
+        leaves = self.et.get_leaves()
+        check_list_contains_strings(leaves)
+
+        emanating_nodes = self.et.get_emanating_nodes()
+        check_list_contains_strings(emanating_nodes)
+
+        terminating_nodes = self.et.get_terminating_nodes()
+        check_list_contains_strings(terminating_nodes)
+
+
+def check_list_contains_strings(str_list) -> bool:
+    assert isinstance(str_list, list)
+    for elem in str_list:
+        assert isinstance(elem, str)

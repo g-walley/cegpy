@@ -4,7 +4,7 @@ from src.cegpy import logger
 from pathlib import Path
 import pandas as pd
 from datetime import datetime
-
+from time import sleep
 
 logger.setLevel(level=logging.DEBUG)
 logger.info("Starting Main Test Program")
@@ -20,3 +20,7 @@ fig_path = Path(__file__).resolve().parent.joinpath(
     'out/medical_dm_event_tree__%s' % dt_string)
 et.create_figure("image")
 et.create_figure(fig_path)
+
+while True:
+    sleep(1)
+    pass

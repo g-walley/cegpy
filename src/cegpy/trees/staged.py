@@ -10,16 +10,16 @@ class StagedTree(EventTree):
     def __init__(self, params) -> None:
         self.prior = None  # List of lists
         self.alpha = None  # int
+        logger.debug("Starting Staged Tree")
 
         # Call event tree init to generate event tree
         super().__init__(params)
-
-        logger.debug("Starting Staged Tree")
 
         # Make params available to all local functions
         self.params = dict(params)
         logger.debug("Params passed to class are:")
         logger.debug(self.params.items())
+        self._check_and_store_params()
 
     def _check_and_store_params(self) -> None:
         self.prior = self._check_param_prior(self.params.get("prior"))
@@ -48,24 +48,45 @@ class StagedTree(EventTree):
 
     def _generate_default_prior(self, alpha) -> list:
         """default prior set for the AHC method using the mass conservation property.
-        That is, the equivalent sample size is the phantom sample starting at
+        That is, the alpha param is the phantom sample starting at
         the root, and it is spread equally across all edges along the tree.
         (see chapter 5 of Collazo, Gorgen & Smith 'Chain Event Graphs', 2018)
         The prior is a list of lists. Each list gives the prior along the
         edges of a specific situation.
         Indexed same as self.situations & self.egde_countset"""
-        default_prior = [[], []]
+        default_prior = [0] * len(self.get_situations())
+        sample_size_at_node = dict()
 
-        # sample_size_at_node = dict()
-        # sample_size_at_node[self.root] = equivalent_sample_size
-        # to_assign_nodes = self.situations.copy()
-        # for node in to_assign_nodes:
-        #     number_of_occurences = self.emanating_nodes.count(node)
-        #     equal_distribution_of_sample = sample_size_at_node[node]/number_of_occurences
-        #     default_prior[self.situations.index(node)] = [equal_distribution_of_sample] *number_of_occurences
-        #     relevant_terminating_nodes = [self.terminating_nodes[self.edges.index(edge_pair)] for edge_pair in self.edges if edge_pair[0] == node]
-        #     for terminating_node in relevant_terminating_nodes:
-        #         sample_size_at_node[terminating_node] = equal_distribution_of_sample
+        # Root node is assigned phantom sample (alpha)
+        if isinstance(alpha, float):
+            alpha = Fraction.from_float(alpha)
+        elif isinstance(alpha, int) or isinstance(alpha, str):
+            alpha = Fraction.from_float(float(alpha))
+        else:
+            logger.warning("Prior generator param alpha is in a strange format.\
+                            ..")
+
+        sample_size_at_node[self.get_root()] = alpha
+
+        for node_idx, node in enumerate(self.get_situations()):
+            # How many nodes emanate from the current node?
+            number_of_emanating_nodes = self.get_emanating_nodes().count(node)
+            # Divide the sample size from the current node equally among
+            # emanating nodes
+            equal_distribution_of_sample = \
+                sample_size_at_node[node] / number_of_emanating_nodes
+            default_prior[node_idx] = \
+                [equal_distribution_of_sample] * number_of_emanating_nodes
+
+            relevant_terminating_nodes = [
+                self.get_terminating_nodes()[self.get_edges().index(edge_pair)]
+                for edge_pair in self.get_edges() if edge_pair[0] == node
+            ]
+
+            for terminating_node in relevant_terminating_nodes:
+                sample_size_at_node[terminating_node] = \
+                 equal_distribution_of_sample
+
         return default_prior
 
     def get_prior(self):  # TODO: INCLUDE -> when type is known

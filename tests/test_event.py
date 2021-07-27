@@ -14,6 +14,32 @@ class TestEventTree():
         self.df = pd.read_excel(df_path)
         self.et = EventTree({'dataframe': self.df})
 
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_st = EventTree(
+            {
+                'dataframe': self.med_df,
+                'sampling_zero_paths': self.med_s_z_paths
+            }
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_st = EventTree(
+            {
+                'dataframe': self.fall_df,
+                'sampling_zero_paths': self.fall_s_z_paths,
+            }
+        )
+
     def test_check_sampling_zero_paths_param(self) -> None:
         """Tests the function that is checking the sampling zero paths param"""
         szp = [('Medium',), ('Medium', 'High')]
@@ -96,6 +122,25 @@ class TestEventTree():
 
         terminating_nodes = self.et.get_terminating_nodes()
         check_list_contains_strings(terminating_nodes)
+
+    def test_get_categories_per_variable(self) -> None:
+        expected_med_cats_per_var = {
+            "Classification": 2,
+            "Group": 3,
+            "Difficulty": 2,
+            "Response": 2,
+        }
+        med_cats_per_var = self.med_st.get_categories_per_variable()
+        assert expected_med_cats_per_var == med_cats_per_var
+
+        expected_fall_cats_per_var = {
+            "HousingAssessment": 4,
+            "Risk": 2,
+            "Treatment": 3,
+            "Fall": 2,
+        }
+        fall_cats_per_var = self.fall_st.get_categories_per_variable()
+        assert expected_fall_cats_per_var == fall_cats_per_var
 
 
 def check_list_contains_strings(str_list) -> bool:

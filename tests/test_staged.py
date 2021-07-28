@@ -39,7 +39,7 @@ class TestStagedTrees():
                           type(self.med_s_z_paths))
         assert isinstance(self.med_st.get_edge_labels(), list)
 
-    def test_generate_default_prior(self) -> None:
+    def test_create_default_prior(self) -> None:
         # stratified medical dataset
         # Expected prior calculated by hand for default alpha of 3
         med_expected_prior = [
@@ -96,11 +96,92 @@ class TestStagedTrees():
 
         alpha = 3
         # check that prior is correct.
-        prior = self.med_st._generate_default_prior(alpha)
+        prior = self.med_st._create_default_prior(alpha)
         assert med_expected_prior == prior
 
         alpha = 4
-        prior = self.fall_st._generate_default_prior(alpha)
+        prior = self.fall_st._create_default_prior(alpha)
         assert fall_expected_prior == prior
 
-    # def test_generate_default_hyperstage(self) -> None:
+    def test_create_default_hyperstage(self) -> None:
+        med_expected_hyperstage = [
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
+            ["s1", "s2"],
+            ["s3", "s4", "s5", "s6", "s7", "s8"]
+        ]
+        fall_expected_hyperstage = [
+            ["s0"],
+            ["s1", "s2", "s3", "s4"],
+            ["s5", "s9"],
+            ["s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+        med_hyperstage = self.med_st._create_default_hyperstage()
+        print(med_expected_hyperstage)
+        print(med_hyperstage)
+
+        fall_hyperstage = self.fall_st._create_default_hyperstage()
+        print(fall_expected_hyperstage)
+        print(fall_hyperstage)
+        assert med_hyperstage == med_expected_hyperstage
+        assert fall_hyperstage == fall_expected_hyperstage
+
+    def test_create_edge_countset(self) -> None:
+        med_expected_edge_countset = [
+            [5500, 5500],
+            [800, 1000, 3700],
+            [800, 1000, 3700],
+            [400, 400],
+            [500, 500],
+            [1850, 1850],
+            [400, 400],
+            [500, 500],
+            [1850, 1850],
+            [393, 6],
+            [347, 52],
+            [480, 20],
+            [433, 67],
+            [1482, 364],
+            [1305, 542],
+            [5, 395],
+            [92, 307],
+            [70, 430],
+            [202, 296],
+            [338, 1511],
+            [716, 1131]
+        ]
+        falls_expected_edge_countset = [
+            [379, 1539, 2871, 45211],
+            [235, 144],
+            [436, 1103],
+            [1449, 1422],
+            [5375, 39836],
+            [53, 52, 130],
+            [130, 14],
+            [82, 354],
+            [870, 233],
+            [319, 315, 815],
+            [1266, 156],
+            [1103, 4272],
+            [30769, 9067],
+            [11, 42],
+            [28, 24],
+            [58, 72],
+            [102, 28],
+            [12, 2],
+            [65, 254],
+            [151, 164],
+            [379, 436],
+            [974, 292],
+            [133, 23]
+        ]
+        assert len(med_expected_edge_countset) == 21
+        assert len(falls_expected_edge_countset) == 23
+
+        actual_countset = self.med_st._create_edge_countset()
+        assert actual_countset == med_expected_edge_countset
+
+        actual_countset = self.fall_st._create_edge_countset()
+        assert actual_countset == falls_expected_edge_countset

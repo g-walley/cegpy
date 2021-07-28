@@ -10,6 +10,8 @@ class StagedTree(EventTree):
     def __init__(self, params) -> None:
         self.prior = None  # List of lists
         self.alpha = None  # int
+        self.hyperstage = None
+        self.edge_countset = None
         logger.debug("Starting Staged Tree")
 
         # Call event tree init to generate event tree
@@ -19,11 +21,12 @@ class StagedTree(EventTree):
         self.params = dict(params)
         logger.debug("Params passed to class are:")
         logger.debug(self.params.items())
-        self._check_and_store_params()
+        self._store_params()
 
-    def _check_and_store_params(self) -> None:
-        self.prior = self._check_param_prior(self.params.get("prior"))
-        self.alpha = self._check_param_alpha(self.params.get("alpha"))
+    def _store_params(self) -> None:
+        self.prior = self.params.get("prior")
+        self.alpha = self.params.get("alpha")
+        self.hyperstage = self.params.get("hyperstage")
 
         if self.prior:
             if self.alpha:
@@ -37,7 +40,10 @@ class StagedTree(EventTree):
                                 were provided. Using default alpha value of\
                                 %d.", self.alpha)
             # No matter what alpha is, generate default prior
-            self.prior = self._generate_default_prior(self.alpha)
+            self.prior = self._create_default_prior(self.alpha)
+
+        if self.hyperstage is None:
+            self.hyperstage = self._create_default_hyperstage()
 
     def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
@@ -46,7 +52,7 @@ class StagedTree(EventTree):
         max_count = max(list(self.get_categories_per_variable().values()))
         return max_count
 
-    def _generate_default_prior(self, alpha) -> list:
+    def _create_default_prior(self, alpha) -> list:
         """default prior set for the AHC method using the mass conservation property.
         That is, the alpha param is the phantom sample starting at
         the root, and it is spread equally across all edges along the tree.
@@ -89,16 +95,79 @@ class StagedTree(EventTree):
 
         return default_prior
 
+    def _create_default_hyperstage(self) -> list:
+        '''Generates default hyperstage for the AHC method.
+        A hyperstage is a list of lists such that two situaions can be in the
+        same stage only if there are elements of the same list for some list
+        in the hyperstage.
+        The default is to allow all situations with the same number of
+        outgoing edges and the same edge labels to be in a common list. '''
+        hyperstage = []
+        info_of_edges = []
+        edges = self.get_edges()
+        edge_labels = self.get_edge_labels()
+        situations = self.get_situations()
+        emanating_nodes = self.get_emanating_nodes()
+
+        for node in situations:
+            edge_indices = [
+                edges.index(edge) for edge in self.edges
+                if edge[0] == node
+            ]
+
+            labels = [edge_labels[x][-1] for x in edge_indices]
+            labels.sort()
+
+            info_of_edges.append(
+                [emanating_nodes.count(node), labels]
+            )
+
+        sorted_info = []
+        for info in info_of_edges:
+            if info not in sorted_info:
+                sorted_info.append(info)
+
+        for info in sorted_info:
+            situations_with_value_edges = []
+            for idx, situation in enumerate(situations):
+                if info_of_edges[idx] == info:
+                    situations_with_value_edges.append(situation)
+            hyperstage = hyperstage + [situations_with_value_edges]
+
+        return hyperstage
+
+    def _create_edge_countset(self) -> list:
+        '''Each element of list contains a list with counts along edges emanating from
+        a specific situation. Indexed same as self.situations'''
+        edge_countset = []
+        situations = self.get_situations()
+        edges = self.get_edges()
+        edge_counts = self.get_edge_counts()
+        term_nodes = self.get_terminating_nodes()
+
+        for node in situations:
+            edgeset = [
+                edge_pair[1] for edge_pair in edges
+                if edge_pair[0] == node
+            ]
+
+            edge_countset.append([
+                edge_counts[term_nodes.index(vertex)]
+                for vertex in edgeset
+            ])
+        return edge_countset
+
     def get_prior(self):  # TODO: INCLUDE -> when type is known
         return self.prior
 
     def get_alpha(self):
         return self.alpha
 
-    def _check_param_prior(self, prior):
-        # TODO: Implement Prior param check when you know what it should be
-        return prior
+    def get_hyperstage(self):
+        return self.hyperstage
 
-    def _check_param_alpha(self, alpha):
-        # TODO: Implement alpha param check when you know what it should be
-        return alpha
+    def get_edge_countset(self):
+        if not self.edge_countset:
+            self.countset = self._create_edge_countset()
+
+        return self.countset

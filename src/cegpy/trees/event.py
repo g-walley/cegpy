@@ -26,6 +26,7 @@ class EventTree(object):
         self.emanating_nodes = None
         self.terminating_nodes = None
         self.variables = None
+        self.edge_counts = None
 
         # Root node of the tree is always defined as s0.
         self.root = 's0'
@@ -127,6 +128,14 @@ class EventTree(object):
             self.terminating_nodes = [edge_pair[1] for edge_pair in edges]
 
         return self.terminating_nodes
+
+    def get_edge_counts(self) -> list:
+        '''list of counts along edges. Indexed same as edges and edge_labels'''
+        if not self.edge_counts:
+            tree = self.event_tree
+            self.edge_counts = [tree[x] for x in list(tree.keys())]
+
+        return self.edge_counts
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,

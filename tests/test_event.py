@@ -123,6 +123,12 @@ class TestEventTree():
         terminating_nodes = self.et.get_terminating_nodes()
         check_list_contains_strings(terminating_nodes)
 
+        edge_counts = self.et.get_edge_counts()
+        print(edge_counts)
+        assert isinstance(edge_counts, list)
+        for count in edge_counts:
+            assert isinstance(count, int)
+
     def test_get_categories_per_variable(self) -> None:
         expected_med_cats_per_var = {
             "Classification": 2,

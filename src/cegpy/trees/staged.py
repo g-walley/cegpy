@@ -1,5 +1,6 @@
 from ..trees.event import EventTree
 from fractions import Fraction
+from operator import add
 # from ..utilities.util import Util
 import logging
 
@@ -12,6 +13,7 @@ class StagedTree(EventTree):
         self.alpha = None  # int
         self.hyperstage = None
         self.edge_countset = None
+        self.posterior = None
         logger.debug("Starting Staged Tree")
 
         # Call event tree init to generate event tree
@@ -157,6 +159,19 @@ class StagedTree(EventTree):
             ])
         return edge_countset
 
+    def _calculate_posterior(self, prior):
+        '''calculating the posterior edge counts for the AHC method.
+        The posterior for each edge is obtained as the sum of its prior
+        and edge count. Here we do this such that the posterior is a
+        list of lists. Each list gives the posterior along the edges
+        emanating from a specific vertex. The indexing is the same as
+        self.edge_countset and self.situations'''
+        posterior = []
+        edge_countset = self.get_edge_countset()
+        for index in range(0, len(prior)):
+            posterior.append(list(map(add, prior[index], edge_countset[index])))
+        return posterior
+
     def get_prior(self):  # TODO: INCLUDE -> when type is known
         return self.prior
 
@@ -171,3 +186,10 @@ class StagedTree(EventTree):
             self.countset = self._create_edge_countset()
 
         return self.countset
+
+    def get_posterior(self):
+        if not self.posterior:
+            prior = self.get_prior()
+            self.posterior = self._calculate_posterior(prior)
+
+        return self.posterior

@@ -128,30 +128,8 @@ class TestStagedTrees():
         assert med_hyperstage == med_expected_hyperstage
         assert fall_hyperstage == fall_expected_hyperstage
 
-    def test_create_edge_countset(self) -> None:
-        med_expected_edge_countset = [
-            [5500, 5500],
-            [800, 1000, 3700],
-            [800, 1000, 3700],
-            [400, 400],
-            [500, 500],
-            [1850, 1850],
-            [400, 400],
-            [500, 500],
-            [1850, 1850],
-            [393, 6],
-            [347, 52],
-            [480, 20],
-            [433, 67],
-            [1482, 364],
-            [1305, 542],
-            [5, 395],
-            [92, 307],
-            [70, 430],
-            [202, 296],
-            [338, 1511],
-            [716, 1131]
-        ]
+    def test_falls_calculate_posterior(self) -> None:
+
         falls_expected_edge_countset = [
             [379, 1539, 2871, 45211],
             [235, 144],
@@ -177,11 +155,47 @@ class TestStagedTrees():
             [974, 292],
             [133, 23]
         ]
-        assert len(med_expected_edge_countset) == 21
         assert len(falls_expected_edge_countset) == 23
+        actual_countset = self.fall_st._create_edge_countset()
+        assert actual_countset == falls_expected_edge_countset
 
+    def test_med_calculate_posterior(self) -> None:
+        med_expected_edge_countset = [
+            [5500, 5500],
+            [800, 1000, 3700],
+            [800, 1000, 3700],
+            [400, 400],
+            [500, 500],
+            [1850, 1850],
+            [400, 400],
+            [500, 500],
+            [1850, 1850],
+            [393, 6],
+            [347, 52],
+            [480, 20],
+            [433, 67],
+            [1482, 364],
+            [1305, 542],
+            [5, 395],
+            [92, 307],
+            [70, 430],
+            [202, 296],
+            [338, 1511],
+            [716, 1131]
+        ]
+        assert len(med_expected_edge_countset) == 21
         actual_countset = self.med_st._create_edge_countset()
         assert actual_countset == med_expected_edge_countset
 
-        actual_countset = self.fall_st._create_edge_countset()
-        assert actual_countset == falls_expected_edge_countset
+        alpha = 3
+        prior = self.med_st._create_default_prior(alpha)
+        expected_posterior = []
+        for idx, countset in enumerate(actual_countset):
+            p_elem = []
+            for jdx, count in enumerate(countset):
+                p_elem.append(count + prior[idx][jdx])
+
+            expected_posterior.append(p_elem)
+
+        actual_posterior = self.med_st._calculate_posterior(prior)
+        assert actual_posterior == expected_posterior

@@ -2,6 +2,7 @@ from ..src.cegpy.trees.staged import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
+import xlsxwriter
 
 
 class TestStagedTrees():
@@ -158,6 +159,32 @@ class TestStagedTrees():
         assert len(falls_expected_edge_countset) == 23
         actual_countset = self.fall_st._create_edge_countset()
         assert actual_countset == falls_expected_edge_countset
+        alpha = 4
+        prior = self.fall_st._create_default_prior(alpha)
+        expected_posterior = []
+        for idx, countset in enumerate(actual_countset):
+            p_elem = []
+            for jdx, count in enumerate(countset):
+                p_elem.append(count + prior[idx][jdx])
+
+            expected_posterior.append(p_elem)
+
+        actual_posterior = self.fall_st._calculate_posterior(prior)
+        assert actual_posterior == expected_posterior
+
+        # xlsx_path = Path(__file__).resolve(
+        #     ).parent.parent.joinpath(
+        #     'data/Falls_posterior_prior.xlsx')
+
+        # write_posterior_and_prior_to_excel(xlsx_path,
+        #     prior, actual_posterior)
+
+        expected_likelihood = -68721.50  # Calculated manually
+        actual_likelihood = self.fall_st._calculate_loglikehood(
+            prior, actual_posterior
+        )
+        actual_likelihood = round(actual_likelihood, 2)
+        assert actual_likelihood == expected_likelihood
 
     def test_med_calculate_posterior(self) -> None:
         med_expected_edge_countset = [
@@ -199,3 +226,31 @@ class TestStagedTrees():
 
         actual_posterior = self.med_st._calculate_posterior(prior)
         assert actual_posterior == expected_posterior
+        # xlsx_path = Path(__file__).resolve(
+        #     ).parent.parent.joinpath(
+        #     'data/medical_dm_posterior_prior.xlsx')
+        # write_posterior_and_prior_to_excel(
+        #     xlsx_path,
+        #     prior,
+        #     actual_posterior)
+        expected_likelihood = -30169.82  # Calculated manually
+        actual_likelihood = self.med_st._calculate_loglikehood(
+            prior, actual_posterior
+        )
+        actual_likelihood = round(actual_likelihood, 2)
+        assert actual_likelihood == expected_likelihood
+
+
+def write_posterior_and_prior_to_excel(path, pri, post):
+    data = xlsxwriter.Workbook(path)
+
+    ws = data.add_worksheet()
+    for idx, pr in enumerate(pri):
+        row = [float(x) for x in pr]
+        ws.write_row(idx, 0, row)
+
+    for jdx, posterior in enumerate(post, start=(idx+2)):
+        row = [float(x) for x in posterior]
+        ws.write_row(jdx, 0, row)
+
+    data.close()

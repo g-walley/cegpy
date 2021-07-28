@@ -1,6 +1,7 @@
 from ..trees.event import EventTree
 from fractions import Fraction
-from operator import add
+from operator import add, sub
+import scipy.special
 # from ..utilities.util import Util
 import logging
 
@@ -169,8 +170,42 @@ class StagedTree(EventTree):
         posterior = []
         edge_countset = self.get_edge_countset()
         for index in range(0, len(prior)):
-            posterior.append(list(map(add, prior[index], edge_countset[index])))
+            posterior.append(
+                list(map(add, prior[index], edge_countset[index]))
+            )
         return posterior
+
+    def _calculate_lg_of_sum(self, array):
+        '''function to calculate log gamma of the sum of an array'''
+        array = [float(x) for x in array]
+        return scipy.special.gammaln(sum(array))
+
+    def _calculate_sum_of_lg(self, array):
+        '''function to calculate log gamma of each element of an array'''
+        return sum([scipy.special.gammaln(float(x)) for x in array])
+
+    def _calculate_loglikehood(self, prior, posterior):
+        '''calculating log likelihood given a prior and posterior'''
+        # Calculate prior contribution
+
+        pri_lg_of_sum = [
+            self._calculate_lg_of_sum(elem) for elem in prior
+        ]
+        pri_sum_of_lg = [
+            self._calculate_sum_of_lg(elem) for elem in prior
+        ]
+        pri_contribution = list(map(sub, pri_lg_of_sum, pri_sum_of_lg))
+
+        # Calculate posterior contribution
+        post_lg_of_sum = [
+            self._calculate_lg_of_sum(elem) for elem in posterior
+        ]
+        post_sum_of_lg = [
+            self._calculate_sum_of_lg(elem) for elem in posterior
+        ]
+        post_contribution = list(map(sub, post_sum_of_lg, post_lg_of_sum))
+
+        return (sum(pri_contribution) + sum(post_contribution))
 
     def get_prior(self):  # TODO: INCLUDE -> when type is known
         return self.prior

@@ -180,7 +180,7 @@ class TestStagedTrees():
         #     prior, actual_posterior)
 
         expected_likelihood = -68721.50  # Calculated manually
-        actual_likelihood = self.fall_st._calculate_loglikehood(
+        actual_likelihood = self.fall_st._calculate_initial_loglikelihood(
             prior, actual_posterior
         )
         actual_likelihood = round(actual_likelihood, 2)
@@ -234,7 +234,7 @@ class TestStagedTrees():
         #     prior,
         #     actual_posterior)
         expected_likelihood = -30169.82  # Calculated manually
-        actual_likelihood = self.med_st._calculate_loglikehood(
+        actual_likelihood = self.med_st._calculate_initial_loglikelihood(
             prior, actual_posterior
         )
         actual_likelihood = round(actual_likelihood, 2)

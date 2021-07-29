@@ -10,3 +10,5 @@ docs/
 .vscode/workspace.code-workspace
 src/cegpy.egg-info/*
 .dist_old/*
+.pytest_cache/*
+~$*.xlsx

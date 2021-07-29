@@ -137,29 +137,16 @@ class EventTree(object):
 
         return self.edge_counts
 
-    def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+    def _generate_graph(self, colours=None):
         node_list = self.get_nodes()
-
-        logger.debug("Filename %s" % str(filename))
-
-        try:
-            q = filename.parent
-            if not q.is_dir():
-                os.mkdir(str(q))
-        except AttributeError:
-            pass
-
-        event_tree_graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-
+        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for key, count in self.event_tree.items():
             # edge_index = self.edges.index(edge)
             path = key[0]
             edge = key[1]
             edge_details = str(path[-1]) + '\n' + str(count)
 
-            event_tree_graph.add_edge(
+            graph.add_edge(
                 pdp.Edge(
                     edge[0],
                     edge[1],
@@ -171,15 +158,38 @@ class EventTree(object):
             )
 
         for node in node_list:
-            event_tree_graph.add_node(
+            if colours:
+                fill_colour = colours[node]
+            else:
+                fill_colour = 'lightgrey'
+
+            graph.add_node(
                 pdp.Node(
                     name=node,
                     label=node,
-                    style="filled"))
+                    style="filled",
+                    fillcolor=fill_colour))
+        return graph
+
+    def _check_filename(self, filename) -> str:
+        try:
+            q = filename.parent
+            if not q.is_dir():
+                os.mkdir(str(q))
+        except AttributeError:
+            pass
+
         png_filename = str(filename) + '.png'
-        logger.debug(png_filename)
-        event_tree_graph.write_png(png_filename)
-        return Image(event_tree_graph.create_png())
+        logger.debug("Filename: %s" % str(filename))
+        return png_filename
+
+    def create_figure(self, filename):
+        """Draws the event tree for the process described by the dataset,
+        and saves it to <filename>.png"""
+        png_filename = self._check_filename(filename)
+        graph = self._generate_graph()
+        graph.write_png(png_filename)
+        return Image(graph.create_png())
 
     def get_categories_per_variable(self) -> dict:
         '''list of number of unique categories/levels for each variable

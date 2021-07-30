@@ -1,3 +1,4 @@
+from ..utilities.util import Util
 from ..trees.event import EventTree
 from fractions import Fraction
 from operator import add, sub
@@ -387,7 +388,7 @@ class StagedTree(EventTree):
     def _generate_colours_for_situations(self):
         """Colours each stage of the tree with an individual colour"""
         number_of_stages = len(self._merged_situations)
-        stage_colours = self._generate_stage_colours(number_of_stages)
+        stage_colours = Util.generate_colours(number_of_stages)
         self._stage_colours = stage_colours
         colours_for_situations = {}
 
@@ -427,19 +428,20 @@ class StagedTree(EventTree):
         self._colours_for_situations = \
             self._generate_colours_for_situations()
 
-        return (
-            self._merged_situations,
-            loglikelihood,
-            self._mean_posterior_probs
-        )
+        return {
+            "Merged Situations": self._merged_situations,
+            "Loglikelihood": loglikelihood,
+            "Mean Posterior Probabilities": self._mean_posterior_probs
+        }
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
         and saves it to <filename>.png"""
+
         if self._colours_for_situations:
-            png_filename = self._check_filename(filename)
+            filename, filetype = Util.generate_filename_and_mkdir(filename)
             graph = self._generate_graph(colours=self._colours_for_situations)
-            graph.write_png(png_filename)
+            graph.write(str(filename), format=filetype)
             return Image(graph.create_png())
         else:
             logger.error("----- PLEASE RUN AHC ALGORITHM before trying to \

@@ -3,8 +3,10 @@ from ..trees.event import EventTree
 from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
+from IPython import get_ipython
 import random
 import scipy.special
+import math
 # from ..utilities.util import Util
 import logging
 
@@ -63,6 +65,7 @@ class StagedTree(EventTree):
         """If no alpha is given, a default value is calculated.
         The value is calculated by determining the maximum number
         of categories that any one variable has"""
+        logger.info("Calculating default prior")
         max_count = max(list(self.get_categories_per_variable().values()))
         return max_count
 
@@ -74,6 +77,8 @@ class StagedTree(EventTree):
         The prior is a list of lists. Each list gives the prior along the
         edges of a specific situation.
         Indexed same as self.situations & self.egde_countset"""
+
+        logger.info("Generating default prior")
         default_prior = [0] * len(self.get_situations())
         sample_size_at_node = dict()
 
@@ -116,6 +121,7 @@ class StagedTree(EventTree):
         in the hyperstage.
         The default is to allow all situations with the same number of
         outgoing edges and the same edge labels to be in a common list. '''
+        logger.info("Creating default hyperstage")
         hyperstage = []
         info_of_edges = []
         edges = self.get_edges()
@@ -153,6 +159,7 @@ class StagedTree(EventTree):
     def _create_edge_countset(self) -> list:
         '''Each element of list contains a list with counts along edges emanating from
         a specific situation. Indexed same as self.situations'''
+        logger.info("Creating edge countset")
         edge_countset = []
         situations = self.get_situations()
         edges = self.get_edges()
@@ -178,6 +185,7 @@ class StagedTree(EventTree):
         list of lists. Each list gives the posterior along the edges
         emanating from a specific vertex. The indexing is the same as
         self.edge_countset and self.situations'''
+        logger.info("Calculating posterior")
         posterior = []
         edge_countset = self.get_edge_countset()
         for index in range(0, len(prior)):
@@ -198,7 +206,7 @@ class StagedTree(EventTree):
     def _calculate_initial_loglikelihood(self, prior, posterior) -> float:
         '''calculating log likelihood given a prior and posterior'''
         # Calculate prior contribution
-
+        logger.info("Calculating initial loglikelihood")
         pri_lg_of_sum = [
             self._calculate_lg_of_sum(elem) for elem in prior
         ]
@@ -289,12 +297,21 @@ class StagedTree(EventTree):
         situ = self.get_situations()
         merged_situation_list = []
         bayesfactor_score = 1
-
+        logger.info(" ----- Starting main loop of AHC algorithm -----")
+        logger.info("Prior is length %d" % len(prior))
+        # print("Progress:   0%")
         while bayesfactor_score > 0:
             local_merges = []
             local_scores = []
 
+            # perc = int(math.floor(len(prior) / 100))
+            index = 0
+
             for sit_1 in range(len(prior)):
+                # if(index % perc) == 0:
+                #     current_perc = index / perc
+                #     print("%d" % current_perc)
+
                 if all(items == 0 for items in posterior[sit_1]) is False:
                     model1 = [prior[sit_1], posterior[sit_1]]
                     for sit_2 in range(sit_1+1, len(prior)):
@@ -316,6 +333,8 @@ class StagedTree(EventTree):
                             )
 
                             local_merges.append([sit_1, sit_2])
+
+                index += 1
 
             if local_scores != [] and max(local_scores) > 0:
                 bayesfactor_score = max(local_scores)
@@ -351,6 +370,8 @@ class StagedTree(EventTree):
 
             elif max(local_scores) <= 0:
                 bayesfactor_score = 0
+
+            logger.debug('--Current AHC score: %d' % bayesfactor_score)
 
         return posterior_probs, loglikelihood, merged_situation_list
 
@@ -440,15 +461,24 @@ class StagedTree(EventTree):
 
         if self._colours_for_situations:
             filename, filetype = Util.generate_filename_and_mkdir(filename)
+            logger.info("--- generating graph ---")
             graph = self._generate_graph(colours=self._colours_for_situations)
+            logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
-            return Image(graph.create_png())
+
+            if get_ipython() is None:
+                return None
+            else:
+                logger.info("--- Exporting graph to notebook ---")
+                return Image(graph.create_png())
+
         else:
             logger.error("----- PLEASE RUN AHC ALGORITHM before trying to \
                 export graph -----")
             return None
 
     def get_prior(self):  # TODO: INCLUDE -> when type is known
+
         return self.prior
 
     def get_alpha(self):

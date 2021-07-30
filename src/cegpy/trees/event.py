@@ -6,6 +6,7 @@ import pydotplus as pdp
 import logging
 from ..utilities.util import Util
 from IPython.display import Image
+from IPython import get_ipython
 import pandas as pd
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
@@ -174,10 +175,16 @@ class EventTree(object):
         """Draws the event tree for the process described by the dataset,
         and saves it to <filename>.png"""
         filename, filetype = Util.generate_filename_and_mkdir(filename)
-
+        logger.info("--- generating graph ---")
         graph = self._generate_graph()
+        logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
-        return Image(graph.create_png())
+
+        if get_ipython() is None:
+            return None
+        else:
+            logger.info("--- Exporting graph to notebook ---")
+            return Image(graph.create_png())
 
     def get_categories_per_variable(self) -> dict:
         '''list of number of unique categories/levels for each variable

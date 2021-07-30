@@ -73,7 +73,7 @@ class Util:
 
         colours = []
 
-        for idx in range(number):
+        for idx in range(len(ends)):
             if jumps[idx] > 0:
                 colours += colorutils.color_run(
                     starts[idx], ends[idx], jumps[idx], to_color=True)

@@ -7,7 +7,6 @@ import logging
 from ..utilities.util import Util
 from IPython.display import Image
 import pandas as pd
-import os
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
@@ -171,24 +170,13 @@ class EventTree(object):
                     fillcolor=fill_colour))
         return graph
 
-    def _check_filename(self, filename) -> str:
-        try:
-            q = filename.parent
-            if not q.is_dir():
-                os.mkdir(str(q))
-        except AttributeError:
-            pass
-
-        png_filename = str(filename) + '.png'
-        logger.debug("Filename: %s" % str(filename))
-        return png_filename
-
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
         and saves it to <filename>.png"""
-        png_filename = self._check_filename(filename)
+        filename, filetype = Util.generate_filename_and_mkdir(filename)
+
         graph = self._generate_graph()
-        graph.write_png(png_filename)
+        graph.write(str(filename), format=filetype)
         return Image(graph.create_png())
 
     def get_categories_per_variable(self) -> dict:

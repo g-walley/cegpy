@@ -12,3 +12,11 @@ src/cegpy.egg-info/*
 .dist_old/*
 .pytest_cache/*
 ~$*.xlsx
+workspace.code-workspace
+data/Falls_Data_test.xlsx
+data/medical_dm_modified_test.xlsx
+data/medical_dm_posterior_prior.xlsx
+data/test_data.xlsx
+data/Falls_Data_test.xlsx
+data/medical_dm_modified_test.xlsx
+data/medical_dm_posterior_prior.xlsx

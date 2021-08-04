@@ -90,34 +90,6 @@ class ChainEventGraph(object):
                 graph['edges'][new_edge_key] = []
                 graph['edges'][new_edge_key].append(edge)
 
-
-            # child_node = {
-            #     'name': edge_key[1][1],
-            #     'label': edge_key[0][-1],
-            #     'count': event_tree[edge_key] + float(prior[idx])
-            # }
-
-            # # Add children to node
-            # try:
-            #     # Modify existing node
-            #     # add child to the node
-            #     graph['nodes'][node_name]['children'].append(child_node)
-            # except KeyError:
-            #     # Create the new node
-            #     graph['nodes'][node_name] = self._create_new_node()
-            #     # add child to the node
-            #     graph['nodes'][node_name]['children'].append(child_node)
-
-            # # Create Child node, add parent information
-            # child_name = child_node['name']
-            # try:
-            #     # If node already exists, add parent node
-            #     graph[child_node[child_name]]['parents'].append(node_name)
-            # except KeyError:
-            #     # Create the new node
-            #     graph[child_name] = self._create_new_node()
-            #     graph[child_name]['parents'].append(node_name)
-
         return graph
 
     def _flatten_list_of_lists(self, list_of_lists) -> list:
@@ -126,14 +98,23 @@ class ChainEventGraph(object):
             flat_list = flat_list + sublist
         return flat_list
 
-    def _create_new_node(self, nodes_to_merge=[], colour='lightgrey') -> dict:
+    def _create_new_node(self, root=False, sink=False,
+                         nodes_to_merge=[], colour='lightgrey') -> dict:
+        """
+        Generates default format of Node dictionary
+        """
         node = {
+            'root': root,
+            'sink': sink,
             'nodes_to_merge': nodes_to_merge,
             'colour': colour
         }
         return node
 
     def _create_new_edge(self, src='', dest='', label='', value=0.0) -> list:
+        """
+        Generates default format of edge dictionary.
+        """
         edge = {
             'src': src,
             'dest': dest,
@@ -142,46 +123,43 @@ class ChainEventGraph(object):
         }
         return edge
 
-    def _graph(self):
-        """
-        Generates the parameters used to output the CEG figure.
-        """
-        self._create_graph_edges()
-        self._create_graph_vertices()
-        self._colour_graph_vertices()
-        pass
+    def _trim_leaves_from_graph(self, graph) -> dict:
+        leaves = self.st.get_leaves()
+        graph['nodes']['w_inf'] = self._create_new_node(sink=True)
+        sink_node = 'w_inf'
+        # Check which nodes have been identified as leaves
+        for leaf in leaves:
+            edges_to_delete = []
+            edges_to_add = {}
+            # In edge list, look for edges that terminate on this leaf
+            for edge_list_key in graph['edges'].keys():
+                if edge_list_key[1] == leaf:
+                    new_edge_list = []
+                    # Each edge key may have multiple edges associate with it
+                    for edge in graph['edges'][edge_list_key]:
+                        new_edge = edge
+                        new_edge['dest'] = sink_node
+                        new_edge_list.append(new_edge)
 
-    def _create_graph_edges(self):
-        """
-        Determines the edges of the CEG, along with their labels.
-        """
-        pass
+                    # add modified edge to the dictionary
+                    edges_to_add[(edge_list_key[0], sink_node)] = \
+                        new_edge_list
 
-    def _create_graph_vertices(self):
-        """
-        Identifies the positions, i.e. the vertices of the CEG.
-        """
-        pass
+                    # remove out of date edges from the dictionary
+                    edges_to_delete.append(edge_list_key)
 
-    def _colour_graph_vertices(self):
-        """
-        Assigns colours to each of the combined vertices.
-        """
-        pass
+            # remove leaf node from the graph
+            del graph['nodes'][leaf]
+            # clean up old edges
+            for edge in edges_to_delete:
+                del graph['edges'][edge]
 
-    def create_figure(self):
-        pass
+            graph['edges'] = {**graph['edges'], **edges_to_add}
 
-    def _create_figure_graph(self):
-        pass
+        return graph
 
-    def _create_figure_edges(self):
-
-        pass
-
-    def _create_figure_vertices(self):
-
-        pass
+    def _merge_nodes(self) -> dict:
+        return self.ceg
 
     def _ceg_positions_edges_optimal(self):
         '''

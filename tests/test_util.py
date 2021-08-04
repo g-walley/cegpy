@@ -53,3 +53,10 @@ class TestCegUtil(object):
         assert Util.check_tuple_contains_strings(tup) is True
         tup = (1, '2')
         assert Util.check_tuple_contains_strings(tup) is False
+
+    # def test_generate_colours(self) -> None:
+    #     high = 6
+    #     for cnt in range(1, high+1):
+    #         print("%d:" % cnt)
+    #         print(Util.generate_colours(cnt))
+    #     assert 1==2

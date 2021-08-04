@@ -1,5 +1,5 @@
 # from ..trees.staged import StagedTree
-import pydotplus as pdp
+# import pydotplus as pdp
 # from operator import add
 
 
@@ -27,16 +27,37 @@ class ChainEventGraph(object):
         from ceg.trees.event.
         The output will have the form:
         {
-            '<node_name>' : {
-                'parents': []           # all parent nodes (str)
-                'children': []          # all child nodes (str)
-                'nodes_to_merge': []    # nodes to merge together
-                'colour': 'str'         # hex representation of colour
+            'nodes': {
+                'node_1': {
+                    'nodes_to_merge': ['n1', 'n2', ...],
+                    'colour': '<hex_colour_string>'
+                },
+                ...
+                'node_n': {
+                    ...
+                }
+            },
+            'edges': {
+                ('src', 'dest'): [
+                    {
+                        'src': 'n1',
+                        'dest': 'n2',
+                        'label': 'Edge_Label',
+                        'value': 54.0
+                    },
+                    {
+                        <any other edges between
+                        the same nodes>
+                    },...
+                ],
+                ...
             }
-            ...
         }
         """
-        graph = {}
+        graph = {
+            "nodes": {},
+            "edges": {}
+        }
         event_tree = self.st.get_event_tree()
         prior = self._flatten_list_of_lists(self.st.get_prior())
 
@@ -44,34 +65,58 @@ class ChainEventGraph(object):
         for idx, edge_key in enumerate(event_tree.keys()):
             # edge has form:
             # (('path', 'to', 'label'), ('<node_name>', '<child_name>'))
-            node_name = edge_key[1][0]
+            edge = self._create_new_edge(
+                src=edge_key[1][0],
+                dest=edge_key[1][1],
+                label=edge_key[0][-1],
+                value=(event_tree[edge_key] + float(prior[idx])))
 
-            child_node = {
-                'name': edge_key[1][1],
-                'label': edge_key[0][-1],
-                'count': event_tree[edge_key] + float(prior[idx])
-            }
-
-            # Add children to node
+            # Add src node to graph dict:
             try:
-                # Modify existing node
-                # add child to the node
-                graph[node_name]['children'].append(child_node)
+                graph['nodes'][edge['src']]
             except KeyError:
-                # Create the new node
-                graph[node_name] = self._create_new_node()
-                # add child to the node
-                graph[node_name]['children'].append(child_node)
-
-            # Create Child node, add parent information
-            child_name = child_node['name']
+                graph['nodes'][edge['src']] = self._create_new_node()
+            # Add dest node
             try:
-                # If node already exists, add parent node
-                graph[child_node[child_name]]['parents'].append(node_name)
+                graph['nodes'][edge['dest']]
             except KeyError:
-                # Create the new node
-                graph[child_name] = self._create_new_node()
-                graph[child_name]['parents'].append(node_name)
+                graph['nodes'][edge['dest']] = self._create_new_node()
+
+            # Add edge to graph dict:
+            new_edge_key = edge_key[1]
+            try:
+                graph['edges'][new_edge_key].append(edge)
+            except KeyError:
+                graph['edges'][new_edge_key] = []
+                graph['edges'][new_edge_key].append(edge)
+
+
+            # child_node = {
+            #     'name': edge_key[1][1],
+            #     'label': edge_key[0][-1],
+            #     'count': event_tree[edge_key] + float(prior[idx])
+            # }
+
+            # # Add children to node
+            # try:
+            #     # Modify existing node
+            #     # add child to the node
+            #     graph['nodes'][node_name]['children'].append(child_node)
+            # except KeyError:
+            #     # Create the new node
+            #     graph['nodes'][node_name] = self._create_new_node()
+            #     # add child to the node
+            #     graph['nodes'][node_name]['children'].append(child_node)
+
+            # # Create Child node, add parent information
+            # child_name = child_node['name']
+            # try:
+            #     # If node already exists, add parent node
+            #     graph[child_node[child_name]]['parents'].append(node_name)
+            # except KeyError:
+            #     # Create the new node
+            #     graph[child_name] = self._create_new_node()
+            #     graph[child_name]['parents'].append(node_name)
 
         return graph
 
@@ -81,14 +126,21 @@ class ChainEventGraph(object):
             flat_list = flat_list + sublist
         return flat_list
 
-    def _create_new_node(self) -> dict:
+    def _create_new_node(self, nodes_to_merge=[], colour='lightgrey') -> dict:
         node = {
-            'parents': [],
-            'children': [],
-            'nodes_to_merge': [],
-            'colour': ''
+            'nodes_to_merge': nodes_to_merge,
+            'colour': colour
         }
         return node
+
+    def _create_new_edge(self, src='', dest='', label='', value=0.0) -> list:
+        edge = {
+            'src': src,
+            'dest': dest,
+            'label': label,
+            'value': value
+        }
+        return edge
 
     def _graph(self):
         """

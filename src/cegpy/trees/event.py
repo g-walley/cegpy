@@ -137,6 +137,9 @@ class EventTree(object):
 
         return self.edge_counts
 
+    def get_event_tree(self) -> dict:
+        return self.event_tree
+
     def _generate_graph(self, colours=None):
         node_list = self.get_nodes()
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')

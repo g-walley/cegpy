@@ -6,7 +6,7 @@ from IPython.display import Image
 from IPython import get_ipython
 import random
 import scipy.special
-import math
+# import math
 # from ..utilities.util import Util
 import logging
 
@@ -25,6 +25,7 @@ class StagedTree(EventTree):
         self._stage_colours = []
         self._sort_count = 0
         self._colours_for_situations = []
+        self._AHC_Output = {}
         logger.debug("Starting Staged Tree")
 
         # Call event tree init to generate event tree
@@ -299,19 +300,11 @@ class StagedTree(EventTree):
         bayesfactor_score = 1
         logger.info(" ----- Starting main loop of AHC algorithm -----")
         logger.info("Prior is length %d" % len(prior))
-        # print("Progress:   0%")
         while bayesfactor_score > 0:
             local_merges = []
             local_scores = []
 
-            # perc = int(math.floor(len(prior) / 100))
-            index = 0
-
             for sit_1 in range(len(prior)):
-                # if(index % perc) == 0:
-                #     current_perc = index / perc
-                #     print("%d" % current_perc)
-
                 if all(items == 0 for items in posterior[sit_1]) is False:
                     model1 = [prior[sit_1], posterior[sit_1]]
                     for sit_2 in range(sit_1+1, len(prior)):
@@ -328,13 +321,11 @@ class StagedTree(EventTree):
                             model2 = [prior[sit_2], posterior[sit_2]]
                             local_scores.append(
                                 self._calculate_bayes_factor(
-                                    *model1, *model2
-                                )
+                                        *model1, *model2
+                                    )
                             )
 
                             local_merges.append([sit_1, sit_2])
-
-                index += 1
 
             if local_scores != [] and max(local_scores) > 0:
                 bayesfactor_score = max(local_scores)
@@ -449,11 +440,12 @@ class StagedTree(EventTree):
         self._colours_for_situations = \
             self._generate_colours_for_situations()
 
-        return {
+        self._AHC_Output = {
             "Merged Situations": self._merged_situations,
             "Loglikelihood": loglikelihood,
             "Mean Posterior Probabilities": self._mean_posterior_probs
         }
+        return self._AHC_Output
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
@@ -499,3 +491,6 @@ class StagedTree(EventTree):
             self.posterior = self._calculate_posterior(prior)
 
         return self.posterior
+
+    def get_AHC_output(self):
+        return self._AHC_Output

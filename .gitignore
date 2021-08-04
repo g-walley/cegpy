@@ -29,3 +29,4 @@ data/medical_dm_posterior_prior.xlsx
 .gitignore
 data/voting.xlsx
 scripts/docker/run_example_docker.sh
+data/tic-tac-toe.xlsx

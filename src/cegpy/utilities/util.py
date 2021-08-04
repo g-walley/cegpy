@@ -1,5 +1,15 @@
 import os
 from collections import defaultdict
+from pathlib import Path
+from colorutils import Color as Colour
+import colorutils
+import math
+
+ST_OUTPUT = {
+    "Merged Situations": [],
+    "Loglikelihood": float,
+    "Mean Posterior Probabilities": [],
+}
 
 
 class Util:
@@ -20,10 +30,72 @@ class Util:
         else:
             return False
 
-    def get_package_root() -> str:
-        """Finds the root directory of the package."""
-        cwd = os.getcwd()
-        return cwd[:cwd.index('pyceg') + len('pyceg')].replace("\\", "/")
+    def generate_colours(number) -> list:
+        """Generates a list of hex colour strings that are evenly spaced
+        around the colour spectrum"""
+        hex_colours = []
+        low, start, high = 100, 150, 255
+        starts = [
+            Colour((start, low, low)),
+            Colour((low, start, low)),
+            Colour((low, low, start))
+        ]
+        ends = [
+            Colour((high, low, low)),
+            Colour((low, high, low)),
+            Colour((low, low, high))
+        ]
+        prim_colours = math.ceil(number / 2)
+        hex_colours += Util.generate_colour_run(prim_colours, starts, ends)
+        starts = [
+            Colour((start, start, low)),
+            Colour((low, start, start)),
+            Colour((start, low, start))
+        ]
+        ends = [
+            Colour((high, high, low)),
+            Colour((low, high, high)),
+            Colour((high, low, high))
+        ]
+        sec_colours = math.floor(number / 2)
+        hex_colours += Util.generate_colour_run(sec_colours, starts, ends)
+
+        return hex_colours
+
+    def generate_colour_run(number, starts, ends) -> list:
+        split = [0, 0, 0]
+        for i in range(number):
+            split[i % len(split)] += 1
+
+        jumps = []
+        for val in split:
+            jumps.append(max(val - 1, 0))
+
+        colours = []
+
+        for idx in range(len(ends)):
+            if jumps[idx] > 0:
+                colours += colorutils.color_run(
+                    starts[idx], ends[idx], jumps[idx], to_color=True)
+            else:
+                colours.append(ends[idx])
+        hex_colours = []
+        for colour in colours:
+            hex_colours.append(colour.hex)
+
+        return hex_colours
+
+    def generate_filename_and_mkdir(filename) -> str:
+        if filename is not Path:
+            filename = Path(filename)
+
+        filetype = filename.suffix.strip('.')
+        if filename.suffix == filetype:
+            filename.joinpath('.png')
+            filetype = 'png'
+
+        os.makedirs(filename.parent, exist_ok=True)
+        return filename, filetype
 
     def create_sampling_zeros(sampling_zero_paths, path_dict) -> defaultdict:
         '''The list of paths to zero must only contain tuples.

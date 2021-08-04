@@ -6,7 +6,8 @@ import pydotplus as pdp
 import logging
 from ..utilities.util import Util
 from IPython.display import Image
-import os
+from IPython import get_ipython
+import pandas as pd
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
@@ -24,6 +25,11 @@ class EventTree(object):
         self.situations = None
         self.emanating_nodes = None
         self.terminating_nodes = None
+        self.variables = None
+        self.edge_counts = None
+
+        # Root node of the tree is always defined as s0.
+        self.root = 's0'
 
         # Paths taken from dataframe in order of occurance
         self.unsorted_paths = defaultdict(int)
@@ -32,19 +38,27 @@ class EventTree(object):
 
         # pandas dataframe passed via parameters
         self.dataframe = params.get("dataframe")
-        try:
-            self.variables = list(self.dataframe.columns)
-            logger.info('Variables extracted from dataframe were:')
-            logger.info(self.variables)
-        except AttributeError:
-            logger.critical('A require parameter \
-                            (dataframe) was not provided!')
-            raise ValueError("Required Parameter: No Dataframe provided. ")
-
         # Format of event_tree dict:
 
         self.event_tree = self._construct_event_tree()
         logger.info('Initialisation complete!')
+
+    def get_root(self):
+        return self.root
+
+    def get_variables(self) -> list:
+        if self.variables:
+            return self.variables
+        else:
+            try:
+                self.variables = list(self.dataframe.columns)
+                logger.info('Variables extracted from dataframe were:')
+                logger.info(self.variables)
+                return self.variables
+            except AttributeError:
+                logger.critical('A require parameter \
+                                (dataframe) was not provided!')
+                raise ValueError("Required Parameter: No Dataframe provided. ")
 
     def get_sampling_zero_paths(self):
         if not self.sampling_zero_paths:
@@ -115,29 +129,27 @@ class EventTree(object):
 
         return self.terminating_nodes
 
-    def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+    def get_edge_counts(self) -> list:
+        '''list of counts along edges. Indexed same as edges and edge_labels'''
+        if not self.edge_counts:
+            tree = self.event_tree
+            self.edge_counts = [tree[x] for x in list(tree.keys())]
+
+        return self.edge_counts
+
+    def get_event_tree(self) -> dict:
+        return self.event_tree
+
+    def _generate_graph(self, colours=None):
         node_list = self.get_nodes()
-
-        logger.debug("Filename %s" % str(filename))
-
-        try:
-            q = filename.parent
-            if not q.is_dir():
-                os.mkdir(str(q))
-        except AttributeError:
-            pass
-
-        event_tree_graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-
+        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for key, count in self.event_tree.items():
             # edge_index = self.edges.index(edge)
             path = key[0]
             edge = key[1]
             edge_details = str(path[-1]) + '\n' + str(count)
 
-            event_tree_graph.add_edge(
+            graph.add_edge(
                 pdp.Edge(
                     edge[0],
                     edge[1],
@@ -149,23 +161,46 @@ class EventTree(object):
             )
 
         for node in node_list:
-            event_tree_graph.add_node(
+            if colours:
+                fill_colour = colours[node]
+            else:
+                fill_colour = 'lightgrey'
+
+            graph.add_node(
                 pdp.Node(
                     name=node,
                     label=node,
-                    style="filled"))
-        png_filename = str(filename) + '.png'
-        logger.debug(png_filename)
-        event_tree_graph.write_png(png_filename)
-        return Image(event_tree_graph.create_png())
+                    style="filled",
+                    fillcolor=fill_colour))
+        return graph
+
+    def create_figure(self, filename):
+        """Draws the event tree for the process described by the dataset,
+        and saves it to <filename>.png"""
+        filename, filetype = Util.generate_filename_and_mkdir(filename)
+        logger.info("--- generating graph ---")
+        graph = self._generate_graph()
+        logger.info("--- writing " + filetype + " file ---")
+        graph.write(str(filename), format=filetype)
+
+        if get_ipython() is None:
+            return None
+        else:
+            logger.info("--- Exporting graph to notebook ---")
+            return Image(graph.create_png())
 
     def get_categories_per_variable(self) -> dict:
         '''list of number of unique categories/levels for each variable
         (a column in the df)'''
+        categories_to_ignore = {"N/A", "NA", "n/a", "na", "NAN", "nan"}
         catagories_per_variable = {}
-        for var in self.variables:
-            catagories_per_variable[var] = len(
-                self.dataframe[var].unique().tolist())
+        for var in self.get_variables():
+            categories = set(self.dataframe[var].unique().tolist())
+            # remove nan
+            categories = {x for x in categories if pd.notna(x)}
+            # remove any string nans that might have made it in.
+            filtered_cats = categories - categories_to_ignore
+            catagories_per_variable[var] = len(filtered_cats)
         return catagories_per_variable
 
     def _set_sampling_zero_paths(self, sz_paths):
@@ -192,9 +227,9 @@ class EventTree(object):
         in the order in which they are given."""
         unsorted_paths = defaultdict(int)
 
-        for variable_number in range(0, len(self.variables)):
+        for variable_number in range(0, len(self.get_variables())):
             dataframe_upto_variable = self.dataframe.loc[
-                :, self.variables[0:variable_number+1]]
+                :, self.get_variables()[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():
                 row = row[1:]
@@ -256,7 +291,7 @@ class EventTree(object):
 
     def _create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
-        node_list = ['s0']  # root node
+        node_list = [self.root]  # root node
 
         for vertex_number, _ in enumerate(list(paths.keys()), start=1):
             node_list.append('s%d' % vertex_number)

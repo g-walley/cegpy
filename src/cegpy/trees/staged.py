@@ -290,12 +290,12 @@ class StagedTree(EventTree):
         return mean_posterior_probs
 
     def _execute_AHC_algoritm(self):
-        prior = self.get_prior()
-        hyperstage = self.get_hyperstage()
-        posterior = self.get_posterior()
+        prior = self.get_prior().copy()
+        hyperstage = self.get_hyperstage().copy()
+        posterior = self.get_posterior().copy()
         loglikelihood = self._calculate_initial_loglikelihood(prior, posterior)
-        posterior_probs = self.get_posterior()
-        situ = self.get_situations()
+        posterior_probs = self.get_posterior().copy()
+        situ = self.get_situations().copy()
         merged_situation_list = []
         bayesfactor_score = 1
         logger.info(" ----- Starting main loop of AHC algorithm -----")

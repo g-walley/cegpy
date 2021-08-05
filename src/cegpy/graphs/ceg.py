@@ -11,14 +11,21 @@ class ChainEventGraph(object):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    def __init__(self, staged_tree=None) -> None:
+    def __init__(self, staged_tree=None, root=None, sink='w_inf') -> None:
+        self.root = root
+        self.sink = sink
         # self.st = StagedTree()
         self.st = staged_tree
-        if self.st.get_AHC_output() == {}:
-            raise ValueError("Run staged tree AHC transitions first.")
-        self.ceg = self._create_graph_representation()
+        self.ahc_output = self.st.get_AHC_output().copy()
 
-        pass
+        if self.ahc_output == {}:
+            raise ValueError("Run staged tree AHC transitions first.")
+
+        if self.root is None:
+            raise(ValueError('Please input the root node!'))
+            # self._identify_root_node()
+
+        self.graph = self._create_graph_representation()
 
     def _create_graph_representation(self) -> dict:
         """
@@ -71,19 +78,36 @@ class ChainEventGraph(object):
                 label=edge_key[0][-1],
                 value=(event_tree[edge_key] + float(prior[idx])))
 
+            new_edge_key = edge_key[1]
             # Add src node to graph dict:
             try:
-                graph['nodes'][edge['src']]
+                graph['nodes'][edge['src']]['outgoing_edges'].append(
+                    new_edge_key
+                )
             except KeyError:
-                graph['nodes'][edge['src']] = self._create_new_node()
+                root = True if edge['src'] == self.root else False
+
+                graph['nodes'][edge['src']] = \
+                    self._create_new_node(
+                        outgoing_edges=[new_edge_key],
+                        root=root
+                    )
+                # graph['nodes'][edge['src']]['outgoing_edges'].append(
+                #     new_edge_key
+                # )
             # Add dest node
             try:
-                graph['nodes'][edge['dest']]
+                graph['nodes'][edge['dest']]['incoming_edges'].append(
+                    new_edge_key
+                )
             except KeyError:
-                graph['nodes'][edge['dest']] = self._create_new_node()
+                graph['nodes'][edge['dest']] = \
+                    self._create_new_node()
+                graph['nodes'][edge['dest']]['incoming_edges'].append(
+                    new_edge_key
+                )
 
             # Add edge to graph dict:
-            new_edge_key = edge_key[1]
             try:
                 graph['edges'][new_edge_key].append(edge)
             except KeyError:
@@ -92,6 +116,25 @@ class ChainEventGraph(object):
 
         return graph
 
+    def _update_distance_to_sink(self) -> None:
+        pass
+
+    def _identify_root_node(self, graph) -> str:
+        number_of_roots = 0
+        root = ''
+        for node in graph['nodes']:
+            node_properties = graph['nodes'][node]
+            if node_properties['incoming_edges'] == []:
+                root = node
+                number_of_roots += 1
+
+        if number_of_roots > 1:
+            raise(ValueError('Your graph has too many roots!'))
+        elif number_of_roots == 1:
+            return root
+        else:
+            raise(ValueError('No graph root was found!'))
+
     def _flatten_list_of_lists(self, list_of_lists) -> list:
         flat_list = []
         for sublist in list_of_lists:
@@ -99,17 +142,21 @@ class ChainEventGraph(object):
         return flat_list
 
     def _create_new_node(self, root=False, sink=False,
+                         incoming_edges=[], outgoing_edges=[],
+                         dist_to_sink=-1,
                          nodes_to_merge=[], colour='lightgrey') -> dict:
         """
         Generates default format of Node dictionary
         """
-        node = {
+        return {
             'root': root,
             'sink': sink,
-            'nodes_to_merge': nodes_to_merge,
+            'incoming_edges': incoming_edges.copy(),
+            'outgoing_edges': outgoing_edges.copy(),
+            'nodes_to_merge': nodes_to_merge.copy(),
+            'dist_to_sink': dist_to_sink,
             'colour': colour
         }
-        return node
 
     def _create_new_edge(self, src='', dest='', label='', value=0.0) -> list:
         """
@@ -123,43 +170,72 @@ class ChainEventGraph(object):
         }
         return edge
 
-    def _trim_leaves_from_graph(self, graph) -> dict:
+    def _trim_leaves_from_graph(self, graph) -> "tuple[dict, list]":
         leaves = self.st.get_leaves()
-        graph['nodes']['w_inf'] = self._create_new_node(sink=True)
-        sink_node = 'w_inf'
+        cut_vertices = []
+        graph['nodes'][self.sink] = \
+            self._create_new_node(sink=True, dist_to_sink=0)
+
         # Check which nodes have been identified as leaves
+        edges_to_delete = []
+        edges_to_add = {}
         for leaf in leaves:
-            edges_to_delete = []
-            edges_to_add = {}
+
             # In edge list, look for edges that terminate on this leaf
             for edge_list_key in graph['edges'].keys():
                 if edge_list_key[1] == leaf:
                     new_edge_list = []
+                    new_edge_list_key = (edge_list_key[0], self.sink)
                     # Each edge key may have multiple edges associate with it
                     for edge in graph['edges'][edge_list_key]:
                         new_edge = edge
-                        new_edge['dest'] = sink_node
+                        new_edge['dest'] = self.sink
                         new_edge_list.append(new_edge)
-
-                    # add modified edge to the dictionary
-                    edges_to_add[(edge_list_key[0], sink_node)] = \
-                        new_edge_list
 
                     # remove out of date edges from the dictionary
                     edges_to_delete.append(edge_list_key)
 
+                    cut_vertices.append(new_edge_list_key[0])
+                    # clean node dict
+                    graph['nodes'][edge_list_key[0]]['outgoing_edges'].remove(
+                        edge_list_key
+                    )
+                    try:
+                        # add modified edge to the dictionary
+                        edges_to_add[new_edge_list_key] = \
+                            edges_to_add[new_edge_list_key] + new_edge_list
+                    except KeyError:
+                        edges_to_add[new_edge_list_key] = \
+                            new_edge_list
+                    # add edge to node dict
+                    outgoing_edges = \
+                        graph['nodes'][new_edge_list_key[0]]['outgoing_edges']
+                    outgoing_edges.append(new_edge_list_key)
+
+                    incoming_edges = \
+                        graph['nodes'][new_edge_list_key[1]]['incoming_edges']
+                    incoming_edges.append(new_edge_list_key)
+
+                    outgoing_edges = list(set(outgoing_edges))
+                    graph['nodes'][new_edge_list_key[0]]['outgoing_edges'] = \
+                        outgoing_edges
+
+                    incoming_edges = list(set(incoming_edges))
+                    graph['nodes'][new_edge_list_key[1]]['incoming_edges'] = \
+                        incoming_edges
+
             # remove leaf node from the graph
             del graph['nodes'][leaf]
-            # clean up old edges
-            for edge in edges_to_delete:
-                del graph['edges'][edge]
+        # clean up old edges
+        for edge in edges_to_delete:
+            del graph['edges'][edge]
 
-            graph['edges'] = {**graph['edges'], **edges_to_add}
+        graph['edges'] = {**graph['edges'], **edges_to_add}
 
-        return graph
+        return (graph, cut_vertices)
 
     def _merge_nodes(self) -> dict:
-        return self.ceg
+        return self.graph
 
     def _ceg_positions_edges_optimal(self):
         '''

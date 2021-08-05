@@ -15,8 +15,10 @@ class TestCEG(object):
         }
         self.st = StagedTree(st_params)
         self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(staged_tree=self.st)
-        self.graph = self.ceg._create_graph_representation()
+        self.ceg = ChainEventGraph(
+            staged_tree=self.st,
+            root='s0'
+        )
 
     def test_integration(self):
 
@@ -29,11 +31,11 @@ class TestCEG(object):
 
         # check that all nodes exist
         for node in nodes:
-            assert self.graph['nodes'].get(node) is not None
+            assert self.ceg.graph['nodes'].get(node) is not None
 
         # check edges were created correctly
         for idx, edge in enumerate(edges):
-            edge_list = self.graph['edges'].get(edge)
+            edge_list = self.ceg.graph['edges'].get(edge)
             src, dest = edge
             assert edge_list is not None
             label_found = False
@@ -46,7 +48,7 @@ class TestCEG(object):
             assert label_found
 
     def test_trim_leaves_from_graph(self) -> None:
-        new_graph = self.ceg._trim_leaves_from_graph(self.graph)
+        new_graph, _ = self.ceg._trim_leaves_from_graph(self.ceg.graph)
         leaves = self.st.get_leaves()
         for leaf in leaves:
             try:
@@ -61,9 +63,12 @@ class TestCEG(object):
             for edge_list_key in new_graph['edges'].keys():
                 assert edge_list_key[1] != leaf
 
+    def test_identify_root_node(self) -> None:
+        root = self.ceg._identify_root_node(self.ceg.graph)
+        assert root == 's0'
+
     def test_merge_nodes(self) -> None:
         new_graph = self.ceg._merge_nodes()
-        assert new_graph
 
     def test_initialisation_of_ceg(self) -> None:
         pass

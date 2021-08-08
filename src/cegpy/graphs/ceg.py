@@ -1,4 +1,4 @@
-# from ..trees.staged import StagedTree
+from ..trees.staged import StagedTree
 # import pydotplus as pdp
 # from operator import add
 
@@ -14,8 +14,8 @@ class ChainEventGraph(object):
     def __init__(self, staged_tree=None, root=None, sink='w_inf') -> None:
         self.root = root
         self.sink = sink
-        # self.st = StagedTree()
-        self.st = staged_tree
+        self.st = StagedTree()
+        # self.st = staged_tree
         self.ahc_output = self.st.get_AHC_output().copy()
 
         if self.ahc_output == {}:
@@ -26,6 +26,7 @@ class ChainEventGraph(object):
             # self._identify_root_node()
 
         self.graph = self._create_graph_representation()
+        self._ceg_positions_edges_optimal()
 
     def _create_graph_representation(self) -> dict:
         """
@@ -114,10 +115,48 @@ class ChainEventGraph(object):
                 graph['edges'][new_edge_key] = []
                 graph['edges'][new_edge_key].append(edge)
 
+        self._update_distances_of_nodes_to_sink(
+            graph, self.st.get_leaves().copy()
+        )
         return graph
 
-    def _update_distance_to_sink(self) -> None:
-        pass
+    def _update_distances_of_nodes_to_sink(self, graph, sinks) -> None:
+        """
+        Provided a graph, and a list of the sink nodes (or leaves),
+        this function will update all the nodes in the graph with their
+        maximum distance to sink.
+        """
+        def calc_dist_of_node_to_sink(
+                node_dict, edge_dict, node) -> int:
+
+            distances = []
+            for out_edge in node_dict[node]['outgoing_edges']:
+                dest = edge_dict[out_edge][0]['dest']
+                distances.append(node_dict[dest]['max_dist_to_sink'])
+            return max(distances) + 1
+
+        def update_dist_of_source_nodes(
+                node_dict, edge_dict, destinations) -> list:
+
+            new_destinations = []
+            for node_id in destinations:
+                for incoming_edge in nodes[node_id]['incoming_edges']:
+                    src_node = edges[incoming_edge][0]['src']
+                    dist = calc_dist_of_node_to_sink(
+                        node_dict, edge_dict, src_node
+                    )
+                    nodes[src_node]['max_dist_to_sink'] = dist
+                    new_destinations.append(src_node)
+            return list(set(new_destinations))
+
+        nodes = graph['nodes']
+        edges = graph['edges']
+        destinations = sinks
+
+        while destinations != []:
+            destinations = update_dist_of_source_nodes(
+                nodes, edges, destinations
+            )
 
     def _identify_root_node(self, graph) -> str:
         number_of_roots = 0
@@ -143,7 +182,7 @@ class ChainEventGraph(object):
 
     def _create_new_node(self, root=False, sink=False,
                          incoming_edges=[], outgoing_edges=[],
-                         dist_to_sink=-1,
+                         dist_to_sink=0,
                          nodes_to_merge=[], colour='lightgrey') -> dict:
         """
         Generates default format of Node dictionary
@@ -154,7 +193,7 @@ class ChainEventGraph(object):
             'incoming_edges': incoming_edges.copy(),
             'outgoing_edges': outgoing_edges.copy(),
             'nodes_to_merge': nodes_to_merge.copy(),
-            'dist_to_sink': dist_to_sink,
+            'max_dist_to_sink': dist_to_sink,
             'colour': colour
         }
 
@@ -232,7 +271,7 @@ class ChainEventGraph(object):
 
         graph['edges'] = {**graph['edges'], **edges_to_add}
 
-        return (graph, cut_vertices)
+        return cut_vertices
 
     def _merge_nodes(self) -> dict:
         return self.graph
@@ -244,6 +283,8 @@ class ChainEventGraph(object):
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
         '''
+        src_nodes_of_cut_edges = self._trim_leaves_from_graph(self.graph)
+        print(src_nodes_of_cut_edges)
         pass
 
     # def _create_pdp_graph_representation(self) -> dict:

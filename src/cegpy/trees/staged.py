@@ -225,7 +225,9 @@ class StagedTree(EventTree):
         ]
         post_contribution = list(map(sub, post_sum_of_lg, post_lg_of_sum))
 
-        return (sum(pri_contribution) + sum(post_contribution))
+        sum_pri_contribution = sum(pri_contribution)
+        sum_post_contribution = sum(post_contribution)
+        return (sum_pri_contribution + sum_post_contribution)
 
     def _check_issubset(self, item, hyperstage) -> bool:
         '''function to check if two situations belong to the same set in the

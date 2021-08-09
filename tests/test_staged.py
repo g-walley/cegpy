@@ -172,13 +172,6 @@ class TestStagedTrees():
         actual_posterior = self.fall_st._calculate_posterior(prior)
         assert actual_posterior == expected_posterior
 
-        # xlsx_path = Path(__file__).resolve(
-        #     ).parent.parent.joinpath(
-        #     'data/Falls_posterior_prior.xlsx')
-
-        # write_posterior_and_prior_to_excel(xlsx_path,
-        #     prior, actual_posterior)
-
         expected_likelihood = -68721.50  # Calculated manually
         actual_likelihood = self.fall_st._calculate_initial_loglikelihood(
             prior, actual_posterior
@@ -188,15 +181,15 @@ class TestStagedTrees():
 
     def test_med_calculate_posterior(self) -> None:
         med_expected_edge_countset = [
-            [5500, 5500],
-            [800, 1000, 3700],
-            [800, 1000, 3700],
-            [400, 400],
+            [5491, 5493],
+            [798, 1000, 3693],
+            [799, 998, 3696],
+            [399, 399],
             [500, 500],
-            [1850, 1850],
-            [400, 400],
-            [500, 500],
-            [1850, 1850],
+            [1846, 1847],
+            [400, 399],
+            [500, 498],
+            [1849, 1847],
             [393, 6],
             [347, 52],
             [480, 20],
@@ -226,14 +219,8 @@ class TestStagedTrees():
 
         actual_posterior = self.med_st._calculate_posterior(prior)
         assert actual_posterior == expected_posterior
-        # xlsx_path = Path(__file__).resolve(
-        #     ).parent.parent.joinpath(
-        #     'data/medical_dm_posterior_prior.xlsx')
-        # write_posterior_and_prior_to_excel(
-        #     xlsx_path,
-        #     prior,
-        #     actual_posterior)
-        expected_likelihood = -30169.82  # Calculated manually
+
+        expected_likelihood = -30134.07  # Calculated manually
         actual_likelihood = self.med_st._calculate_initial_loglikelihood(
             prior, actual_posterior
         )

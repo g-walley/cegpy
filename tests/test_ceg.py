@@ -180,5 +180,5 @@ class TestCEG(object):
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate_CEG()
         path = Util.create_path('out/medical_dm_CEG', True, '.pdf')
-        self.ceg.create_figure(path)
+        # self.ceg.create_figure(path)
         pass

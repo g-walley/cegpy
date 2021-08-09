@@ -1,9 +1,10 @@
 import os
+import colorutils
+import math
 from collections import defaultdict
 from pathlib import Path
 from colorutils import Color as Colour
-import colorutils
-import math
+from datetime import datetime
 
 ST_OUTPUT = {
     "Merged Situations": [],
@@ -117,3 +118,13 @@ class Util:
                     added first. Ensure the tuple ends with a comma.")
 
         return path_dict
+
+    def create_path(filename, add_time=False, filetype='png'):
+        dt_string = ''
+        if add_time:
+            now = datetime.now()
+            dt_string = now.strftime("__%d-%m-%Y_%H-%M-%S")
+        fig_path = Path(__file__).resolve().parent\
+            .parent.parent.parent.joinpath(
+                filename + dt_string + '.' + filetype)
+        return fig_path

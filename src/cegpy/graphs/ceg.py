@@ -1,12 +1,13 @@
-from ..trees.staged import StagedTree
-# import pydotplus as pdp
-# from operator import add
+import pydotplus as pdp
+from copy import deepcopy
+from ..utilities.util import Util
+from IPython.display import Image
+from IPython import get_ipython
 
 
 class ChainEventGraph(object):
     """
     Class: Chain Event Graph
-
 
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
@@ -14,8 +15,7 @@ class ChainEventGraph(object):
     def __init__(self, staged_tree=None, root=None, sink='w_inf') -> None:
         self.root = root
         self.sink = sink
-        self.st = StagedTree()
-        # self.st = staged_tree
+        self.st = staged_tree
         self.ahc_output = self.st.get_AHC_output().copy()
 
         if self.ahc_output == {}:
@@ -26,7 +26,7 @@ class ChainEventGraph(object):
             # self._identify_root_node()
 
         self.graph = self._create_graph_representation()
-        self._ceg_positions_edges_optimal()
+        # self._ceg_positions_edges_optimal()
 
     def _create_graph_representation(self) -> dict:
         """
@@ -158,6 +158,26 @@ class ChainEventGraph(object):
                 nodes, edges, destinations
             )
 
+    def _gen_nodes_with_increasing_distance(self, graph, start=0) -> list:
+        distance_dict = {}
+        nodes = graph['nodes']
+        graph_max_dist = nodes[self.root]['max_dist_to_sink']
+
+        # create empty lists for each distance
+        for dist in range(graph_max_dist):
+            distance_dict[dist] = []
+
+        # look at all nodes in the graph, and add each node
+        # to the list with other nodes of the same max distance
+        for node_id, node_data in nodes.items():
+            if node_data['root'] is False:
+                node_max_dist = node_data['max_dist_to_sink']
+                distance_dict[node_max_dist].append(node_id)
+
+        for dist in range(graph_max_dist):
+            if dist >= start:
+                yield distance_dict[dist]
+
     def _identify_root_node(self, graph) -> str:
         number_of_roots = 0
         root = ''
@@ -209,7 +229,7 @@ class ChainEventGraph(object):
         }
         return edge
 
-    def _trim_leaves_from_graph(self, graph) -> "tuple[dict, list]":
+    def _trim_leaves_from_graph(self, graph) -> list:
         leaves = self.st.get_leaves()
         cut_vertices = []
         graph['nodes'][self.sink] = \
@@ -271,21 +291,256 @@ class ChainEventGraph(object):
 
         graph['edges'] = {**graph['edges'], **edges_to_add}
 
-        return cut_vertices
+        return list(set(cut_vertices))
 
     def _merge_nodes(self) -> dict:
         return self.graph
 
-    def _ceg_positions_edges_optimal(self):
+    def generate_CEG(self):
         '''
         This function takes the output of the AHC algorithm and identifies
         the positions i.e. the vertices of the CEG and the edges of the CEG
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
         '''
-        src_nodes_of_cut_edges = self._trim_leaves_from_graph(self.graph)
-        print(src_nodes_of_cut_edges)
-        pass
+        def check_vertices_can_be_merged(v1, v2) -> bool:
+            vertices_are_equivalent = False
+            logic_values = [
+                (v1 in stage, v2 in stage)
+                for stage in self.ahc_output["Merged Situations"]
+            ]
+            vertices_are_equivalent = any(
+                value == (True, True) for value in logic_values
+            )
+            return vertices_are_equivalent
+
+        def clean_dict_list(edges, keys_to_keep=[]) -> list:
+            """
+            For a list of dictionaries, copy the dicts, and remove
+            any keys from the dict that are specified."""
+            # first copy each of the dictionaries in the list
+            new_edges = []
+            for edge in edges:
+                new_edge = deepcopy(edge)
+
+                keys_to_delete = [
+                    key for key in new_edge.keys()
+                    if key not in keys_to_keep
+                ]
+
+                for key in keys_to_delete:
+                    del new_edge[key]
+
+                new_edges.append(new_edge)
+
+            return new_edges
+
+        def get_outgoing_edges(node_dict, edge_dict, node) -> list:
+            # obtain a list of all the outgoing edges from this node
+            outgoing_edge_keys = node_dict[node]['outgoing_edges']
+            outgoing_edges = []
+            # Build a list of all the dict objects of the edges leaving
+            # this node
+            for key in outgoing_edge_keys:
+                # remove superfuous data from the dictionary
+                try:
+                    edges = clean_dict_list(
+                        edges=edge_dict[key][:],
+                        keys_to_keep=['dest', 'label']
+                    )
+                except KeyError:
+                    print('wtf')
+                outgoing_edges = outgoing_edges + edges
+
+            # sort the list by the edge label in the dictionary
+            outgoing_edges.sort(key=lambda dict: dict['label'])
+
+            return outgoing_edges
+
+        def merge_outgoing_edges(target_edges, source_edges,
+                                 edge_dict) -> list:
+            """
+            Nodes in the same position set can have their outgoing edges
+            merged. This translates to their values being added together.
+            Target edges are the outgoing edges from the node we are keeping.
+            Source edges are the outgoing edges from the node we are merging.
+            """
+            for src_edge in source_edges:
+                src_edge_list = edge_dict[src_edge]
+                for src_edg_dtls in src_edge_list:
+                    for trg_edge in target_edges:
+                        trg_edge_list = edge_dict[trg_edge]
+                        for trg_edg_dtls in trg_edge_list:
+                            src_lbl = src_edg_dtls['label']
+                            trg_lbl = trg_edg_dtls['label']
+                            # Edges can be merged!
+                            if src_lbl == trg_lbl:
+                                trg_edg_dtls['value'] += src_edg_dtls['value']
+
+                del edge_dict[src_edge]
+            return target_edges
+
+        def merge_position_set_nodes(node_dict, edge_dict, position_set):
+            node_to_keep = position_set[0]
+            other_nodes = set(position_set[:])
+            other_nodes.remove(node_to_keep)
+            keep_outgoing = node_dict[node_to_keep]['outgoing_edges']
+
+            for node in other_nodes:
+                # redirect incoming nodes to the node_to_keep
+                incoming = node_dict[node]['incoming_edges']
+                for edge in incoming:
+                    edge_list = edge_dict[edge]
+                    for edge_details in edge_list:
+                        src_node = edge_details['src']
+                        redirected_edge_key = (
+                            src_node,
+                            node_to_keep
+                        )
+                        redirected_edge_details = \
+                            deepcopy(edge_details)
+
+                        redirected_edge_details['dest'] = \
+                            node_to_keep
+
+                        try:
+                            edge_dict[redirected_edge_key].append(
+                                redirected_edge_details
+                            )
+                        except KeyError:
+                            edge_dict[redirected_edge_key] = [
+                                redirected_edge_details
+                            ]
+                        # Ensure that the src_node of the edge now points
+                        # to the node we are keeping
+                        node_dict[src_node]['outgoing_edges'].remove(
+                            edge
+                        )
+                        node_dict[src_node]['outgoing_edges'].append(
+                            redirected_edge_key
+                        )
+                    # remove the old edge as it is going to point to a node
+                    # that no longer exists
+                    del edge_dict[edge]
+
+                # merge outgoing edges for all nodes in same position_set
+                other_outgoing = node_dict[node]['outgoing_edges']
+                keep_outgoing = merge_outgoing_edges(
+                    target_edges=keep_outgoing,
+                    source_edges=other_outgoing,
+                    edge_dict=edge_dict
+                )
+                del node_dict[node]
+
+        self._trim_leaves_from_graph(self.graph)
+        src_node_gen = self._gen_nodes_with_increasing_distance(
+            graph=self.graph,
+            start=1
+        )
+        next_set_of_nodes = next(src_node_gen)
+
+        # Keep track of changes made. When none have been made, set to 0
+        changes_made = -1
+
+        nodes = self.graph['nodes']
+        edges = self.graph['edges']
+
+        while changes_made != 0:
+            position_sets = []
+            # Initialise changes made to 0 so that it can be used to terminate
+            # the while loop
+            changes_made = 0
+            while next_set_of_nodes != []:
+
+                for node_1 in next_set_of_nodes:
+                    position_set = [node_1]
+                    n1_outgoing_edges = get_outgoing_edges(
+                        node_dict=nodes,
+                        edge_dict=edges,
+                        node=node_1
+                    )
+                    # make a copy of our list, and remove node_1
+                    other_src_nodes_of_cut_edges = next_set_of_nodes[:]
+                    other_src_nodes_of_cut_edges.remove(node_1)
+
+                    for node_2 in other_src_nodes_of_cut_edges:
+                        # check if node_1 and node_2 are ever in the same stage
+                        nodes_are_equivalent = check_vertices_can_be_merged(
+                            v1=node_1,
+                            v2=node_2
+                        )
+                        if nodes_are_equivalent:
+                            n2_outgoing_edges = get_outgoing_edges(
+                                node_dict=nodes,
+                                edge_dict=edges,
+                                node=node_2
+                            )
+
+                            if n1_outgoing_edges == n2_outgoing_edges:
+                                position_set.append(node_2)
+
+                    if len(position_set) > 1:
+                        changes_made += 1
+
+                    position_sets.append(position_set)
+
+                    for node in position_set:
+                        next_set_of_nodes.remove(node)
+
+            # Now we have all the stages that need to merge together
+            for position_set in position_sets:
+                # Only make changes if there are more than one element
+                if len(position_set) > 1:
+                    merge_position_set_nodes(
+                        node_dict=nodes,
+                        edge_dict=edges,
+                        position_set=position_set
+                    )
+
+            try:
+                next_set_of_nodes = next(src_node_gen)
+            except StopIteration:
+                next_set_of_nodes = []
+
+    def create_figure(self, filename):
+        filename, filetype = Util.generate_filename_and_mkdir(filename)
+
+        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
+        for _, edges in self.graph['edges'].items():
+            for edge in edges:
+                edge_label = edge['label'] + '\n' + str(edge['value'])
+                graph.add_edge(
+                    pdp.Edge(
+                        src=edge['src'],
+                        dst=edge['dest'],
+                        label=edge_label,
+                        labelfontcolor='#009933',
+                        fontsize='10.0',
+                        color='black'
+                    )
+                )
+
+        for key, node in self.graph['nodes'].items():
+            try:
+                fill_colour = node['colour']
+            except KeyError:
+                fill_colour = 'lightgrey'
+
+            graph.add_node(
+                pdp.Node(
+                    name=key,
+                    label=key,
+                    style='filled',
+                    fillcolour=fill_colour
+                )
+            )
+
+        graph.write(str(filename), format=filetype)
+
+        if get_ipython() is None:
+            return None
+        else:
+            return Image(graph.create_png())
 
     # def _create_pdp_graph_representation(self) -> dict:
     #     graph = pdp.Dot(graph_type='digraph', rankdir='LR')

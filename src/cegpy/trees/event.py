@@ -8,6 +8,7 @@ from ..utilities.util import Util
 from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
+import textwrap
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
@@ -192,15 +193,41 @@ class EventTree(object):
     def get_categories_per_variable(self) -> dict:
         '''list of number of unique categories/levels for each variable
         (a column in the df)'''
+        def display_nan_warning():
+            logger.warning(
+                textwrap.dedent(
+                    """   --- NaNs found in the dataframe!! ---
+                    cegpy assumes that NaNs are either structural zeros or
+                    structural missing values.
+                    Any non-structural missing values must be dealt with
+                    prior to providing the dataset to any of the cegpy
+                    functions. Any non-structural zeros should be explicitly
+                    added into the cegpy objects.
+                    --- See documentation for more information. ---"""
+                )
+            )
+
         categories_to_ignore = {"N/A", "NA", "n/a", "na", "NAN", "nan"}
         catagories_per_variable = {}
+        nans_filtered = False
+
         for var in self.get_variables():
             categories = set(self.dataframe[var].unique().tolist())
-            # remove nan
-            categories = {x for x in categories if pd.notna(x)}
+            # remove nan with pandas
+            pd_filtered_categories = {x for x in categories if pd.notna(x)}
+            if pd_filtered_categories != categories:
+                nans_filtered = True
+
             # remove any string nans that might have made it in.
-            filtered_cats = categories - categories_to_ignore
+            filtered_cats = pd_filtered_categories - categories_to_ignore
+            if pd_filtered_categories != filtered_cats:
+                nans_filtered = True
+
             catagories_per_variable[var] = len(filtered_cats)
+
+        if nans_filtered:
+            display_nan_warning()
+
         return catagories_per_variable
 
     def _set_sampling_zero_paths(self, sz_paths):

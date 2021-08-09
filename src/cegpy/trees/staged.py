@@ -392,7 +392,7 @@ class StagedTree(EventTree):
         def startcolor():
             return '#' + ''.join(random.choice(_HEX) for _ in range(6))
         colours = []
-        for index in range(0, number):
+        for _ in range(0, number):
             newcolour = startcolor()
             while newcolour in colours:
                 newcolour = startcolor()
@@ -445,7 +445,8 @@ class StagedTree(EventTree):
         self._AHC_Output = {
             "Merged Situations": self._merged_situations,
             "Loglikelihood": loglikelihood,
-            "Mean Posterior Probabilities": self._mean_posterior_probs
+            "Mean Posterior Probabilities": self._mean_posterior_probs,
+            "Node Colours": self._colours_for_situations
         }
         return self._AHC_Output
 

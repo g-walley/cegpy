@@ -17,7 +17,18 @@ class ChainEventGraph(object):
         self.sink = sink
         self.st = staged_tree
         self.ahc_output = self.st.get_AHC_output().copy()
-
+        self.evidence = dict(
+            certain=dict(
+                variables=dict(),
+                edges=dict(),
+                vertices=set()
+            ),
+            uncertain=dict(
+                variables=dict(),
+                edges=dict(),
+                vertices=set()
+            )
+        )
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
 
@@ -27,6 +38,64 @@ class ChainEventGraph(object):
 
         self.graph = self._create_graph_representation()
         # self._ceg_positions_edges_optimal()
+
+    def get_evidence_dict(self) -> dict:
+        return self.evidence
+
+    def add_evidence(self, type_of_evidence, evidence, certain=True):
+        """
+        Type of evidence can be:
+        'variables', 'edges', or 'vertices'.
+        see documentation.
+        """
+
+        if certain:
+            dict_to_change = self.evidence['certain']
+        else:
+            dict_to_change = self.evidence['uncertain']
+
+        if type_of_evidence == 'variables' and\
+                certain is False:
+            if len(evidence) > 1:
+                raise(
+                    ValueError(
+                        'You can only provide one' +
+                        'uncertain variable at a time.\n' +
+                        'See documentation.'
+                    )
+                )
+
+        if type_of_evidence in ['variables', 'edges']:
+            for key, val in evidence.items():
+                dict_to_change[type_of_evidence][key] = val
+        elif type_of_evidence == 'vertices':
+            new_vertex_set = dict_to_change[type_of_evidence].\
+                union(evidence)
+            dict_to_change[type_of_evidence] = new_vertex_set
+        else:
+            raise(ValueError("Unknown evidence type.\n \
+                should be 'variables', 'edges', or 'vertices'.\
+                see documentation."))
+
+    def get_evidence_str(self) -> str:
+        def add_elems_of_dict_to_str(string, dict):
+            for key, val in dict.items():
+                string += (' %s:\n' % key)
+                string += ('   %s\n' % str(val))
+            return string
+
+        dict_str = 'The evidence you have given is as follows:\n\n'
+        dict_str += ' Evidence you are certain of:\n'
+        dict_str = add_elems_of_dict_to_str(
+            dict_str, self.evidence['certain']
+        )
+
+        dict_str += '\n Evidence you are uncertain of:\n'
+        dict_str = add_elems_of_dict_to_str(
+            dict_str, self.evidence['uncertain']
+        )
+
+        return dict_str
 
     def _create_graph_representation(self) -> dict:
         """
@@ -68,7 +137,9 @@ class ChainEventGraph(object):
         }
         event_tree = self.st.get_event_tree()
         prior = self._flatten_list_of_lists(self.st.get_prior())
-
+        posterior_probs = self._flatten_list_of_lists(
+            self.ahc_output['Mean Posterior Probabilities']
+        )
         # Add all nodes, and their children, to the dictionary
         for idx, edge_key in enumerate(event_tree.keys()):
             # edge has form:
@@ -77,9 +148,11 @@ class ChainEventGraph(object):
                 src=edge_key[1][0],
                 dest=edge_key[1][1],
                 label=edge_key[0][-1],
+                probability=float(posterior_probs[idx]),
                 value=(event_tree[edge_key] + float(prior[idx])))
 
             new_edge_key = edge_key[1]
+
             # Add src node to graph dict:
             try:
                 graph['nodes'][edge['src']]['outgoing_edges'].append(
@@ -90,12 +163,11 @@ class ChainEventGraph(object):
 
                 graph['nodes'][edge['src']] = \
                     self._create_new_node(
+                        colour=self.ahc_output['Node Colours'][edge['src']],
                         outgoing_edges=[new_edge_key],
                         root=root
                     )
-                # graph['nodes'][edge['src']]['outgoing_edges'].append(
-                #     new_edge_key
-                # )
+
             # Add dest node
             try:
                 graph['nodes'][edge['dest']]['incoming_edges'].append(
@@ -103,10 +175,10 @@ class ChainEventGraph(object):
                 )
             except KeyError:
                 graph['nodes'][edge['dest']] = \
-                    self._create_new_node()
-                graph['nodes'][edge['dest']]['incoming_edges'].append(
-                    new_edge_key
-                )
+                    self._create_new_node(
+                        colour=self.ahc_output['Node Colours'][edge['dest']],
+                        incoming_edges=[new_edge_key]
+                    )
 
             # Add edge to graph dict:
             try:
@@ -202,8 +274,7 @@ class ChainEventGraph(object):
 
     def _create_new_node(self, root=False, sink=False,
                          incoming_edges=[], outgoing_edges=[],
-                         dist_to_sink=0,
-                         nodes_to_merge=[], colour='lightgrey') -> dict:
+                         dist_to_sink=0, colour='lightgrey') -> dict:
         """
         Generates default format of Node dictionary
         """
@@ -212,12 +283,12 @@ class ChainEventGraph(object):
             'sink': sink,
             'incoming_edges': incoming_edges.copy(),
             'outgoing_edges': outgoing_edges.copy(),
-            'nodes_to_merge': nodes_to_merge.copy(),
             'max_dist_to_sink': dist_to_sink,
             'colour': colour
         }
 
-    def _create_new_edge(self, src='', dest='', label='', value=0.0) -> list:
+    def _create_new_edge(self, src='', dest='', label='',
+                         probability=0.0, value=0.0) -> list:
         """
         Generates default format of edge dictionary.
         """
@@ -225,7 +296,8 @@ class ChainEventGraph(object):
             'src': src,
             'dest': dest,
             'label': label,
-            'value': value
+            'value': value,
+            'probability': probability
         }
         return edge
 
@@ -349,7 +421,7 @@ class ChainEventGraph(object):
                         keys_to_keep=['dest', 'label']
                     )
                 except KeyError:
-                    print('wtf')
+                    pass
                 outgoing_edges = outgoing_edges + edges
 
             # sort the list by the edge label in the dictionary
@@ -508,7 +580,7 @@ class ChainEventGraph(object):
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for _, edges in self.graph['edges'].items():
             for edge in edges:
-                edge_label = edge['label'] + '\n' + str(edge['value'])
+                edge_label = edge['label'] + '\n' + str(edge['probability'])
                 graph.add_edge(
                     pdp.Edge(
                         src=edge['src'],
@@ -521,17 +593,14 @@ class ChainEventGraph(object):
                 )
 
         for key, node in self.graph['nodes'].items():
-            try:
-                fill_colour = node['colour']
-            except KeyError:
-                fill_colour = 'lightgrey'
+            fill_colour = node['colour']
 
             graph.add_node(
                 pdp.Node(
                     name=key,
                     label=key,
                     style='filled',
-                    fillcolour=fill_colour
+                    fillcolor=fill_colour
                 )
             )
 

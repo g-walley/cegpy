@@ -179,6 +179,68 @@ class TestCEG(object):
 
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate_CEG()
-        path = Util.create_path('out/medical_dm_CEG', True, '.pdf')
+        path = Util.create_path('out/medical_dm_CEG', True, 'pdf')
+        # string = self.ceg.get_evidence_str()
         # self.ceg.create_figure(path)
         pass
+
+    def test_adding_evidence(self) -> None:
+        certain_variables = {
+            self.st.get_variables()[1]: 'Experienced'
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='variables',
+            evidence=certain_variables,
+            certain=True
+        )
+
+        certain_edges = {
+            ('s1', 's3'): 'Experienced',
+            ('s3', 's12'): 'Hard'
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='edges',
+            evidence=certain_edges,
+            certain=True
+        )
+
+        certain_vertices = {
+            's3', 's12'
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='vertices',
+            evidence=certain_vertices,
+            certain=True
+        )
+
+        uncertain_variables = {
+            self.st.get_variables()[1]: ['Inexperienced', 'Novice'],
+            self.st.get_variables()[2]: ['Easy']
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='variables',
+            evidence=uncertain_variables,
+            certain=False
+        )
+
+        uncertain_edges = {
+            ('s1', 's3'): 'Experienced',
+            ('s3', 's12'): 'Hard'
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='edges',
+            evidence=uncertain_edges,
+            certain=False
+        )
+
+        uncertain_vertices = {
+            's3', 's12'
+        }
+        self.ceg.add_evidence(
+            type_of_evidence='vertices',
+            evidence=uncertain_vertices,
+            certain=False
+        )
+
+        print(self.ceg.get_evidence_str())
+        assert(1 == 0)

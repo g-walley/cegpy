@@ -17,17 +17,18 @@ class ChainEventGraph(object):
         self.sink = sink
         self.st = staged_tree
         self.ahc_output = self.st.get_AHC_output().copy()
-        self.evidence = dict(
-            certain=dict(
-                variables=dict(),
-                edges=dict(),
-                vertices=set()
+        evidence_dict = dict(
+            edges=dict(
+                evidence=dict(),
+                paths=set()
             ),
-            uncertain=dict(
-                variables=dict(),
-                edges=dict(),
-                vertices=set()
+            vertices=dict(
+                evidence=set(),
+                paths=set()
             )
+        )
+        self.evidence = dict(
+            certain=deepcopy(evidence_dict), uncertain=deepcopy(evidence_dict)
         )
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
@@ -45,43 +46,46 @@ class ChainEventGraph(object):
     def add_evidence(self, type_of_evidence, evidence, certain=True):
         """
         Type of evidence can be:
-        'variables', 'edges', or 'vertices'.
+        'edges' or 'vertices'.
         see documentation.
         """
-
         if certain:
             dict_to_change = self.evidence['certain']
         else:
             dict_to_change = self.evidence['uncertain']
 
-        if type_of_evidence == 'variables' and\
-                certain is False:
-            if len(evidence) > 1:
-                raise(
-                    ValueError(
-                        'You can only provide one' +
-                        'uncertain variable at a time.\n' +
-                        'See documentation.'
-                    )
-                )
+        # if type_of_evidence == 'variables' and\
+        #         certain is False:
+        #     if len(evidence) > 1:
+        #         raise(
+        #             ValueError(
+        #                 'You can only provide one' +
+        #                 'uncertain variable at a time.\n' +
+        #                 'See documentation.'
+        #             )
+        #         )
 
-        if type_of_evidence in ['variables', 'edges']:
+        if type_of_evidence == 'edges':
             for key, val in evidence.items():
-                dict_to_change[type_of_evidence][key] = val
+                dict_to_change[type_of_evidence]['evidence'][key] = val
         elif type_of_evidence == 'vertices':
-            new_vertex_set = dict_to_change[type_of_evidence].\
+            new_vertex_set = dict_to_change[type_of_evidence]['evidence'].\
                 union(evidence)
-            dict_to_change[type_of_evidence] = new_vertex_set
+            dict_to_change[type_of_evidence]['evidence'] = new_vertex_set
         else:
             raise(ValueError("Unknown evidence type.\n \
-                should be 'variables', 'edges', or 'vertices'.\
+                should be 'edges' or 'vertices'.\
                 see documentation."))
+
+    def _check_evidence_consistency(self, type_of_evidence,
+                                    evidence, certain):
+        pass
 
     def get_evidence_str(self) -> str:
         def add_elems_of_dict_to_str(string, dict):
             for key, val in dict.items():
                 string += (' %s:\n' % key)
-                string += ('   %s\n' % str(val))
+                string += ('   %s\n' % str(val['evidence']))
             return string
 
         dict_str = 'The evidence you have given is as follows:\n\n'

@@ -179,7 +179,7 @@ class TestCEG(object):
 
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate_CEG()
-        path = Util.create_path('out/medical_dm_CEG', True, 'pdf')
+        # path = Util.create_path('out/medical_dm_CEG', True, 'pdf')
         # string = self.ceg.get_evidence_str()
         # self.ceg.create_figure(path)
         pass
@@ -188,11 +188,15 @@ class TestCEG(object):
         certain_variables = {
             self.st.get_variables()[1]: 'Experienced'
         }
-        self.ceg.add_evidence(
-            type_of_evidence='variables',
-            evidence=certain_variables,
-            certain=True
-        )
+        try:
+            self.ceg.add_evidence(
+                type_of_evidence='variables',
+                evidence=certain_variables,
+                certain=True
+            )
+            assert False  # We shouldn't be able to add variables!
+        except ValueError:
+            pass
 
         certain_edges = {
             ('s1', 's3'): 'Experienced',
@@ -217,15 +221,19 @@ class TestCEG(object):
             self.st.get_variables()[1]: ['Inexperienced', 'Novice'],
             self.st.get_variables()[2]: ['Easy']
         }
-        self.ceg.add_evidence(
-            type_of_evidence='variables',
-            evidence=uncertain_variables,
-            certain=False
-        )
+        try:
+            self.ceg.add_evidence(
+                type_of_evidence='variables',
+                evidence=uncertain_variables,
+                certain=False
+            )
+            assert False  # We shouldn't be able to add variables!
+        except ValueError:
+            pass
 
         uncertain_edges = {
-            ('s1', 's3'): 'Experienced',
-            ('s3', 's12'): 'Hard'
+            ('s2', 's8'): 'Experienced',
+            ('s6', 's15'): 'Hard'
         }
         self.ceg.add_evidence(
             type_of_evidence='edges',
@@ -234,7 +242,7 @@ class TestCEG(object):
         )
 
         uncertain_vertices = {
-            's3', 's12'
+            's2', 's15'
         }
         self.ceg.add_evidence(
             type_of_evidence='vertices',
@@ -243,4 +251,4 @@ class TestCEG(object):
         )
 
         print(self.ceg.get_evidence_str())
-        assert(1 == 0)
+        # assert(1 == 0)

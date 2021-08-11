@@ -1,5 +1,6 @@
 import pydotplus as pdp
 from copy import deepcopy
+from enum import Enum
 from ..utilities.util import Util
 from IPython.display import Image
 from IPython import get_ipython
@@ -54,17 +55,6 @@ class ChainEventGraph(object):
         else:
             dict_to_change = self.evidence['uncertain']
 
-        # if type_of_evidence == 'variables' and\
-        #         certain is False:
-        #     if len(evidence) > 1:
-        #         raise(
-        #             ValueError(
-        #                 'You can only provide one' +
-        #                 'uncertain variable at a time.\n' +
-        #                 'See documentation.'
-        #             )
-        #         )
-
         if type_of_evidence == 'edges':
             for key, val in evidence.items():
                 dict_to_change[type_of_evidence]['evidence'][key] = val
@@ -78,8 +68,120 @@ class ChainEventGraph(object):
                 see documentation."))
 
     def _check_evidence_consistency(self, type_of_evidence,
-                                    evidence, certain):
+                                    evidence, certain) -> bool:
         pass
+
+    def _find_edges_entering_or_exiting_node(
+            self, node, direction='in') -> list:
+
+        """When a node is provided, this functions finds all
+        edges either coming in or going out and returns them."""
+        node_data = self.graph['nodes'][node]
+
+        if direction not in ['in', 'out']:
+            raise(
+                ValueError(
+                    "Invalid direction provided, please specify" +
+                    " either 'in', or 'out'"
+                )
+            )
+        elif (direction == 'out' and node_data['sink']) or \
+             (direction == 'in' and node_data['root']):
+            return []
+        else:
+            node_edge_key = direction + 'going_edges'
+            edge_keys = node_data[node_edge_key]
+            edges = []
+            for edge_key in edge_keys:
+                for edge in self.graph['edges'][edge_key]:
+                    edges.append(edge)
+            return edges
+
+    def _extend_paths_to_root(self, paths) -> list:
+        """Takes a set of paths, and steps through the graph
+        to the root node to find all the paths."""
+        root_not_found = True
+
+        while root_not_found:
+            extended_paths = []
+            for path in paths:
+                parent = path[0][Edge.SRC.value]
+
+                if self.graph['nodes'][parent]['root']:
+                    root_not_found = False
+                    break
+                else:
+                    root_not_found = True
+                edges = self._find_edges_entering_or_exiting_node(parent, 'in')
+                for edge in edges:
+                    new_edge = (edge['src'], edge['dest'], edge['label'])
+                    extended_paths.append([new_edge] + path)
+
+            if root_not_found:
+                paths = extended_paths
+
+        return paths
+
+    def _extend_paths_to_sink(self, paths) -> list:
+        """Takes a set of paths, and steps through the graph
+        to the sink node to find all the paths."""
+        sink_not_found = True
+        while sink_not_found:
+            extended_paths = []
+            for path in paths:
+                child = path[-1][Edge.DST.value]
+
+                if self.graph['nodes'][child]['sink']:
+                    sink_not_found = False
+                    break
+                else:
+                    sink_not_found = True
+                edges = self._find_edges_entering_or_exiting_node(child, 'out')
+                for edge in edges:
+                    new_edge = (edge['src'], edge['dest'], edge['label'])
+                    extended_paths.append(path + [new_edge])
+
+            if sink_not_found:
+                paths = extended_paths
+
+        return paths
+
+    def _find_paths_containing_edge(self, edge) -> list:
+        """When provided with an edge, produces all the paths
+        that pass through that edge."""
+        # Edge has format ('src', 'dest', 'label')
+        paths = [[edge]]
+        paths = self._extend_paths_to_sink(paths)
+        paths = self._extend_paths_to_root(paths)
+
+        return paths
+
+    def _find_paths_containing_node(self, node) -> list:
+        """When provided with a node in the graph,
+        provides all the paths that pass through the node"""
+        paths = []
+        node_data = self.graph['nodes'][node]
+        edge_keys = node_data['ingoing_edges'] if node_data['sink'] \
+            else node_data['outgoing_edges']
+
+        for key in edge_keys:
+            edges = self.graph['edges'][key]
+            for edge_data in edges:
+                edge = (
+                    edge_data['src'],
+                    edge_data['dest'],
+                    edge_data['label']
+                )
+
+                paths.append([edge])
+
+        if not node_data['sink']:
+            paths = self._extend_paths_to_sink(paths)
+
+        if not node_data['root']:
+            paths = self._extend_paths_to_root(paths)
+
+        return paths
 
     def get_evidence_str(self) -> str:
         def add_elems_of_dict_to_str(string, dict):
@@ -174,14 +276,14 @@ class ChainEventGraph(object):
 
             # Add dest node
             try:
-                graph['nodes'][edge['dest']]['incoming_edges'].append(
+                graph['nodes'][edge['dest']]['ingoing_edges'].append(
                     new_edge_key
                 )
             except KeyError:
                 graph['nodes'][edge['dest']] = \
                     self._create_new_node(
                         colour=self.ahc_output['Node Colours'][edge['dest']],
-                        incoming_edges=[new_edge_key]
+                        ingoing_edges=[new_edge_key]
                     )
 
             # Add edge to graph dict:
@@ -216,8 +318,8 @@ class ChainEventGraph(object):
 
             new_destinations = []
             for node_id in destinations:
-                for incoming_edge in nodes[node_id]['incoming_edges']:
-                    src_node = edges[incoming_edge][0]['src']
+                for ingoing_edge in nodes[node_id]['ingoing_edges']:
+                    src_node = edges[ingoing_edge][0]['src']
                     dist = calc_dist_of_node_to_sink(
                         node_dict, edge_dict, src_node
                     )
@@ -259,7 +361,7 @@ class ChainEventGraph(object):
         root = ''
         for node in graph['nodes']:
             node_properties = graph['nodes'][node]
-            if node_properties['incoming_edges'] == []:
+            if node_properties['ingoing_edges'] == []:
                 root = node
                 number_of_roots += 1
 
@@ -277,7 +379,7 @@ class ChainEventGraph(object):
         return flat_list
 
     def _create_new_node(self, root=False, sink=False,
-                         incoming_edges=[], outgoing_edges=[],
+                         ingoing_edges=[], outgoing_edges=[],
                          dist_to_sink=0, colour='lightgrey') -> dict:
         """
         Generates default format of Node dictionary
@@ -285,7 +387,7 @@ class ChainEventGraph(object):
         return {
             'root': root,
             'sink': sink,
-            'incoming_edges': incoming_edges.copy(),
+            'ingoing_edges': ingoing_edges.copy(),
             'outgoing_edges': outgoing_edges.copy(),
             'max_dist_to_sink': dist_to_sink,
             'colour': colour
@@ -347,17 +449,17 @@ class ChainEventGraph(object):
                         graph['nodes'][new_edge_list_key[0]]['outgoing_edges']
                     outgoing_edges.append(new_edge_list_key)
 
-                    incoming_edges = \
-                        graph['nodes'][new_edge_list_key[1]]['incoming_edges']
-                    incoming_edges.append(new_edge_list_key)
+                    ingoing_edges = \
+                        graph['nodes'][new_edge_list_key[1]]['ingoing_edges']
+                    ingoing_edges.append(new_edge_list_key)
 
                     outgoing_edges = list(set(outgoing_edges))
                     graph['nodes'][new_edge_list_key[0]]['outgoing_edges'] = \
                         outgoing_edges
 
-                    incoming_edges = list(set(incoming_edges))
-                    graph['nodes'][new_edge_list_key[1]]['incoming_edges'] = \
-                        incoming_edges
+                    ingoing_edges = list(set(ingoing_edges))
+                    graph['nodes'][new_edge_list_key[1]]['ingoing_edges'] = \
+                        ingoing_edges
 
             # remove leaf node from the graph
             del graph['nodes'][leaf]
@@ -434,7 +536,7 @@ class ChainEventGraph(object):
             return outgoing_edges
 
         def merge_outgoing_edges(target_edges, source_edges,
-                                 edge_dict) -> list:
+                                 node_dict, edge_dict) -> list:
             """
             Nodes in the same position set can have their outgoing edges
             merged. This translates to their values being added together.
@@ -453,6 +555,9 @@ class ChainEventGraph(object):
                             if src_lbl == trg_lbl:
                                 trg_edg_dtls['value'] += src_edg_dtls['value']
 
+                node_dict[src_edge[1]]['ingoing_edges'].remove(
+                    src_edge
+                )
                 del edge_dict[src_edge]
             return target_edges
 
@@ -463,10 +568,10 @@ class ChainEventGraph(object):
             keep_outgoing = node_dict[node_to_keep]['outgoing_edges']
 
             for node in other_nodes:
-                # redirect incoming nodes to the node_to_keep
-                incoming = node_dict[node]['incoming_edges']
-                for edge in incoming:
-                    edge_list = edge_dict[edge]
+                # redirect ingoing nodes to the node_to_keep
+                ingoing = node_dict[node]['ingoing_edges']
+                for edge_key in ingoing:
+                    edge_list = edge_dict[edge_key]
                     for edge_details in edge_list:
                         src_node = edge_details['src']
                         redirected_edge_key = (
@@ -490,22 +595,40 @@ class ChainEventGraph(object):
                         # Ensure that the src_node of the edge now points
                         # to the node we are keeping
                         node_dict[src_node]['outgoing_edges'].remove(
-                            edge
+                            edge_key
                         )
-                        node_dict[src_node]['outgoing_edges'].append(
-                            redirected_edge_key
-                        )
+                        # node_dict[node_to_keep]['ingoing_edges'].remove(
+                        #     edge_key
+                        # )
+                        src_out_edges = \
+                            node_dict[src_node]['outgoing_edges']
+
+                        if redirected_edge_key not in src_out_edges:
+                            node_dict[src_node]['outgoing_edges'].append(
+                                redirected_edge_key
+                            )
+
+                        node_to_keep_in_edges = \
+                            node_dict[node_to_keep]['ingoing_edges']
+
+                        if redirected_edge_key not in node_to_keep_in_edges:
+                            node_dict[node_to_keep]['ingoing_edges'].append(
+                                redirected_edge_key
+                            )
+
                     # remove the old edge as it is going to point to a node
                     # that no longer exists
-                    del edge_dict[edge]
+                    del edge_dict[edge_key]
 
                 # merge outgoing edges for all nodes in same position_set
                 other_outgoing = node_dict[node]['outgoing_edges']
                 keep_outgoing = merge_outgoing_edges(
                     target_edges=keep_outgoing,
                     source_edges=other_outgoing,
+                    node_dict=node_dict,
                     edge_dict=edge_dict
                 )
+
                 del node_dict[node]
 
         self._trim_leaves_from_graph(self.graph)
@@ -615,52 +738,8 @@ class ChainEventGraph(object):
         else:
             return Image(graph.create_png())
 
-    # def _create_pdp_graph_representation(self) -> dict:
-    #     graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-    #     event_tree = self.st.get_event_tree()
-    #     prior = self._flatten_list_of_lists(self.st.get_prior())
 
-    #     for idx, (key, count) in enumerate(event_tree.items()):
-    #         # edge_index = self.edges.index(edge)
-    #         path = key[0]
-    #         edge = key[1]
-    #         edge_details = str(path[-1]) + '\n' + \
-    #             str(count + float(prior[idx]))
-
-    #         graph.add_edge(
-    #             pdp.Edge(
-    #                 edge[0],
-    #                 edge[1],
-    #                 label=edge_details,
-    #                 labelfontcolor="#009933",
-    #                 fontsize="10.0",
-    #                 color="black"
-    #             )
-    #         )
-
-    #     for node in self.st.get_nodes():
-    #         # if colours:
-    #         #     fill_colour = colours[node]
-    #         # else:
-    #         #     fill_colour = 'lightgrey'
-
-    #         graph.add_node(
-    #             pdp.Node(
-    #                 name=node,
-    #                 label=node,
-    #                 style="filled",
-    #                 fillcolor='lightgrey'))
-    #     edge = graph.get_edge(('s0', 's1'))
-
-    #     edge_label = edge[0].get_label()
-    #     print(edge_label)
-    #     return graph
-
-    # def _get_edge_details(self, graph, edge_name):
-    #     edge = graph.get_edge(edge_name)
-
-    #     try:
-    #         edge_label = edge[0].get_label()
-
-    #     except KeyError or IndexError:
-    #         edge_label = edge.get_label()
+class Edge(Enum):
+    SRC = 0
+    DST = 1
+    LABEL = 2

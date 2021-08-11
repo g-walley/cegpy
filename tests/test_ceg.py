@@ -138,7 +138,7 @@ class TestCEG(object):
                 src=new_edge_1[0], dest=new_edge_2[1], label='new_edge_1'
             )
         ]
-        med_graph['nodes'][new_edge_1[1]]['incoming_edges'].append(new_edge_1)
+        med_graph['nodes'][new_edge_1[1]]['ingoing_edges'].append(new_edge_1)
         med_graph['nodes'][new_edge_1[0]]['outgoing_edges'].append(new_edge_1)
 
         # Add a second edge to the dictionary
@@ -147,7 +147,7 @@ class TestCEG(object):
                 src=new_edge_2[0], dest=new_edge_2[1], label='new_edge_2'
             )
         ]
-        med_graph['nodes'][new_edge_2[1]]['incoming_edges'].append(new_edge_2)
+        med_graph['nodes'][new_edge_2[1]]['ingoing_edges'].append(new_edge_2)
         med_graph['nodes'][new_edge_2[0]]['outgoing_edges'].append(new_edge_2)
 
         self.ceg._update_distances_of_nodes_to_sink(
@@ -252,3 +252,78 @@ class TestCEG(object):
 
         print(self.ceg.get_evidence_str())
         # assert(1 == 0)
+
+    def test_find_paths_from_edge(self) -> None:
+        self.ceg.generate_CEG()
+        expected_paths = [
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Experienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Experienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Non-blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Inexperienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Inexperienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Non-blast')
+            ]
+        ]
+        edge = ('s3', 's9', 'Easy')
+        actual_paths = self.ceg._find_paths_containing_edge(edge)
+        for path in expected_paths:
+            assert path in actual_paths
+
+        assert len(actual_paths) == len(expected_paths)
+
+    def test_find_paths_from_node(self) -> None:
+        self.ceg.generate_CEG()
+        sink_actual_paths = self.ceg._find_paths_containing_node('w_inf')
+        assert len(sink_actual_paths) == 24
+        root_actual_paths = self.ceg._find_paths_containing_node('s0')
+        assert len(root_actual_paths) == 24
+
+        expected_paths = [
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Experienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Experienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Non-blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Inexperienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Blast')
+            ],
+            [
+                ('s0', 's1', 'Blast'),
+                ('s1', 's3', 'Inexperienced'),
+                ('s3', 's9', 'Easy'),
+                ('s9', 'w_inf', 'Non-blast')
+            ]
+        ]
+        s_nine_actual_paths = self.ceg._find_paths_containing_node('s9')
+
+        for path in expected_paths:
+            assert path in s_nine_actual_paths
+
+        assert len(s_nine_actual_paths) == len(expected_paths)

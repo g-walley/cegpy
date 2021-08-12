@@ -4,6 +4,9 @@ from enum import Enum
 from ..utilities.util import Util
 from IPython.display import Image
 from IPython import get_ipython
+import logging
+
+logger = logging.getLogger('pyceg.chain_event_graph')
 
 
 class ChainEventGraph(object):

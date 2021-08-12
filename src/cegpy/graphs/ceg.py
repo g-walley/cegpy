@@ -13,7 +13,7 @@ class ChainEventGraph(object):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    def __init__(self, staged_tree=None, root=None, sink='w_inf') -> None:
+    def __init__(self, staged_tree, root=None, sink='w_inf') -> None:
         self.root = root
         self.sink = sink
         self.st = staged_tree

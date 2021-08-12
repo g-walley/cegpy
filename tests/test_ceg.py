@@ -251,7 +251,29 @@ class TestCEG(object):
         )
 
         print(self.ceg.get_evidence_str())
-        # assert(1 == 0)
+
+        self.ceg.clear_evidence()
+        evidence = self.ceg.get_evidence_dict()
+        assert evidence['certain'] == {
+            'edges': {
+                'evidence': {},
+                'paths': set()
+            },
+            'vertices': {
+                'evidence': set(),
+                'paths': set()
+            }
+        }
+        assert evidence['uncertain'] == {
+            'edges': {
+                'evidence': {},
+                'paths': set()
+            },
+            'vertices': {
+                'evidence': set(),
+                'paths': set()
+            }
+        }
 
     def test_find_paths_from_edge(self) -> None:
         self.ceg.generate_CEG()
@@ -281,12 +303,10 @@ class TestCEG(object):
                 ('s9', 'w_inf', 'Non-blast')
             ]
         ]
+        expected_path_set = set(map(frozenset, expected_paths))
         edge = ('s3', 's9', 'Easy')
-        actual_paths = self.ceg._find_paths_containing_edge(edge)
-        for path in expected_paths:
-            assert path in actual_paths
-
-        assert len(actual_paths) == len(expected_paths)
+        actual_path_set = self.ceg._find_paths_containing_edge(edge)
+        assert expected_path_set == actual_path_set
 
     def test_find_paths_from_node(self) -> None:
         self.ceg.generate_CEG()
@@ -321,9 +341,7 @@ class TestCEG(object):
                 ('s9', 'w_inf', 'Non-blast')
             ]
         ]
-        s_nine_actual_paths = self.ceg._find_paths_containing_node('s9')
+        expected_path_set = set(map(frozenset, expected_paths))
+        s_nine_actual_path_set = self.ceg._find_paths_containing_node('s9')
 
-        for path in expected_paths:
-            assert path in s_nine_actual_paths
-
-        assert len(s_nine_actual_paths) == len(expected_paths)
+        assert s_nine_actual_path_set == expected_path_set

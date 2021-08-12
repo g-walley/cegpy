@@ -18,31 +18,19 @@ class ChainEventGraph(object):
     """
     def __init__(self, staged_tree, root=None, sink='w_inf') -> None:
         self.root = root
+
         self.sink = sink
         self.st = staged_tree
         self.ahc_output = self.st.get_AHC_output().copy()
-        evidence_dict = dict(
-            edges=dict(
-                evidence=dict(),
-                paths=set()
-            ),
-            vertices=dict(
-                evidence=set(),
-                paths=set()
-            )
-        )
-        self.evidence = dict(
-            certain=deepcopy(evidence_dict), uncertain=deepcopy(evidence_dict)
-        )
+
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
 
         if self.root is None:
-            raise(ValueError('Please input the root node!'))
-            # self._identify_root_node()
+            raise(ValueError('Please input the label of the root node!'))
 
+        self._create_evidence_dict()
         self.graph = self._create_graph_representation()
-        # self._ceg_positions_edges_optimal()
 
     def get_evidence_dict(self) -> dict:
         return self.evidence
@@ -69,6 +57,24 @@ class ChainEventGraph(object):
             raise(ValueError("Unknown evidence type.\n \
                 should be 'edges' or 'vertices'.\
                 see documentation."))
+
+    def clear_evidence(self):
+        self._create_evidence_dict()
+
+    def _create_evidence_dict(self):
+        evidence_dict = dict(
+            edges=dict(
+                evidence=dict(),
+                paths=set()
+            ),
+            vertices=dict(
+                evidence=set(),
+                paths=set()
+            )
+        )
+        self.evidence = dict(
+            certain=deepcopy(evidence_dict), uncertain=deepcopy(evidence_dict)
+        )
 
     def _check_evidence_consistency(self, type_of_evidence,
                                     evidence, certain) -> bool:
@@ -149,7 +155,7 @@ class ChainEventGraph(object):
 
         return paths
 
-    def _find_paths_containing_edge(self, edge) -> list:
+    def _find_paths_containing_edge(self, edge) -> set:
         """When provided with an edge, produces all the paths
         that pass through that edge."""
         # Edge has format ('src', 'dest', 'label')
@@ -157,9 +163,9 @@ class ChainEventGraph(object):
         paths = self._extend_paths_to_sink(paths)
         paths = self._extend_paths_to_root(paths)
 
-        return paths
+        return set(map(frozenset, paths))
 
-    def _find_paths_containing_node(self, node) -> list:
+    def _find_paths_containing_node(self, node) -> set:
         """When provided with a node in the graph,
         provides all the paths that pass through the node"""
         paths = []
@@ -184,7 +190,7 @@ class ChainEventGraph(object):
         if not node_data['root']:
             paths = self._extend_paths_to_root(paths)
 
-        return paths
+        return set(map(frozenset, paths))
 
     def get_evidence_str(self) -> str:
         def add_elems_of_dict_to_str(string, dict):

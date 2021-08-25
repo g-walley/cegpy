@@ -185,6 +185,7 @@ class TestCEG(object):
         pass
 
     def test_adding_evidence(self) -> None:
+        self.ceg.generate_CEG()
         certain_variables = {
             self.st.get_variables()[1]: 'Experienced'
         }

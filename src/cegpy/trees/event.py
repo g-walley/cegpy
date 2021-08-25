@@ -32,8 +32,6 @@ class EventTree(object):
         # Root node of the tree is always defined as s0.
         self.root = 's0'
 
-        # Paths taken from dataframe in order of occurance
-        self.unsorted_paths = defaultdict(int)
         # Paths sorted alphabetically in order of length
         self.sorted_paths = defaultdict(int)
 
@@ -287,15 +285,14 @@ class EventTree(object):
         manually added path format is correct.
         Added functionality to remove NaN/null edge labels
         assuming they are structural zeroes'''
-
-        self.unsorted_paths = self._create_unsorted_paths_dict()
+        unsorted_paths = self._create_unsorted_paths_dict()
 
         if self.sampling_zero_paths is not None:
-            self.unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zero_paths, self.unsorted_paths)
+            unsorted_paths = Util.create_sampling_zeros(
+                self.sampling_zero_paths, unsorted_paths)
 
-        depth = len(max(list(self.unsorted_paths.keys()), key=len))
-        keys_of_list = list(self.unsorted_paths.keys())
+        depth = len(max(list(unsorted_paths.keys()), key=len))
+        keys_of_list = list(unsorted_paths.keys())
         sorted_keys = []
         for deep in range(0, depth + 1):
             unsorted_mini_list = [key for key in keys_of_list if
@@ -303,7 +300,7 @@ class EventTree(object):
             sorted_keys = sorted_keys + sorted(unsorted_mini_list)
 
         for key in sorted_keys:
-            self.sorted_paths[key] = self.unsorted_paths[key]
+            self.sorted_paths[key] = unsorted_paths[key]
 
     def _check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
         """Check param 'sampling_zero_paths' is in the correct format"""

@@ -9,25 +9,26 @@ from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
 import textwrap
+import networkx as nx
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
 
-class EventTree(object):
+class EventTree(nx.DiGraph):
     """Creates event trees from pandas dataframe."""
-    def __init__(self, params) -> None:
+    def __init__(self, dataframe, sampling_zero_paths=None,
+                 incoming_graph_data=None, **attr) -> None:
         logger.info('Initialising')
-        self.params = params
-        self.sampling_zero_paths = None
-        self.nodes = []
+        # Initialise Networkx DiGraph class
+        super().__init__(incoming_graph_data, **attr)
+
+        self.sampling_zero_paths = \
+            self._set_sampling_zero_paths(sampling_zero_paths)
         self.leaves = None
-        self.edges = None
-        self.edge_labels = None
         self.situations = None
         self.emanating_nodes = None
         self.terminating_nodes = None
         self.variables = None
-        self.edge_counts = None
 
         # Root node of the tree is always defined as s0.
         self.root = 's0'
@@ -36,14 +37,11 @@ class EventTree(object):
         self.sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self.dataframe = params.get("dataframe")
+        self.dataframe = dataframe
         # Format of event_tree dict:
 
-        self.event_tree = self._construct_event_tree()
+        self._construct_event_tree()
         logger.info('Initialisation complete!')
-
-    def get_root(self):
-        return self.root
 
     def get_variables(self) -> list:
         if self.variables:
@@ -66,35 +64,16 @@ class EventTree(object):
 
         return self.sampling_zero_paths
 
-    def get_edge_labels(self) -> list:
-        """Once event tree dict has been populated, a list of all
+    def get_edge_labels(self) -> dict:
+        """Once event has been created, a dict of all
         edge labels can be obtained with this function"""
-        if not self.edge_labels:
-            self.edge_labels = [key[0] for key in list(
-                                self.event_tree.keys())]
-
-        return self.edge_labels
-
-    def get_edges(self) -> list:
-        """Returns list of all edges in the event_tree"""
-        if not self.edges:
-            self.edges = [key[1] for key in list(
-                            self.event_tree.keys())]
-
-        return self.edges
-
-    def get_nodes(self) -> list:
-        """Returns node list"""
-        if not self.nodes:
-            self.nodes = self._create_node_list_from_paths(self.sorted_paths)
-
-        return self.nodes
+        return nx.get_edge_attributes(self, 'label')
 
     def get_situations(self) -> list:
         """Returns list of event tree situations.
         (non-leaf nodes)"""
         if not self.situations:
-            nodes = self.get_nodes()
+            nodes = self.nodes
             leaves = self.get_leaves()
             self.situations = [node for node in nodes if node not in leaves]
 
@@ -105,7 +84,7 @@ class EventTree(object):
         # if not already generated, create self.leaves
         if not self.leaves:
             eminating_nodes = self.get_emanating_nodes()
-            edges = self.get_edges()
+            edges = self.edges
             self.leaves = [edge_pair[1] for edge_pair in edges
                            if edge_pair[1] not in eminating_nodes]
 
@@ -115,7 +94,7 @@ class EventTree(object):
         """Returns list of situations where edges start."""
         # if not already generated, create self.emanating_nodes
         if not self.emanating_nodes:
-            edges = self.get_edges()
+            edges = self.edges
             self.emanating_nodes = [edge_pair[0] for edge_pair in edges]
 
         return self.emanating_nodes
@@ -123,24 +102,17 @@ class EventTree(object):
     def get_terminating_nodes(self) -> list:
         """Returns list of suations where edges terminate."""
         if not self.terminating_nodes:
-            edges = self.get_edges()
+            edges = self.edges
             self.terminating_nodes = [edge_pair[1] for edge_pair in edges]
 
         return self.terminating_nodes
 
-    def get_edge_counts(self) -> list:
+    def get_edge_counts(self) -> dict:
         '''list of counts along edges. Indexed same as edges and edge_labels'''
-        if not self.edge_counts:
-            tree = self.event_tree
-            self.edge_counts = [tree[x] for x in list(tree.keys())]
-
-        return self.edge_counts
-
-    def get_event_tree(self) -> dict:
-        return self.event_tree
+        return nx.get_edge_attributes(self, 'count')
 
     def _generate_graph(self, colours=None):
-        node_list = self.get_nodes()
+        node_list = self.nodes
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for key, count in self.event_tree.items():
             # edge_index = self.edges.index(edge)
@@ -335,7 +307,7 @@ class EventTree(object):
         logger.info('Starting construction of event tree')
         self._set_sampling_zero_paths(self.params.get('sampling_zero_paths'))
         self._create_path_dict_entries()
-        node_list = self.get_nodes()
+        node_list = self.nodes
 
         # sampling zeros paths added manually via parameters
         event_tree = defaultdict(int)

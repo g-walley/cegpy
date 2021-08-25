@@ -3,6 +3,7 @@ from collections import defaultdict
 import pandas as pd
 # from ceg_util import CegUtil as util
 from pathlib import Path
+import re
 
 
 class TestEventTree():
@@ -12,33 +13,8 @@ class TestEventTree():
             'data/medical_dm_modified.xlsx')
 
         self.df = pd.read_excel(df_path)
-        self.et = EventTree({'dataframe': self.df})
-
-        # stratified dataset
-        med_df_path = Path(__file__).resolve(
-            ).parent.parent.joinpath(
-            'data/medical_dm_modified.xlsx')
-        self.med_s_z_paths = None
-        self.med_df = pd.read_excel(med_df_path)
-        self.med_st = EventTree(
-            {
-                'dataframe': self.med_df,
-                'sampling_zero_paths': self.med_s_z_paths
-            }
-        )
-
-        # non-stratified dataset
-        fall_df_path = Path(__file__).resolve(
-            ).parent.parent.joinpath(
-            'data/Falls_Data.xlsx')
-        self.fall_s_z_paths = None
-        self.fall_df = pd.read_excel(fall_df_path)
-        self.fall_st = EventTree(
-            {
-                'dataframe': self.fall_df,
-                'sampling_zero_paths': self.fall_s_z_paths,
-            }
-        )
+        self.et = EventTree(dataframe=self.df)
+        self.node_format = re.compile('^s\d\d*$')
 
     def test_check_sampling_zero_paths_param(self) -> None:
         """Tests the function that is checking the sampling zero paths param"""
@@ -79,28 +55,37 @@ class TestEventTree():
     def test_construct_event_tree(self) -> None:
         """Tests the construction of an event tree from a set of paths,
         nodes, and """
-        event_tree = self.et._construct_event_tree()
-        assert isinstance(event_tree, defaultdict)
-        for key, value in event_tree.items():
-            assert isinstance(key, tuple)
-            for elem in key:
-                assert isinstance(elem, tuple)
+        EXPECTED_NODE_COUNT = 45
+        assert len(self.et) == EXPECTED_NODE_COUNT
+        assert len(self.et.edges) == EXPECTED_NODE_COUNT - 1
+        edge_counts = self.et.get_edge_counts()
+        edge_labels = self.et.get_edge_labels()
 
-                for sub_elem in elem[0]:
-                    assert isinstance(sub_elem, str)
+        assert len(edge_counts) == EXPECTED_NODE_COUNT - 1
+        for _, count in edge_counts.items():
+            assert isinstance(count, int)
 
-            # Check the edge data in the key is exactly 2 long.
-            assert len(key[1]) == 2
+        assert len(edge_labels) == EXPECTED_NODE_COUNT - 1
+        for _, label in edge_labels.items():
+            assert isinstance(label, str)
 
     def test_get_functions_producing_expected_data(self) -> None:
         edge_labels = self.et.get_edge_labels()
-        assert isinstance(edge_labels, list)
-        for path in edge_labels:
-            assert isinstance(path, tuple)
-            for edge_label in path:
-                assert isinstance(edge_label, str)
+        assert isinstance(edge_labels, dict)
+        for edge, label in edge_labels.items():
+            assert isinstance(edge, tuple)
 
-        edges = self.et.get_edges()
+            LEN_EDGE_KEY = 2
+            assert len(edge) == LEN_EDGE_KEY
+
+            for node in edge:
+                assert isinstance(node, str)
+                assert self.node_format.match(node)
+
+            assert isinstance(label, str)
+            # assert self.node_format.match(edge[1])
+
+        edges = list(self.et.edges)
         assert isinstance(edges, list)
         for edge in edges:
             assert isinstance(edge, tuple)
@@ -108,7 +93,7 @@ class TestEventTree():
             assert isinstance(edge[0], str)
             assert isinstance(edge[1], str)
 
-        nodes = self.et.get_nodes()
+        nodes = list(self.et)
         check_list_contains_strings(nodes)
 
         situations = self.et.get_situations()
@@ -125,9 +110,37 @@ class TestEventTree():
 
         edge_counts = self.et.get_edge_counts()
         print(edge_counts)
-        assert isinstance(edge_counts, list)
-        for count in edge_counts:
+        assert isinstance(edge_counts, dict)
+        for edge, count in edge_counts.items():
+            assert isinstance(edge, tuple)
+            for node in edge:
+                assert isinstance(node, str)
             assert isinstance(count, int)
+
+
+class TestEventTreeStratUnstratTypes():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_et = EventTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_et = EventTree(
+            dataframe=self.fall_df,
+            sampling_zero_path=self.fall_s_z_paths
+        )
 
     def test_get_categories_per_variable(self) -> None:
         expected_med_cats_per_var = {
@@ -136,8 +149,8 @@ class TestEventTree():
             "Difficulty": 2,
             "Response": 2,
         }
-        med_cats_per_var = self.med_st.get_categories_per_variable()
-        assert expected_med_cats_per_var == med_cats_per_var
+        actual_med_cats_per_var = self.med_et.get_categories_per_variable()
+        assert expected_med_cats_per_var == actual_med_cats_per_var
 
         expected_fall_cats_per_var = {
             "HousingAssessment": 4,
@@ -145,8 +158,8 @@ class TestEventTree():
             "Treatment": 3,
             "Fall": 2,
         }
-        fall_cats_per_var = self.fall_st.get_categories_per_variable()
-        assert expected_fall_cats_per_var == fall_cats_per_var
+        actual_fall_cats_per_var = self.fall_et.get_categories_per_variable()
+        assert expected_fall_cats_per_var == actual_fall_cats_per_var
 
 
 def check_list_contains_strings(str_list) -> bool:

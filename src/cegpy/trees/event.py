@@ -109,13 +109,11 @@ class EventTree(nx.DiGraph):
         return nx.get_edge_attributes(self, 'count')
 
     def _generate_graph(self, colours=None):
-        node_list = self.nodes
+        node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        for key, count in self.event_tree.items():
-            # edge_index = self.edges.index(edge)
-            path = key[0]
-            edge = key[1]
-            edge_details = str(path[-1]) + '\n' + str(count)
+        for edge, label in self.get_edge_labels().items():
+            count = self[edge[0]][edge[1]]['count']
+            edge_details = label + '\n' + str(count)
 
             graph.add_edge(
                 pdp.Edge(
@@ -236,10 +234,8 @@ class EventTree(nx.DiGraph):
 
                 # checking if the last edge label in row was nan. That would
                 # result in double counting nan must be identified as string
-                if (row[-1] != np.nan and
-                   str(row[-1]) != 'NaN' and
-                   str(row[-1]) != 'nan' and
-                   row[-1] != ''):
+                if (row[-1] != np.nan and str(row[-1]) != 'NaN' and
+                   str(row[-1]) != 'nan' and row[-1] != ''):
                     unsorted_paths[new_row] += 1
 
         return unsorted_paths
@@ -271,6 +267,9 @@ class EventTree(nx.DiGraph):
         for key in sorted_keys:
             self.sorted_paths[key] = unsorted_paths[key]
 
+        node_list = self._create_node_list_from_paths(self.sorted_paths)
+        self.add_nodes_from(node_list)
+
     def _check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
         """Check param 'sampling_zero_paths' is in the correct format"""
         for tup in sampling_zero_paths:
@@ -284,44 +283,40 @@ class EventTree(nx.DiGraph):
 
     def _create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
-        node_list = [self.root]  # root node
+        node_list = [self.root]
 
         for vertex_number, _ in enumerate(list(paths.keys()), start=1):
             node_list.append('s%d' % vertex_number)
 
         return node_list
 
-    def _construct_event_tree(self) -> defaultdict:
-        """Constructs event_tree dictionary.
-        Format of the dictionary is:
-        {
-            key:	(('path','to','leaf'), ('s4','s5')):
-            value:	<Edge counts>
-        }
+    def _construct_event_tree(self):
+        """Constructs event_tree DiGraph.
+        Takes the paths, and adds all the nodes and edges to the Graph"""
 
-        A key constructed from a tuple containing a tuple(path to leaf),
-        and a tuple(eminating node, terminating node)."""
         logger.info('Starting construction of event tree')
-        self._set_sampling_zero_paths(self.params.get('sampling_zero_paths'))
         self._create_path_dict_entries()
-        node_list = self.nodes
-
-        # sampling zeros paths added manually via parameters
-        event_tree = defaultdict(int)
+        # Taking a list of a networkx graph object (self) provides a list
+        # of all the nodes
+        node_list = list(self)
 
         # Work through the sorted paths list to build the event tree.
         edge_labels_list = ['root']
-        edges_list = []
-        for path in list(self.sorted_paths.keys()):
+        for path, count in list(self.sorted_paths.items()):
             path = list(path)
             edge_labels_list.append(path)
             if path[:-1] in edge_labels_list:
                 path_edge_comes_from = edge_labels_list.index(path[:-1])
-                edges_list.append([node_list[path_edge_comes_from],
-                                   node_list[edge_labels_list.index(path)]])
+                self.add_edge(
+                    u_of_edge=node_list[path_edge_comes_from],
+                    v_of_edge=node_list[edge_labels_list.index(path)],
+                    label=path[-1],
+                    count=count
+                )
             else:
-                edges_list.append([node_list[0],
-                                   node_list[edge_labels_list.index(path)]])
-            event_tree[((*path,),
-                       (*edges_list[-1],))] = self.sorted_paths[tuple(path)]
-        return event_tree
+                self.add_edge(
+                    u_of_edge=node_list[0],
+                    v_of_edge=node_list[edge_labels_list.index(path)],
+                    label=path[-1],
+                    count=count
+                )

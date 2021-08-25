@@ -41,6 +41,21 @@ class ChainEventGraph(object):
         'edges' or 'vertices'.
         see documentation.
         """
+        def combine_paths(dict_to_change, type_of_evidence,
+                          new_paths, certain):
+
+            current_paths = dict_to_change[type_of_evidence]['paths']
+
+            if current_paths == set():
+                dict_to_change[type_of_evidence]['paths'] = new_paths
+            else:
+                if certain:
+                    dict_to_change[type_of_evidence]['paths'] = \
+                        current_paths.intersection(new_paths)
+                else:
+                    dict_to_change[type_of_evidence]['paths'] = \
+                        current_paths.union(new_paths)
+
         if certain:
             dict_to_change = self.evidence['certain']
         else:
@@ -49,14 +64,30 @@ class ChainEventGraph(object):
         if type_of_evidence == 'edges':
             for key, val in evidence.items():
                 dict_to_change[type_of_evidence]['evidence'][key] = val
+                edge = (key[0], key[1], val)
+                paths_for_evidence = self._find_paths_containing_edge(edge)
+                combine_paths(
+                    dict_to_change,
+                    type_of_evidence,
+                    paths_for_evidence,
+                    certain
+                )
+
         elif type_of_evidence == 'vertices':
+
+
             new_vertex_set = dict_to_change[type_of_evidence]['evidence'].\
                 union(evidence)
             dict_to_change[type_of_evidence]['evidence'] = new_vertex_set
         else:
-            raise(ValueError("Unknown evidence type.\n \
-                should be 'edges' or 'vertices'.\
-                see documentation."))
+            raise(
+                ValueError(
+                    "Unknown evidence type. " +
+                    "Should be 'edges' or 'vertices'.\n" +
+                    "See documentation."
+                )
+            )
+        pass
 
     def clear_evidence(self):
         self._create_evidence_dict()
@@ -140,15 +171,18 @@ class ChainEventGraph(object):
             for path in paths:
                 child = path[-1][Edge.DST.value]
 
-                if self.graph['nodes'][child]['sink']:
+                if self.graph['nodes'][child]['sink'] or\
+                        self.graph['nodes'][child]['outgoing_edges'] == []:
                     sink_not_found = False
                     break
                 else:
+                    edges = self._find_edges_entering_or_exiting_node(
+                        child, 'out'
+                    )
                     sink_not_found = True
-                edges = self._find_edges_entering_or_exiting_node(child, 'out')
-                for edge in edges:
-                    new_edge = (edge['src'], edge['dest'], edge['label'])
-                    extended_paths.append(path + [new_edge])
+                    for edge in edges:
+                        new_edge = (edge['src'], edge['dest'], edge['label'])
+                        extended_paths.append(path + [new_edge])
 
             if sink_not_found:
                 paths = extended_paths

@@ -21,7 +21,7 @@ def create_path(filename, add_time=False, filetype='png'):
 
 
 # MED
-logger.setLevel(level=logging.DEBUG)
+logger.setLevel(level=logging.WARNING)
 logger.info("Starting Main Test Program")
 df_path = Path(__file__).resolve().parent.joinpath(
     'data/medical_dm_modified.xlsx')

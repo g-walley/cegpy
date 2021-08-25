@@ -24,11 +24,6 @@ class EventTree(nx.DiGraph):
 
         self.sampling_zero_paths = \
             self._set_sampling_zero_paths(sampling_zero_paths)
-        self.leaves = None
-        self.situations = None
-        self.emanating_nodes = None
-        self.terminating_nodes = None
-        self.variables = None
 
         # Root node of the tree is always defined as s0.
         self.root = 's0'
@@ -44,18 +39,13 @@ class EventTree(nx.DiGraph):
         logger.info('Initialisation complete!')
 
     def get_variables(self) -> list:
-        if self.variables:
+        try:
             return self.variables
-        else:
-            try:
-                self.variables = list(self.dataframe.columns)
-                logger.info('Variables extracted from dataframe were:')
-                logger.info(self.variables)
-                return self.variables
-            except AttributeError:
-                logger.critical('A require parameter \
-                                (dataframe) was not provided!')
-                raise ValueError("Required Parameter: No Dataframe provided. ")
+        except AttributeError:
+            self.variables = list(self.dataframe.columns)
+            logger.info('Variables extracted from dataframe were:')
+            logger.info(self.variables)
+            return self.variables
 
     def get_sampling_zero_paths(self):
         if not self.sampling_zero_paths:
@@ -72,40 +62,47 @@ class EventTree(nx.DiGraph):
     def get_situations(self) -> list:
         """Returns list of event tree situations.
         (non-leaf nodes)"""
-        if not self.situations:
+        try:
+            return self.situations
+        except AttributeError:
             nodes = self.nodes
             leaves = self.get_leaves()
             self.situations = [node for node in nodes if node not in leaves]
 
-        return self.situations
+            return self.situations
 
     def get_leaves(self) -> list:
         """Returns leaves of the event tree."""
         # if not already generated, create self.leaves
-        if not self.leaves:
+        try:
+            return self.leaves
+        except AttributeError:
             eminating_nodes = self.get_emanating_nodes()
             edges = self.edges
             self.leaves = [edge_pair[1] for edge_pair in edges
                            if edge_pair[1] not in eminating_nodes]
 
-        return self.leaves
+            return self.leaves
 
     def get_emanating_nodes(self) -> list:
         """Returns list of situations where edges start."""
         # if not already generated, create self.emanating_nodes
-        if not self.emanating_nodes:
+        try:
+            return self.emanating_nodes
+        except AttributeError:
             edges = self.edges
             self.emanating_nodes = [edge_pair[0] for edge_pair in edges]
-
-        return self.emanating_nodes
+            return self.emanating_nodes
 
     def get_terminating_nodes(self) -> list:
         """Returns list of suations where edges terminate."""
-        if not self.terminating_nodes:
+        try:
+            return self.terminating_nodes
+        except AttributeError:
             edges = self.edges
             self.terminating_nodes = [edge_pair[1] for edge_pair in edges]
 
-        return self.terminating_nodes
+            return self.terminating_nodes
 
     def get_edge_counts(self) -> dict:
         '''list of counts along edges. Indexed same as edges and edge_labels'''

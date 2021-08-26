@@ -14,7 +14,7 @@ class TestEventTree():
 
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
-        self.node_format = re.compile('^s\d\d*$')
+        self.node_format = re.compile('^s\\d\\d*$')
 
     def test_check_sampling_zero_paths_param(self) -> None:
         """Tests the function that is checking the sampling zero paths param"""
@@ -29,11 +29,11 @@ class TestEventTree():
 
     def test_check_sampling_zero_get_and_set(self) -> None:
         """Tests the functions that set and get the sampling zeros"""
-        assert self.et.get_sampling_zero_paths() is None
+        assert self.et.sampling_zero_paths is None
 
         szp = [('Medium',), ('Medium', 'High')]
         self.et._set_sampling_zero_paths(szp)
-        assert self.et.get_sampling_zero_paths() == szp
+        assert self.et.sampling_zero_paths == szp
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)
@@ -58,8 +58,8 @@ class TestEventTree():
         EXPECTED_NODE_COUNT = 45
         assert len(self.et) == EXPECTED_NODE_COUNT
         assert len(self.et.edges) == EXPECTED_NODE_COUNT - 1
-        edge_counts = self.et.get_edge_counts()
-        edge_labels = self.et.get_edge_labels()
+        edge_counts = self.et.edge_counts
+        edge_labels = self.et.edge_labels
 
         assert len(edge_counts) == EXPECTED_NODE_COUNT - 1
         for _, count in edge_counts.items():
@@ -70,7 +70,7 @@ class TestEventTree():
             assert isinstance(label, str)
 
     def test_get_functions_producing_expected_data(self) -> None:
-        edge_labels = self.et.get_edge_labels()
+        edge_labels = self.et.edge_labels
         assert isinstance(edge_labels, dict)
         for edge, label in edge_labels.items():
             assert isinstance(edge, tuple)
@@ -93,22 +93,13 @@ class TestEventTree():
             assert isinstance(edge[0], str)
             assert isinstance(edge[1], str)
 
-        nodes = list(self.et)
-        check_list_contains_strings(nodes)
+        check_list_contains_strings(list(self.et))
+        check_list_contains_strings(self.et.situations)
+        check_list_contains_strings(self.et.leaves)
+        check_list_contains_strings(self.et.emanating_nodes)
+        check_list_contains_strings(self.et.terminating_nodes)
 
-        situations = self.et.get_situations()
-        check_list_contains_strings(situations)
-
-        leaves = self.et.get_leaves()
-        check_list_contains_strings(leaves)
-
-        emanating_nodes = self.et.get_emanating_nodes()
-        check_list_contains_strings(emanating_nodes)
-
-        terminating_nodes = self.et.get_terminating_nodes()
-        check_list_contains_strings(terminating_nodes)
-
-        edge_counts = self.et.get_edge_counts()
+        edge_counts = self.et.edge_counts
         print(edge_counts)
         assert isinstance(edge_counts, dict)
         for edge, count in edge_counts.items():

@@ -22,11 +22,7 @@ class EventTree(nx.DiGraph):
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
 
-        self.sampling_zero_paths = \
-            self._set_sampling_zero_paths(sampling_zero_paths)
-
-        # Root node of the tree is always defined as s0.
-        self.root = 's0'
+        self._set_sampling_zero_paths(sampling_zero_paths)
 
         # Paths sorted alphabetically in order of length
         self.sorted_paths = defaultdict(int)
@@ -38,80 +34,95 @@ class EventTree(nx.DiGraph):
         self._construct_event_tree()
         logger.info('Initialisation complete!')
 
-    def get_variables(self) -> list:
+    @property
+    def root(self) -> str:
+        return 's0'
+
+    @property
+    def variables(self) -> list:
         try:
-            return self.variables
+            return self._variables
         except AttributeError:
-            self.variables = list(self.dataframe.columns)
+            self._variables = list(self.dataframe.columns)
             logger.info('Variables extracted from dataframe were:')
-            logger.info(self.variables)
-            return self.variables
+            logger.info(self._variables)
+            return self._variables
 
-    def get_sampling_zero_paths(self):
-        if not self.sampling_zero_paths:
-            logger.info("EventTree.get_sampling_zero_paths() \
-                        called but no paths have been set.")
+    @property
+    def sampling_zero_paths(self):
+        if not self._sampling_zero_paths:
+            logger.info("EventTree.sampling_zero_paths \
+                        has not been set.")
 
-        return self.sampling_zero_paths
+        return self._sampling_zero_paths
 
-    def get_edge_labels(self) -> dict:
+    @property
+    def edge_labels(self) -> dict:
         """Once event has been created, a dict of all
         edge labels can be obtained with this function"""
         return nx.get_edge_attributes(self, 'label')
 
-    def get_situations(self) -> list:
+    @property
+    def situations(self) -> list:
         """Returns list of event tree situations.
         (non-leaf nodes)"""
         try:
-            return self.situations
+            return self._situations
         except AttributeError:
             nodes = self.nodes
-            leaves = self.get_leaves()
-            self.situations = [node for node in nodes if node not in leaves]
+            self._situations = [
+                node for node in nodes if node not in self.leaves
+            ]
 
-            return self.situations
+            return self._situations
 
-    def get_leaves(self) -> list:
+    @property
+    def leaves(self) -> list:
         """Returns leaves of the event tree."""
         # if not already generated, create self.leaves
         try:
-            return self.leaves
+            return self._leaves
         except AttributeError:
-            eminating_nodes = self.get_emanating_nodes()
             edges = self.edges
-            self.leaves = [edge_pair[1] for edge_pair in edges
-                           if edge_pair[1] not in eminating_nodes]
+            self._leaves = [
+                edge_pair[1] for edge_pair in edges
+                if edge_pair[1] not in self.emanating_nodes
+            ]
 
-            return self.leaves
+            return self._leaves
 
-    def get_emanating_nodes(self) -> list:
+    @property
+    def emanating_nodes(self) -> list:
         """Returns list of situations where edges start."""
-        # if not already generated, create self.emanating_nodes
+        # if not already generated, create self._emanating_nodes
         try:
-            return self.emanating_nodes
+            return self._emanating_nodes
         except AttributeError:
             edges = self.edges
-            self.emanating_nodes = [edge_pair[0] for edge_pair in edges]
-            return self.emanating_nodes
+            self._emanating_nodes = [edge_pair[0] for edge_pair in edges]
+            return self._emanating_nodes
 
-    def get_terminating_nodes(self) -> list:
+    @property
+    def terminating_nodes(self) -> list:
         """Returns list of suations where edges terminate."""
         try:
-            return self.terminating_nodes
+            return self._terminating_nodes
         except AttributeError:
-            edges = self.edges
-            self.terminating_nodes = [edge_pair[1] for edge_pair in edges]
+            self._terminating_nodes = [
+                edge_pair[1] for edge_pair in self.edges
+            ]
 
-            return self.terminating_nodes
+            return self._terminating_nodes
 
-    def get_edge_counts(self) -> dict:
+    @property
+    def edge_counts(self) -> dict:
         '''list of counts along edges. Indexed same as edges and edge_labels'''
         return nx.get_edge_attributes(self, 'count')
 
     def _generate_graph(self, colours=None):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        for edge, label in self.get_edge_labels().items():
+        for edge, label in self.edge_labels.items():
             count = self[edge[0]][edge[1]]['count']
             edge_details = label + '\n' + str(count)
 
@@ -176,7 +187,7 @@ class EventTree(nx.DiGraph):
         catagories_per_variable = {}
         nans_filtered = False
 
-        for var in self.get_variables():
+        for var in self.variables:
             categories = set(self.dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
@@ -199,13 +210,13 @@ class EventTree(nx.DiGraph):
         """Use this function to set the sampling zero paths.
         If different to previous value, will re-generate the event tree."""
         if sz_paths is None:
-            self.sampling_zero_paths = None
+            self._sampling_zero_paths = None
         else:
             # checkes if the user has inputted sz paths correctly
             sz_paths = self._check_sampling_zero_paths_param(sz_paths)
 
             if sz_paths:
-                self.sampling_zero_paths = sz_paths
+                self._sampling_zero_paths = sz_paths
             else:
                 error_str = "Parameter 'sampling_zero_paths' not in expected format. \
                              Should be a list of tuples like so:\n \
@@ -219,9 +230,9 @@ class EventTree(nx.DiGraph):
         in the order in which they are given."""
         unsorted_paths = defaultdict(int)
 
-        for variable_number in range(0, len(self.get_variables())):
+        for variable_number in range(0, len(self.variables)):
             dataframe_upto_variable = self.dataframe.loc[
-                :, self.get_variables()[0:variable_number+1]]
+                :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():
                 row = row[1:]
@@ -246,7 +257,7 @@ class EventTree(nx.DiGraph):
         Each path is an ordered sequence of edge labels starting
         from the root.
         The keys in the dict are ordered alphabetically.
-        Also calls the method self.sampling zeros to ensure
+        Also calls the method self._sampling_zeros to ensure
         manually added path format is correct.
         Added functionality to remove NaN/null edge labels
         assuming they are structural zeroes'''

@@ -126,10 +126,10 @@ class EventTree(nx.DiGraph):
         self.sampling_zeros = sampling_zero_paths
 
         # Paths sorted alphabetically in order of length
-        self.__sorted_paths = defaultdict(int)
+        self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self.__dataframe = dataframe
+        self._dataframe = dataframe
         # Format of event_tree dict:
 
         self.__construct_event_tree()
@@ -144,7 +144,7 @@ class EventTree(nx.DiGraph):
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
-        vars = list(self.__dataframe.columns)
+        vars = list(self._dataframe.columns)
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
@@ -240,7 +240,7 @@ class EventTree(nx.DiGraph):
         nans_filtered = False
 
         for var in self.variables:
-            categories = set(self.__dataframe[var].unique().tolist())
+            categories = set(self._dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
             if pd_filtered_categories != categories:
@@ -311,7 +311,7 @@ class EventTree(nx.DiGraph):
         unsorted_paths = defaultdict(int)
 
         for variable_number in range(0, len(self.variables)):
-            dataframe_upto_variable = self.__dataframe.loc[
+            dataframe_upto_variable = self._dataframe.loc[
                 :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():
@@ -356,9 +356,9 @@ class EventTree(nx.DiGraph):
             sorted_keys = sorted_keys + sorted(unsorted_mini_list)
 
         for key in sorted_keys:
-            self.__sorted_paths[key] = unsorted_paths[key]
+            self._sorted_paths[key] = unsorted_paths[key]
 
-        node_list = self.__create_node_list_from_paths(self.__sorted_paths)
+        node_list = self.__create_node_list_from_paths(self._sorted_paths)
         self.add_nodes_from(node_list)
 
     def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
@@ -393,7 +393,7 @@ class EventTree(nx.DiGraph):
 
         # Work through the sorted paths list to build the event tree.
         edge_labels_list = ['root']
-        for path, count in list(self.__sorted_paths.items()):
+        for path, count in list(self._sorted_paths.items()):
             path = list(path)
             edge_labels_list.append(path)
             if path[:-1] in edge_labels_list:

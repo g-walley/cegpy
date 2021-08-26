@@ -19,21 +19,21 @@ class TestEventTree():
     def test_check_sampling_zero_paths_param(self) -> None:
         """Tests the function that is checking the sampling zero paths param"""
         szp = [('Medium',), ('Medium', 'High')]
-        assert self.et._check_sampling_zero_paths_param(szp) == szp
+        assert self.et._EventTree__check_sampling_zero_paths_param(szp) == szp
 
         szp = [1, 2, 3, 4]
-        assert self.et._check_sampling_zero_paths_param(szp) is None
+        assert self.et._EventTree__check_sampling_zero_paths_param(szp) is None
 
         szp = [('path', 'to'), (123, 'something'), 'path/to']
-        assert self.et._check_sampling_zero_paths_param(szp) is None
+        assert self.et._EventTree__check_sampling_zero_paths_param(szp) is None
 
     def test_check_sampling_zero_get_and_set(self) -> None:
         """Tests the functions that set and get the sampling zeros"""
-        assert self.et.sampling_zero_paths is None
+        assert self.et.sampling_zeros is None
 
         szp = [('Medium',), ('Medium', 'High')]
-        self.et._set_sampling_zero_paths(szp)
-        assert self.et.sampling_zero_paths == szp
+        self.et.sampling_zeros = szp
+        assert self.et.sampling_zeros == szp
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)
@@ -45,7 +45,7 @@ class TestEventTree():
         paths[('road', 'away')] += 1
 
         # code being tested:
-        node_list = self.et._create_node_list_from_paths(paths)
+        node_list = self.et._EventTree__create_node_list_from_paths(paths)
 
         print(node_list)
         assert len(list(paths.keys())) + 1 == len(node_list)
@@ -133,14 +133,14 @@ class TestEventTreeStratUnstratTypes():
             sampling_zero_path=self.fall_s_z_paths
         )
 
-    def test_get_categories_per_variable(self) -> None:
+    def test_categories_per_variable(self) -> None:
         expected_med_cats_per_var = {
             "Classification": 2,
             "Group": 3,
             "Difficulty": 2,
             "Response": 2,
         }
-        actual_med_cats_per_var = self.med_et.get_categories_per_variable()
+        actual_med_cats_per_var = self.med_et.categories_per_variable
         assert expected_med_cats_per_var == actual_med_cats_per_var
 
         expected_fall_cats_per_var = {
@@ -149,7 +149,7 @@ class TestEventTreeStratUnstratTypes():
             "Treatment": 3,
             "Fall": 2,
         }
-        actual_fall_cats_per_var = self.fall_et.get_categories_per_variable()
+        actual_fall_cats_per_var = self.fall_et.categories_per_variable
         assert expected_fall_cats_per_var == actual_fall_cats_per_var
 
 

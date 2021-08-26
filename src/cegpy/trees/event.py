@@ -190,7 +190,8 @@ class EventTree(nx.DiGraph):
         """Returns list of event tree situations.
         (non-leaf nodes)"""
         return [
-            node for node in self.nodes if node not in self.leaves
+            node for node, out_degree in self.out_degree
+            if out_degree != 0
         ]
 
     @property
@@ -198,8 +199,8 @@ class EventTree(nx.DiGraph):
         """Returns leaves of the event tree."""
         # if not already generated, create self.leaves
         return [
-            edge_pair[1] for edge_pair in self.edges
-            if edge_pair[1] not in self.emanating_nodes
+            node for node, out_degree in self.out_degree
+            if out_degree == 0
         ]
 
     @property

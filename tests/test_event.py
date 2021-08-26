@@ -109,7 +109,7 @@ class TestEventTree():
             assert isinstance(count, int)
 
 
-class TestEventTreeStratUnstratTypes():
+class TestIntegration():
     def setup(self):
         # stratified dataset
         med_df_path = Path(__file__).resolve(

@@ -24,6 +24,14 @@ class StagedTree(EventTree):
             incoming_graph_data=None,
             **attr) -> None:
 
+        # Call event tree init to generate event tree
+        super().__init__(
+            dataframe,
+            sampling_zero_paths,
+            incoming_graph_data,
+            **attr
+        )
+
         self.__store_params(prior, alpha, hyperstage)
         self._mean_posterior_probs = []
         self._merged_situations = []
@@ -32,13 +40,7 @@ class StagedTree(EventTree):
         self._colours_for_situations = []
         logger.debug("Starting Staged Tree")
 
-        # Call event tree init to generate event tree
-        super().__init__(
-            dataframe,
-            sampling_zero_paths,
-            incoming_graph_data,
-            **attr
-        )
+
 
     @property
     def prior(self):
@@ -147,7 +149,8 @@ class StagedTree(EventTree):
 
         for node_idx, node in enumerate(self.situations):
             # How many nodes emanate from the current node?
-            number_of_emanating_nodes = self.emanating_nodes.count(node)
+            number_of_emanating_nodes = self.out_degree[node]
+
             # Divide the sample size from the current node equally among
             # emanating nodes
             equal_distribution_of_sample = \
@@ -156,8 +159,7 @@ class StagedTree(EventTree):
                 [equal_distribution_of_sample] * number_of_emanating_nodes
 
             relevant_terminating_nodes = [
-                self.terminating_nodes[self.edges.index(edge_pair)]
-                for edge_pair in self.get_edges() if edge_pair[0] == node
+                edge[1] for edge in list(self.edges) if edge[0] == node
             ]
 
             for terminating_node in relevant_terminating_nodes:
@@ -176,23 +178,15 @@ class StagedTree(EventTree):
         logger.info("Creating default hyperstage")
         hyperstage = []
         info_of_edges = []
-        edges = self.get_edges()
-        edge_labels = self.get_edge_labels()
-        situations = self.get_situations()
-        emanating_nodes = self.get_emanating_nodes()
 
-        for node in situations:
-            edge_indices = [
-                edges.index(edge) for edge in self.edges
+        for node in self.situations:
+            labels = [
+                self.edge_labels[edge] for edge in self.edges
                 if edge[0] == node
             ]
-
-            labels = [edge_labels[x][-1] for x in edge_indices]
             labels.sort()
 
-            info_of_edges.append(
-                [emanating_nodes.count(node), labels]
-            )
+            info_of_edges.append([self.out_degree[node], labels])
 
         sorted_info = []
         for info in info_of_edges:
@@ -201,7 +195,7 @@ class StagedTree(EventTree):
 
         for info in sorted_info:
             situations_with_value_edges = []
-            for idx, situation in enumerate(situations):
+            for idx, situation in enumerate(self.situations):
                 if info_of_edges[idx] == info:
                     situations_with_value_edges.append(situation)
             hyperstage = hyperstage + [situations_with_value_edges]
@@ -213,20 +207,11 @@ class StagedTree(EventTree):
         a specific situation. Indexed same as self.situations'''
         logger.info("Creating edge countset")
         edge_countset = []
-        situations = self.get_situations()
-        edges = self.get_edges()
-        edge_counts = self.get_edge_counts()
-        term_nodes = self.get_terminating_nodes()
 
-        for node in situations:
-            edgeset = [
-                edge_pair[1] for edge_pair in edges
-                if edge_pair[0] == node
-            ]
-
+        for node in self.situations:
             edge_countset.append([
-                edge_counts[term_nodes.index(vertex)]
-                for vertex in edgeset
+                count for edge, count in self.edge_counts.items()
+                if edge[0] == node
             ])
         return edge_countset
 
@@ -342,12 +327,12 @@ class StagedTree(EventTree):
         return mean_posterior_probs
 
     def _execute_AHC_algoritm(self):
-        prior = self.get_prior().copy()
-        hyperstage = self.get_hyperstage().copy()
-        posterior = self.get_posterior().copy()
+        prior = self.prior.copy()
+        hyperstage = self.hyperstage.copy()
+        posterior = self.posterior.copy()
         loglikelihood = self._calculate_initial_loglikelihood(prior, posterior)
-        posterior_probs = self.get_posterior().copy()
-        situ = self.get_situations().copy()
+        posterior_probs = self.posterior.copy()
+        situ = self.situations.copy()
         merged_situation_list = []
         bayesfactor_score = 1
         logger.info(" ----- Starting main loop of AHC algorithm -----")
@@ -425,36 +410,18 @@ class StagedTree(EventTree):
         self._sort_count = 0
         list_of_merged_situations = self._sort_list(merged_situation_indexes)
         merged_situations = []
-        situ = self.get_situations()
+        situ = self.situations
         for stage in list_of_merged_situations:
             merged_situations.append(
                 [situ[index] for index in stage]
             )
         return merged_situations
 
-    def _generate_stage_colours(self, number):
-        '''generating unique colours for the staged tree and event tree.
-        This function is seeded so that colours are the same on multiple
-        runs of the code'''
-        random.seed("12345")
-        _HEX = '0123456789abcdef'
-
-        def startcolor():
-            return '#' + ''.join(random.choice(_HEX) for _ in range(6))
-        colours = []
-        for _ in range(0, number):
-            newcolour = startcolor()
-            while newcolour in colours:
-                newcolour = startcolor()
-            colours.append(newcolour)
-        return colours
-
     def _generate_colours_for_situations(self):
         """Colours each stage of the tree with an individual colour"""
         number_of_stages = len(self._merged_situations)
         stage_colours = Util.generate_colours(number_of_stages)
         self._stage_colours = stage_colours
-        colours_for_situations = {}
 
         for node in self.nodes:
             stage_logic_values = [
@@ -462,13 +429,10 @@ class StagedTree(EventTree):
             ]
 
             if all(value == (False) for value in stage_logic_values):
-                colours_for_situations[node] = 'lightgrey'
+                self.nodes[node]['colour'] = 'lightgrey'
             else:
                 colour_index = stage_logic_values.index((True))
-                colours_for_situations[node] = \
-                    stage_colours[colour_index]
-
-        return colours_for_situations
+                self.nodes[node]['colour'] = stage_colours[colour_index]
 
     def calculate_AHC_transitions(self, prior=None,
                                   alpha=None, hyperstage=None):
@@ -489,25 +453,23 @@ class StagedTree(EventTree):
         self._merged_situations = \
             self._create_merged_situations(merged_situation_indexes)
 
-        self._colours_for_situations = \
-            self._generate_colours_for_situations()
+        self._generate_colours_for_situations()
 
         self.ahc_output = {
             "Merged Situations": self._merged_situations,
             "Loglikelihood": loglikelihood,
-            "Mean Posterior Probabilities": self._mean_posterior_probs,
-            "Node Colours": self._colours_for_situations
+            "Mean Posterior Probabilities": self._mean_posterior_probs
         }
         return self.ahc_output
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
         and saves it to <filename>.png"""
-
-        if self._colours_for_situations:
+        try:
+            self.ahc_output
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
-            graph = self.__generate_pdp_graph(colours=self._colours_for_situations)
+            graph = self._generate_pdp_graph()
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
 
@@ -517,7 +479,9 @@ class StagedTree(EventTree):
                 logger.info("--- Exporting graph to notebook ---")
                 return Image(graph.create_png())
 
-        else:
-            logger.error("----- PLEASE RUN AHC ALGORITHM before trying to \
-                export graph -----")
+        except AttributeError:
+            logger.error(
+                "----- PLEASE RUN AHC ALGORITHM before trying to" +
+                " export graph -----"
+            )
             return None

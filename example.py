@@ -27,22 +27,22 @@ df_path = Path(__file__).resolve().parent.joinpath(
     'data/medical_dm_modified.xlsx')
 logger.info(str(df_path))
 df = pd.read_excel(df_path)
-med_et = EventTree({'dataframe': df})
-med_st = StagedTree({'dataframe': df})
-
+med_et = EventTree(dataframe=df)
+med_st = StagedTree(dataframe=df)
 
 et_fig_path = create_path('out/medical_dm_event_tree', True, 'pdf')
 st_fig_path = create_path('out/medical_dm_staged_tree', True, 'pdf')
 med_et.create_figure(et_fig_path)
 med_st.calculate_AHC_transitions()
+med_st.create_figure(st_fig_path)
 
-pickle_path = create_path('out/med_st', True, 'pickle')
-with open(pickle_path, 'wb') as f:
-    pickle.dump(med_st, f, pickle.HIGHEST_PROTOCOL)
+# pickle_path = create_path('out/med_st', True, 'pickle')
+# with open(pickle_path, 'wb') as f:
+#     pickle.dump(med_st, f, pickle.HIGHEST_PROTOCOL)
 
-with open(pickle_path, 'rb') as f:
-    med_st2 = pickle.load(f)
-    med_st2.create_figure(st_fig_path)
+# with open(pickle_path, 'rb') as f:
+#     med_st2 = pickle.load(f)
+#     med_st2.create_figure(st_fig_path)
 
 
 # # FALLS
@@ -50,11 +50,9 @@ df_path = Path(__file__).resolve().parent.joinpath(
     'data/Falls_Data.xlsx')
 logger.info(str(df_path))
 df = pd.read_excel(df_path)
-falls_et = EventTree({'dataframe': df})
-falls_st = StagedTree({'dataframe': df})
+falls_et = EventTree(dataframe=df)
+falls_st = StagedTree(dataframe=df)
 
-now = datetime.now()
-dt_string = now.strftime("%d-%m-%Y_%H-%M-%S")
 et_fig_path = create_path('out/falls_event_tree', True, 'pdf')
 st_fig_path = create_path('out/falls_staged_tree', True, 'pdf')
 falls_et.create_figure(et_fig_path)

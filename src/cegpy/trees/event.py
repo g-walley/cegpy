@@ -204,16 +204,6 @@ class EventTree(nx.DiGraph):
         ]
 
     @property
-    def emanating_nodes(self) -> list:
-        """Returns list of situations where edges start."""
-        return [edge_pair[0] for edge_pair in self.edges]
-
-    @property
-    def terminating_nodes(self) -> list:
-        """Returns list of suations where edges terminate."""
-        return [edge_pair[1] for edge_pair in self.edges]
-
-    @property
     def edge_counts(self) -> dict:
         '''list of counts along edges. Indexed same as edges and edge_labels'''
         return nx.get_edge_attributes(self, 'count')
@@ -259,7 +249,7 @@ class EventTree(nx.DiGraph):
 
         return self._catagories_per_variable
 
-    def __generate_pdp_graph(self, colours=None):
+    def _generate_pdp_graph(self):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, label in self.edge_labels.items():
@@ -278,9 +268,9 @@ class EventTree(nx.DiGraph):
             )
 
         for node in node_list:
-            if colours:
-                fill_colour = colours[node]
-            else:
+            try:
+                fill_colour = self.nodes[node]['colour']
+            except KeyError:
                 fill_colour = 'lightgrey'
 
             graph.add_node(
@@ -296,7 +286,7 @@ class EventTree(nx.DiGraph):
         and saves it to <filename>.png"""
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self.__generate_pdp_graph()
+        graph = self._generate_pdp_graph()
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 

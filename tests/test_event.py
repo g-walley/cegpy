@@ -96,8 +96,6 @@ class TestEventTree():
         check_list_contains_strings(list(self.et))
         check_list_contains_strings(self.et.situations)
         check_list_contains_strings(self.et.leaves)
-        check_list_contains_strings(self.et.emanating_nodes)
-        check_list_contains_strings(self.et.terminating_nodes)
 
         edge_counts = self.et.edge_counts
         print(edge_counts)

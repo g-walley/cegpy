@@ -403,19 +403,16 @@ class StagedTree(EventTree):
 
         return posterior_probs, loglikelihood, merged_situation_list
 
-    def _create_merged_situations(self, merged_situation_indexes):
+    def _mark_nodes_with_stage_number(self, merged_situation_indexes):
         """AHC algorithm creates a list of indexes to the situations list.
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
         list_of_merged_situations = self._sort_list(merged_situation_indexes)
-        merged_situations = []
-        situ = self.situations
-        for stage in list_of_merged_situations:
-            merged_situations.append(
-                [situ[index] for index in stage]
-            )
-        return merged_situations
+        for index, stage in enumerate(list_of_merged_situations):
+            for node_number in stage:
+                node_name = 's' + str(node_number)
+                self.nodes[node_name]['stage'] = index
 
     def _generate_colours_for_situations(self):
         """Colours each stage of the tree with an individual colour"""
@@ -451,7 +448,7 @@ class StagedTree(EventTree):
             self._calculate_mean_posterior_probs(posterior_probs)
 
         self._merged_situations = \
-            self._create_merged_situations(merged_situation_indexes)
+            self._mark_nodes_with_stage_number(merged_situation_indexes)
 
         self._generate_colours_for_situations()
 

@@ -4,10 +4,8 @@ from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
-import random
+import networkx as nx
 import scipy.special
-# import math
-# from ..utilities.util import Util
 import logging
 
 logger = logging.getLogger('pyceg.staged_tree')
@@ -40,15 +38,70 @@ class StagedTree(EventTree):
         self._colours_for_situations = []
         logger.debug("Starting Staged Tree")
 
-
-
     @property
     def prior(self):
-        return self._prior
+        return nx.get_edge_attributes(self, 'prior')
 
     @prior.setter
-    def prior(self, value):
-        self._prior = value
+    def prior(self, prior):
+        offset = 0
+        for node_idx, node_priors in enumerate(prior):
+            node_name = ('s%d' % (node_idx + offset))
+            while self.succ[node_name] == {}:
+                offset += 1
+                node_name = ('s%d' % (node_idx + offset))
+            pass
+            for edge_prior_idx, succ_key in enumerate(
+                    self.succ[node_name].keys()):
+
+                self.edges[(node_name, succ_key)]['prior'] = \
+                    node_priors[edge_prior_idx]
+
+    def get_prior_as_list(self):
+        prior_list = []
+        for node in list(self):
+
+            succ_list = []
+            for _, succ_dict in self.succ[node].items():
+                try:
+                    succ_list.append(succ_dict['prior'])
+                except KeyError:
+                    pass
+            if succ_list != []:
+                prior_list.append(succ_list)
+
+        return prior_list
+
+    @property
+    def posterior(self):
+        '''Posterior is calculated such that the edge count is added
+        to the prior for each edge.'''
+        try:
+            posterior = nx.get_edge_attributes(self, 'posterior')
+            if posterior == {}:
+                raise AttributeError('Posterior not yet set.')
+            else:
+                return posterior
+        except AttributeError:
+            for edge in self.edges:
+                edge_dict = self.edges[edge]
+                posterior = edge_dict['prior'] + edge_dict['count']
+                edge_dict['posterior'] = posterior
+            return nx.get_edge_attributes(self, 'posterior')
+
+    def get_posterior_as_list(self):
+        self.posterior  # Access to ensure it has been created
+        prior_list = []
+        for node in list(self):
+
+            succ_list = []
+            for _, succ_dict in self.succ[node].items():
+                succ_list.append(succ_dict['posterior'])
+
+            if succ_list != []:
+                prior_list.append(succ_list)
+
+        return prior_list
 
     @property
     def alpha(self):
@@ -69,18 +122,6 @@ class StagedTree(EventTree):
     @property
     def edge_countset(self):
         return self.__create_edge_countset()
-
-    @property
-    def posterior(self):
-        try:
-            return self._posterior
-        except AttributeError:
-            self.posterior = self.__calculate_posterior(self.prior)
-            return self.posterior
-
-    @posterior.setter
-    def posterior(self, value):
-        self._posterior = value
 
     @property
     def ahc_output(self):
@@ -215,21 +256,6 @@ class StagedTree(EventTree):
             ])
         return edge_countset
 
-    def __calculate_posterior(self, prior) -> list:
-        '''calculating the posterior edge counts for the AHC method.
-        The posterior for each edge is obtained as the sum of its prior
-        and edge count. Here we do this such that the posterior is a
-        list of lists. Each list gives the posterior along the edges
-        emanating from a specific vertex. The indexing is the same as
-        self.edge_countset and self.situations'''
-        logger.info("Calculating posterior")
-        posterior = []
-        for index in range(0, len(prior)):
-            posterior.append(
-                list(map(add, prior[index], self.edge_countset[index]))
-            )
-        return posterior
-
     def _calculate_lg_of_sum(self, array) -> float:
         '''function to calculate log gamma of the sum of an array'''
         array = [float(x) for x in array]
@@ -243,6 +269,7 @@ class StagedTree(EventTree):
         '''calculating log likelihood given a prior and posterior'''
         # Calculate prior contribution
         logger.info("Calculating initial loglikelihood")
+
         pri_lg_of_sum = [
             self._calculate_lg_of_sum(elem) for elem in prior
         ]
@@ -327,83 +354,80 @@ class StagedTree(EventTree):
         return mean_posterior_probs
 
     def _execute_AHC_algoritm(self):
-        prior = self.prior.copy()
+        # prior = self.prior.copy()
         hyperstage = self.hyperstage.copy()
-        posterior = self.posterior.copy()
-        loglikelihood = self._calculate_initial_loglikelihood(prior, posterior)
-        posterior_probs = self.posterior.copy()
+        # posterior = self.posterior.copy()
+        prior_list = self.get_prior_as_list().copy()
+        posterior_list = self.get_posterior_as_list().copy()
+        loglikelihood = self._calculate_initial_loglikelihood(
+            prior_list, posterior_list
+        )
+        posterior_probs = self.get_posterior_as_list().copy()
         situ = self.situations.copy()
         merged_situation_list = []
         bayesfactor_score = 1
-        logger.info(" ----- Starting main loop of AHC algorithm -----")
-        logger.info("Prior is length %d" % len(prior))
-        while bayesfactor_score > 0:
-            local_merges = []
-            local_scores = []
 
-            for sit_1 in range(len(prior)):
-                if all(items == 0 for items in posterior[sit_1]) is False:
-                    model1 = [prior[sit_1], posterior[sit_1]]
-                    for sit_2 in range(sit_1+1, len(prior)):
+        logger.info(" ----- Starting main loop of AHC algorithm -----")
+        logger.info("Prior is length %d" % len(prior_list))
+        while bayesfactor_score > 0:
+            local = {}
+
+            for sit_1 in range(len(prior_list)):
+                if all(items == 0 for items in posterior_list[sit_1]) is False:
+                    model1 = [prior_list[sit_1], posterior_list[sit_1]]
+                    for sit_2 in range(sit_1+1, len(prior_list)):
                         is_subset = self._check_issubset(
                             [situ[sit_1], situ[sit_2]],
                             hyperstage
                         )
 
                         any_non_zero = all(
-                            items == 0 for items in posterior[sit_2]
+                            items == 0 for items in posterior_list[sit_2]
                         )
 
                         if is_subset and not any_non_zero:
-                            model2 = [prior[sit_2], posterior[sit_2]]
-                            local_scores.append(
+                            model2 = [prior_list[sit_2], posterior_list[sit_2]]
+                            local[(sit_1, sit_2)] = \
                                 self._calculate_bayes_factor(
-                                        *model1, *model2
-                                    )
-                            )
+                                    *model1, *model2
+                                )
 
-                            local_merges.append([sit_1, sit_2])
+            max_key = max(local, key=local.get)
+            bayesfactor_score = local[max_key]
 
-            if local_scores != [] and max(local_scores) > 0:
-                bayesfactor_score = max(local_scores)
+            if local != {} and bayesfactor_score > 0:
+                merged_situation_list.append(list(max_key))
 
-                merged_situation_list.append(
-                    local_merges[local_scores.index(bayesfactor_score)]
-                )
-
-                change_idx = merged_situation_list[-1]
-
-                prior[change_idx[0]] = list(
+                prior_list[max_key[0]] = list(
                     map(
                         add,
-                        prior[change_idx[0]],
-                        prior[change_idx[1]]
+                        prior_list[max_key[0]],
+                        prior_list[max_key[1]]
                     )
                 )
-                posterior[change_idx[0]] = list(
+                posterior_list[max_key[0]] = list(
                     map(
                         add,
-                        posterior[change_idx[0]],
-                        posterior[change_idx[1]]
+                        posterior_list[max_key[0]],
+                        posterior_list[max_key[1]]
                     )
                 )
 
-                prior[change_idx[1]] = [0] * len(prior[change_idx[0]])
-                posterior[change_idx[1]] = [0] * len(prior[change_idx[0]])
+                prior_list[max_key[1]] = \
+                    [0] * len(prior_list[max_key[0]])
+                posterior_list[max_key[1]] = \
+                    [0] * len(prior_list[max_key[0]])
 
-                posterior_probs[change_idx[0]] = posterior[change_idx[0]]
-                posterior_probs[change_idx[1]] = posterior[change_idx[0]]
+                posterior_probs[max_key[0]] = posterior_list[max_key[0]]
+                posterior_probs[max_key[1]] = posterior_list[max_key[0]]
 
                 loglikelihood += bayesfactor_score
-
-            elif max(local_scores) <= 0:
-                bayesfactor_score = 0
 
             logger.debug('--Current AHC score: %d' % bayesfactor_score)
 
         return posterior_probs, loglikelihood, merged_situation_list
 
-    def _mark_nodes_with_stage_number(self, merged_situation_indexes):
+    def _mark_nodes_with_stage_number(self, merged_situation_indexes) -> list:
         """AHC algorithm creates a list of indexes to the situations list.
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
@@ -414,15 +438,17 @@ class StagedTree(EventTree):
                 node_name = 's' + str(node_number)
                 self.nodes[node_name]['stage'] = index
 
-    def _generate_colours_for_situations(self):
+        return list_of_merged_situations
+
+    def _generate_colours_for_situations(self, merged_situations):
         """Colours each stage of the tree with an individual colour"""
-        number_of_stages = len(self._merged_situations)
+        number_of_stages = len(merged_situations)
         stage_colours = Util.generate_colours(number_of_stages)
         self._stage_colours = stage_colours
 
         for node in self.nodes:
             stage_logic_values = [
-                (node in stage) for stage in self._merged_situations
+                (node in stage) for stage in merged_situations
             ]
 
             if all(value == (False) for value in stage_logic_values):
@@ -444,18 +470,18 @@ class StagedTree(EventTree):
         posterior_probs, loglikelihood, \
             merged_situation_indexes = self._execute_AHC_algoritm()
 
-        self._mean_posterior_probs = \
+        mean_posterior_probs = \
             self._calculate_mean_posterior_probs(posterior_probs)
 
-        self._merged_situations = \
+        merged_situations = \
             self._mark_nodes_with_stage_number(merged_situation_indexes)
 
-        self._generate_colours_for_situations()
+        self._generate_colours_for_situations(merged_situations)
 
         self.ahc_output = {
-            "Merged Situations": self._merged_situations,
+            "Merged Situations": merged_situations,
             "Loglikelihood": loglikelihood,
-            "Mean Posterior Probabilities": self._mean_posterior_probs
+            "Mean Posterior Probabilities": mean_posterior_probs
         }
         return self.ahc_output
 

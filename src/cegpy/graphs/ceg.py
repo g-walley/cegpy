@@ -3,6 +3,7 @@ import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
 import itertools as it
+import collections
 
 from ..utilities.util import Util
 from IPython.display import Image
@@ -32,8 +33,8 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
-        self.evidence = Evidence()
-        pass
+        self.certain_evidence = Evidence()
+        self.uncertain_evidence = Evidence()
 
     @property
     def node_prefix(self):
@@ -60,19 +61,51 @@ class ChainEventGraph(nx.MultiDiGraph):
         return ("%s0" % self.node_prefix)
 
     @property
-    def evidence(self):
-        return self._evidence
+    def certain_evidence(self):
+        return self._certain_evidence
 
-    @evidence.setter
-    def evidence(self, value):
-        self._evidence = value
+    @certain_evidence.setter
+    def certain_evidence(self, value):
+        self._certain_evidence = value
 
-    @evidence.deleter
-    def evidence(self):
-        del self._evidence
+    @property
+    def uncertain_evidence(self):
+        return self._uncertain_evidence
+
+    @uncertain_evidence.setter
+    def uncertain_evidence(self, value):
+        self._uncertain_evidence = value
+
+    @property
+    def evidence_as_str(self) -> str:
+        def evidence_str(base_str, evidence):
+            if evidence.edges == []:
+                base_str += '   Edges = []\n'
+            else:
+                base_str += '   Edges = [\n'
+                for edge in evidence.edges:
+                    base_str += '     %s,\n' % (str(edge))
+                base_str += '   ]\n'
+
+            if evidence.vertices == set():
+                base_str += '   Vertices = {}\n'
+            else:
+                base_str += '   Vertices = {\n'
+                for vertex in evidence.vertices:
+                    base_str += "     '%s',\n" % (str(vertex))
+                base_str += '   }\n\n'
+            return base_str
+
+        base_str = 'The evidence you have given is as follows:\n'
+        base_str += ' Evidence you are certain of:\n'
+        base_str = evidence_str(base_str, self.certain_evidence)
+        base_str += ' Evidence you are uncertain of:\n'
+        base_str = evidence_str(base_str, self.uncertain_evidence)
+        return base_str
 
     def clear_evidence(self):
-        self.evidence = Evidence()
+        self.certain_evidence = Evidence()
+        self.uncertain_evidence = Evidence()
 
     def _check_evidence_consistency(self, type_of_evidence,
                                     evidence, certain) -> bool:
@@ -411,91 +444,40 @@ class ChainEventGraph(nx.MultiDiGraph):
 
 
 class Evidence:
-    def __new__(cls):
-        evidence_dict = dict(
-            edges=dict(
-                evidence=dict(),
-                paths=set()
-            ),
-            vertices=dict(
-                evidence=set(),
-                paths=set()
-            )
-        )
-        return dict(
-            certain=deepcopy(evidence_dict), uncertain=deepcopy(evidence_dict)
-        )
+    Edge = collections.namedtuple('edge', ['u', 'v', 'label'])
 
     def __init__(self):
-        print(self)
+        self.edges = []
+        self.vertices = set()
 
-    def __str__(self) -> str:
-        def add_elems_of_dict_to_str(string, dict):
-            for key, val in dict.items():
-                string += (' %s:\n' % key)
-                string += ('   %s\n' % str(val['evidence']))
-            return string
+    @property
+    def edges(self):
+        return self.__edges
 
-        dict_str = 'The evidence you have given is as follows:\n\n'
-        dict_str += ' Evidence you are certain of:\n'
-        dict_str = add_elems_of_dict_to_str(
-            dict_str, self['certain']
-        )
+    @edges.setter
+    def edges(self, value):
+        self.__edges = value
 
-        dict_str += '\n Evidence you are uncertain of:\n'
-        dict_str = add_elems_of_dict_to_str(
-            dict_str, self['uncertain']
-        )
+    @property
+    def vertices(self):
+        return self.__vertices
 
-        return dict_str
+    @vertices.setter
+    def vertices(self, value):
+        self.__vertices = value
 
-    def add_evidence(self, type_of_evidence, evidence, certain=True):
-        """
-        Type of evidence can be:
-        'edges' or 'vertices'.
-        see documentation.
-        """
-        def combine_paths(dict_to_change, type_of_evidence,
-                          new_paths, certain):
+    def __repr__(self) -> str:
+        return "Evidence(Edges=%s, Vertices=%s)" %\
+            (str(self.edges), str(self.vertices))
 
-            current_paths = dict_to_change[type_of_evidence]['paths']
+    def add_edge(self, u, v, label):
+        self.edges.append(Evidence.Edge(u, v, label))
 
-            if current_paths == set():
-                dict_to_change[type_of_evidence]['paths'] = new_paths
-            else:
-                if certain:
-                    dict_to_change[type_of_evidence]['paths'] = \
-                        current_paths.intersection(new_paths)
-                else:
-                    dict_to_change[type_of_evidence]['paths'] = \
-                        current_paths.union(new_paths)
+    def remove_edge(self, u, v, label):
+        self.edges.remove(Evidence.Edge(u, v, label))
 
-        if certain:
-            dict_to_change = self['certain']
-        else:
-            dict_to_change = self['uncertain']
+    def add_vertex(self, vertex):
+        self.vertices.add(vertex)
 
-        if type_of_evidence == 'edges':
-            for key, val in evidence.items():
-                dict_to_change[type_of_evidence]['evidence'][key] = val
-                edge = (key[0], key[1], val)
-                paths_for_evidence = self._find_paths_containing_edge(edge)
-                combine_paths(
-                    dict_to_change,
-                    type_of_evidence,
-                    paths_for_evidence,
-                    certain
-                )
-
-        elif type_of_evidence == 'vertices':
-            new_vertex_set = dict_to_change[type_of_evidence]['evidence'].\
-                union(evidence)
-            dict_to_change[type_of_evidence]['evidence'] = new_vertex_set
-        else:
-            raise(
-                ValueError(
-                    "Unknown evidence type. " +
-                    "Should be 'edges' or 'vertices'.\n" +
-                    "See documentation."
-                )
-            )
+    def remove_vertex(self, vertex):
+        self.vertices.remove(vertex)

@@ -1,5 +1,6 @@
 # from os import name
 from ..src.cegpy.graphs.ceg import ChainEventGraph
+from ..src.cegpy.graphs.ceg import Evidence
 from ..src.cegpy.trees.staged import StagedTree
 from ..src.cegpy.utilities.util import Util
 # from collections import defaultdict
@@ -7,6 +8,7 @@ from pathlib import Path
 import networkx as nx
 import pandas as pd
 import os.path
+
 
 class TestCEG(object):
     def setup(self):
@@ -26,6 +28,14 @@ class TestCEG(object):
             node_prefix='w',
             sink_suffix='inf'
         )
+        # path_gen = nx.all_simple_edge_paths(self.ceg, self.ceg.root_node, self.ceg.sink_node)
+        # paths = []
+        # while True:
+        #     try:
+        #         paths.append(next(path_gen))
+        #     except StopIteration:
+        #         break
+
 
     def test_node_name_generation(self):
         prefix = self.ceg.node_prefix
@@ -118,102 +128,49 @@ class TestCEG(object):
             assert actual_node_list.sort() == expected_node_list.sort()
 
     def test_creation_of_ceg(self) -> None:
-        self.ceg.generate_CEG()
+
         fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
         self.ceg.create_figure(fname)
         assert os.path.isfile(fname)
 
     def test_adding_evidence(self) -> None:
-        self.ceg.generate_CEG()
-        certain_variables = {
-            self.st.get_variables()[1]: 'Experienced'
-        }
-        try:
-            self.ceg.add_evidence(
-                type_of_evidence='variables',
-                evidence=certain_variables,
-                certain=True
+        certain_edges = [
+            ('s1', 's3', 'Experienced'),
+            ('s3', 's12', 'Hard'),
+        ]
+        for edge in certain_edges:
+            self.ceg.certain_evidence.add_edge(
+                edge[0], edge[1], edge[2]
             )
-            assert False  # We shouldn't be able to add variables!
-        except ValueError:
-            pass
-
-        certain_edges = {
-            ('s1', 's3'): 'Experienced',
-            ('s3', 's12'): 'Hard'
-        }
-        self.ceg.add_evidence(
-            type_of_evidence='edges',
-            evidence=certain_edges,
-            certain=True
-        )
+            assert Evidence.Edge(edge[0], edge[1], edge[2]) \
+                in self.ceg.certain_evidence.edges
 
         certain_vertices = {
             's3', 's12'
         }
-        self.ceg.add_evidence(
-            type_of_evidence='vertices',
-            evidence=certain_vertices,
-            certain=True
-        )
+        for vertex in certain_vertices:
+            self.ceg.certain_evidence.add_vertex(vertex)
+            assert vertex in self.ceg.certain_evidence.vertices
 
-        uncertain_variables = {
-            self.st.get_variables()[1]: ['Inexperienced', 'Novice'],
-            self.st.get_variables()[2]: ['Easy']
-        }
-        try:
-            self.ceg.add_evidence(
-                type_of_evidence='variables',
-                evidence=uncertain_variables,
-                certain=False
+        uncertain_edges = [
+            ('s2', 's8', 'Experienced'),
+            ('s6', 's15', 'Hard')
+        ]
+        for edge in uncertain_edges:
+            self.ceg.uncertain_evidence.add_edge(
+                edge[0], edge[1], edge[2]
             )
-            assert False  # We shouldn't be able to add variables!
-        except ValueError:
-            pass
-
-        uncertain_edges = {
-            ('s2', 's8'): 'Experienced',
-            ('s6', 's15'): 'Hard'
-        }
-        self.ceg.add_evidence(
-            type_of_evidence='edges',
-            evidence=uncertain_edges,
-            certain=False
-        )
+            assert Evidence.Edge(edge[0], edge[1], edge[2]) \
+                in self.ceg.uncertain_evidence.edges
 
         uncertain_vertices = {
             's2', 's15'
         }
-        self.ceg.add_evidence(
-            type_of_evidence='vertices',
-            evidence=uncertain_vertices,
-            certain=False
-        )
+        for vertex in uncertain_vertices:
+            self.ceg.uncertain_evidence.add_vertex(vertex)
+            assert vertex in self.ceg.uncertain_evidence.vertices
 
-        print(self.ceg.get_evidence_str())
-
-        self.ceg.clear_evidence()
-        evidence = self.ceg.get_evidence_dict()
-        assert evidence['certain'] == {
-            'edges': {
-                'evidence': {},
-                'paths': set()
-            },
-            'vertices': {
-                'evidence': set(),
-                'paths': set()
-            }
-        }
-        assert evidence['uncertain'] == {
-            'edges': {
-                'evidence': {},
-                'paths': set()
-            },
-            'vertices': {
-                'evidence': set(),
-                'paths': set()
-            }
-        }
+        print(self.ceg.evidence_as_str)
 
     def test_find_paths_from_edge(self) -> None:
         self.ceg.generate_CEG()
@@ -285,3 +242,41 @@ class TestCEG(object):
         s_nine_actual_path_set = self.ceg._find_paths_containing_node('s9')
 
         assert s_nine_actual_path_set == expected_path_set
+
+
+class TestEvidence(object):
+    def setup(self):
+        self.evidence = Evidence()
+        print(self.evidence)
+
+    def test_edge_creation(self):
+        u = 's1'
+        v = 's3'
+        label = 'Experienced'
+        edge = Evidence.Edge(u, v, label)
+        edge_str = str(edge)
+        expected_str = "edge(u='" + u + "', v='" + v + "', label='" + label + "')"
+        assert edge_str == expected_str
+
+    def test_edge_add_and_remove(self):
+        edges = [
+            ('s1', 's2', 'Experienced'),
+            ('s1', 's2', 'Other'),
+            ('s1', 's2', 'Novice'),
+        ]
+        for edge in edges:
+            self.evidence.add_edge(edge[0], edge[1], edge[2])
+        assert edges == self.evidence.edges
+        self.evidence.remove_edge('s1', 's2', 'Other')
+        edges.remove(('s1', 's2', 'Other'))
+        assert edges == self.evidence.edges
+
+    def test_add_vertex_add_and_remove(self):
+        vertices = {'s1', 's2', 's3', 's45'}
+        for vertex in vertices:
+            self.evidence.add_vertex(vertex)
+        assert vertices == self.evidence.vertices
+
+        self.evidence.remove_vertex('s2')
+        vertices.remove('s2')
+        assert vertices == self.evidence.vertices

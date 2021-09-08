@@ -1,59 +1,47 @@
+# from os import name
 from ..src.cegpy.graphs.ceg import ChainEventGraph
 from ..src.cegpy.trees.staged import StagedTree
 from ..src.cegpy.utilities.util import Util
 # from collections import defaultdict
 from pathlib import Path
+import networkx as nx
 import pandas as pd
-
+import os.path
 
 class TestCEG(object):
     def setup(self):
+        self.node_prefix = 'w'
+        self.sink_suffix = 'inf'
         df_path = Path(__file__).resolve(
             ).parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
-        st_params = {
-            'dataframe': pd.read_excel(df_path)
-        }
-        self.st = StagedTree(st_params)
+
+        self.st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name="medical_staged"
+        )
         self.st.calculate_AHC_transitions()
         self.ceg = ChainEventGraph(
-            staged_tree=self.st,
-            root='s0'
+            incoming_graph_data=self.st,
+            node_prefix='w',
+            sink_suffix='inf'
         )
 
-    def test_integration(self):
-
-        self.ceg._create_graph_representation()
-
-    def test_create_graph_representation(self) -> None:
-        nodes = self.st.get_nodes()
-        edges = self.st.get_edges()
-        edge_labels = self.st.get_edge_labels()
-
-        # check that all nodes exist
-        for node in nodes:
-            assert self.ceg.graph['nodes'].get(node) is not None
-
-        # check edges were created correctly
-        for idx, edge in enumerate(edges):
-            edge_list = self.ceg.graph['edges'].get(edge)
-            src, dest = edge
-            assert edge_list is not None
-            label_found = False
-            for elem in edge_list:
-                label_found = True \
-                    if elem['label'] == edge_labels[idx][-1] \
-                    else False
-                assert src == elem['src']
-                assert dest == elem['dest']
-            assert label_found
+    def test_node_name_generation(self):
+        prefix = self.ceg.node_prefix
+        largest = 20
+        node_names = [
+            self.ceg._ChainEventGraph__get_next_node_name()
+            for _ in range(0, largest)
+        ]
+        assert (prefix + '1') == node_names[0]
+        assert (prefix + str(largest)) == node_names[largest - 1]
 
     def test_trim_leaves_from_graph(self) -> None:
-        _ = self.ceg._trim_leaves_from_graph(self.ceg.graph)
-        leaves = self.st.get_leaves()
-        for leaf in leaves:
+        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        for leaf in self.st.leaves:
             try:
-                self.ceg.graph['nodes'][leaf]
+                self.ceg.nodes[leaf]
                 leaf_removed = False
 
             except KeyError:
@@ -61,23 +49,19 @@ class TestCEG(object):
 
             assert leaf_removed
 
-            for edge_list_key in self.ceg.graph['edges'].keys():
+            for edge_list_key in self.ceg.edges.keys():
                 assert edge_list_key[1] != leaf
 
-    def test_identify_root_node(self) -> None:
-        root = self.ceg._identify_root_node(self.ceg.graph)
-        assert root == 's0'
-
     def test_update_distances_of_nodes_to_sink(self) -> None:
-        def create_node_dist_dict(graph) -> dict:
-            node_dists = {}
-            for key in graph['nodes'].keys():
-                node_dists[key] = graph['nodes'][key]['max_dist_to_sink']
-            return node_dists
-
-        med_graph = self.ceg.graph.copy()
+        def check_distances():
+            actual_node_dists = \
+                nx.get_node_attributes(self.ceg, 'max_dist_to_sink')
+            for node, distance in actual_node_dists.items():
+                assert distance == expected_node_dists[node]
+        root_node = self.node_prefix + '0'
+        sink_node = self.node_prefix + self.sink_suffix
         expected_node_dists = {
-            's0': 4,
+            root_node: 4,
             's1': 3,
             's2': 3,
             's3': 2,
@@ -98,63 +82,18 @@ class TestCEG(object):
             's18': 1,
             's19': 1,
             's20': 1,
-            's21': 0,
-            's22': 0,
-            's23': 0,
-            's24': 0,
-            's25': 0,
-            's26': 0,
-            's27': 0,
-            's28': 0,
-            's29': 0,
-            's30': 0,
-            's31': 0,
-            's32': 0,
-            's33': 0,
-            's34': 0,
-            's35': 0,
-            's36': 0,
-            's37': 0,
-            's38': 0,
-            's39': 0,
-            's40': 0,
-            's41': 0,
-            's42': 0,
-            's43': 0,
-            's44': 0
+            sink_node: 0
         }
-        self.ceg._update_distances_of_nodes_to_sink(
-            med_graph, self.st.get_leaves().copy()
-        )
-        actual_node_dists = create_node_dist_dict(med_graph)
-        assert actual_node_dists == expected_node_dists
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        check_distances()
 
-        new_edge_1 = ('s3', 's24')
-        new_edge_2 = ('s1', 's29')
         # Add another edge to the dictionary, to show that the path is max,
         # and not min distance to sink
-        med_graph['edges'][new_edge_1] = [
-            self.ceg._create_new_edge(
-                src=new_edge_1[0], dest=new_edge_2[1], label='new_edge_1'
-            )
-        ]
-        med_graph['nodes'][new_edge_1[1]]['ingoing_edges'].append(new_edge_1)
-        med_graph['nodes'][new_edge_1[0]]['outgoing_edges'].append(new_edge_1)
-
-        # Add a second edge to the dictionary
-        med_graph['edges'][new_edge_2] = [
-            self.ceg._create_new_edge(
-                src=new_edge_2[0], dest=new_edge_2[1], label='new_edge_2'
-            )
-        ]
-        med_graph['nodes'][new_edge_2[1]]['ingoing_edges'].append(new_edge_2)
-        med_graph['nodes'][new_edge_2[0]]['outgoing_edges'].append(new_edge_2)
-
-        self.ceg._update_distances_of_nodes_to_sink(
-            med_graph, self.st.get_leaves().copy()
-        )
-        actual_node_dists = create_node_dist_dict(med_graph)
-        assert actual_node_dists == expected_node_dists
+        self.ceg.add_edge('s3', self.ceg.sink_node)
+        self.ceg.add_edge('s1', self.ceg.sink_node)
+        self.ceg.add_edge('s2', 's10')
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
         expected_nodes = {
@@ -166,11 +105,12 @@ class TestCEG(object):
             2: ['s3', 's4', 's5', 's6', 's7', 's8'],
             3: ['s1', 's2']
         }
-
-        nodes_gen = self.ceg._gen_nodes_with_increasing_distance(
-            graph=self.ceg.graph,
-            start=0
-        )
+        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        nodes_gen = self.ceg.\
+            _ChainEventGraph__gen_nodes_with_increasing_distance(
+                start=0
+            )
 
         for nodes in range(len(expected_nodes)):
             expected_node_list = expected_nodes[nodes]
@@ -179,10 +119,9 @@ class TestCEG(object):
 
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate_CEG()
-        # path = Util.create_path('out/medical_dm_CEG', True, 'pdf')
-        # string = self.ceg.get_evidence_str()
-        # self.ceg.create_figure(path)
-        pass
+        fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
+        self.ceg.create_figure(fname)
+        assert os.path.isfile(fname)
 
     def test_adding_evidence(self) -> None:
         self.ceg.generate_CEG()

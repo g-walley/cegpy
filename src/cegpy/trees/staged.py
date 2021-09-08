@@ -447,15 +447,11 @@ class StagedTree(EventTree):
         self._stage_colours = stage_colours
 
         for node in self.nodes:
-            stage_logic_values = [
-                (node in stage) for stage in merged_situations
-            ]
-
-            if all(value == (False) for value in stage_logic_values):
+            try:
+                stage = self.nodes[node]['stage']
+                self.nodes[node]['colour'] = stage_colours[stage]
+            except KeyError:
                 self.nodes[node]['colour'] = 'lightgrey'
-            else:
-                colour_index = stage_logic_values.index((True))
-                self.nodes[node]['colour'] = stage_colours[colour_index]
 
     def calculate_AHC_transitions(self, prior=None,
                                   alpha=None, hyperstage=None):

@@ -53,23 +53,25 @@ class StagedTree(EventTree):
             pass
             for edge_prior_idx, succ_key in enumerate(
                     self.succ[node_name].keys()):
-
-                self.edges[(node_name, succ_key)]['prior'] = \
+                label = list(self.succ[node_name][succ_key])[0]
+                self.edges[(node_name, succ_key, label)]['prior'] = \
                     node_priors[edge_prior_idx]
 
     def get_prior_as_list(self):
         prior_list = []
-        for node in list(self):
+        prev_node = list(self.prior)[0][0]
+        succ_list = []
 
-            succ_list = []
-            for _, succ_dict in self.succ[node].items():
-                try:
-                    succ_list.append(succ_dict['prior'])
-                except KeyError:
-                    pass
-            if succ_list != []:
+        for edge, prior in self.prior.items():
+            node = edge[0]
+            if node != prev_node:
                 prior_list.append(succ_list)
+                succ_list = []
+            succ_list.append(prior)
+            prev_node = node
 
+        if succ_list != []:
+            prior_list.append(succ_list)
         return prior_list
 
     @property
@@ -90,18 +92,21 @@ class StagedTree(EventTree):
             return nx.get_edge_attributes(self, 'posterior')
 
     def get_posterior_as_list(self):
-        self.posterior  # Access to ensure it has been created
-        prior_list = []
-        for node in list(self):
+        posterior_list = []
+        prev_node = list(self.posterior)[0][0]
+        succ_list = []
 
-            succ_list = []
-            for _, succ_dict in self.succ[node].items():
-                succ_list.append(succ_dict['posterior'])
+        for edge, posterior in self.posterior.items():
+            node = edge[0]
+            if node != prev_node:
+                posterior_list.append(succ_list)
+                succ_list = []
+            succ_list.append(posterior)
+            prev_node = node
 
-            if succ_list != []:
-                prior_list.append(succ_list)
-
-        return prior_list
+        if succ_list != []:
+            posterior_list.append(succ_list)
+        return posterior_list
 
     @property
     def alpha(self):
@@ -222,7 +227,7 @@ class StagedTree(EventTree):
 
         for node in self.situations:
             labels = [
-                self.edge_labels[edge] for edge in self.edges
+                edge[2] for edge in self.edges
                 if edge[0] == node
             ]
             labels.sort()

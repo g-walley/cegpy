@@ -12,7 +12,7 @@ import networkx as nx
 logger = logging.getLogger('pyceg.event_tree')
 
 
-class EventTree(nx.DiGraph):
+class EventTree(nx.MultiDiGraph):
     """
     Class for event trees.
 
@@ -180,12 +180,6 @@ class EventTree(nx.DiGraph):
                     raise ValueError(error_str)
 
     @property
-    def edge_labels(self) -> dict:
-        """Once event has been created, a dict of all
-        edge labels can be obtained with this function"""
-        return nx.get_edge_attributes(self, 'label')
-
-    @property
     def situations(self) -> list:
         """Returns list of event tree situations.
         (non-leaf nodes)"""
@@ -252,9 +246,8 @@ class EventTree(nx.DiGraph):
     def _generate_pdp_graph(self):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        for edge, label in self.edge_labels.items():
-            count = self[edge[0]][edge[1]]['count']
-            edge_details = label + '\n' + str(count)
+        for edge, count in self.edge_counts.items():
+            edge_details = edge[2] + '\n' + str(count)
 
             graph.add_edge(
                 pdp.Edge(
@@ -390,15 +383,15 @@ class EventTree(nx.DiGraph):
             if path[:-1] in edge_labels_list:
                 path_edge_comes_from = edge_labels_list.index(path[:-1])
                 self.add_edge(
-                    u_of_edge=node_list[path_edge_comes_from],
-                    v_of_edge=node_list[edge_labels_list.index(path)],
-                    label=path[-1],
+                    u_for_edge=node_list[path_edge_comes_from],
+                    v_for_edge=node_list[edge_labels_list.index(path)],
+                    key=path[-1],
                     count=count
                 )
             else:
                 self.add_edge(
-                    u_of_edge=node_list[0],
-                    v_of_edge=node_list[edge_labels_list.index(path)],
-                    label=path[-1],
+                    u_for_edge=node_list[0],
+                    v_for_edge=node_list[edge_labels_list.index(path)],
+                    key=path[-1],
                     count=count
                 )

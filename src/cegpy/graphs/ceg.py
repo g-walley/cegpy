@@ -23,7 +23,6 @@ class ChainEventGraph(nx.MultiDiGraph):
     def __init__(self, incoming_graph_data,
                  node_prefix='w', sink_suffix='inf', **attr):
         super().__init__(incoming_graph_data, **attr)
-
         self.sink_suffix = sink_suffix
         self.node_prefix = node_prefix
         # rename root node:
@@ -286,6 +285,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                         self.add_edge(
                             pred_node,
                             self.sink_node,
+                            key=edge['label'],
                             label=edge['label'],
                             count=edge['count'],
                             prior=edge['prior'],

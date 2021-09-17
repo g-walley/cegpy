@@ -20,7 +20,6 @@ class TestEventTree():
         """Tests the function that is checking the sampling zero paths param"""
         szp = [('Medium',), ('Medium', 'High')]
         assert self.et._EventTree__check_sampling_zero_paths_param(szp) == szp
-
         szp = [1, 2, 3, 4]
         assert self.et._EventTree__check_sampling_zero_paths_param(szp) is None
 

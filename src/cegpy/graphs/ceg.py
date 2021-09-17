@@ -2,7 +2,6 @@ import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
 import itertools as it
-import collections
 
 from ..utilities.util import Util
 from IPython.display import Image
@@ -22,10 +21,8 @@ class ChainEventGraph(nx.MultiDiGraph):
     def __init__(self, incoming_graph_data=None, **attr):
         super().__init__(incoming_graph_data, **attr)
         self.incoming_graph_data = incoming_graph_data
-        node_prefix = 'w'
-        sink_suffix = 'inf'
-        self.sink_suffix = sink_suffix
-        self.node_prefix = node_prefix
+        self.sink_suffix = '&infin;'
+        self.node_prefix = 'w'
 
         if incoming_graph_data is not None:
             try:
@@ -199,7 +196,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                                 prior=new_edge_data['prior'],
                                 posterior=new_edge_data['posterior'],
                                 probability=new_edge_data['probability']
-                        )
+                            )
                         except KeyError:
                             self.add_edge(
                                 u_for_edge=new_node,
@@ -290,7 +287,9 @@ class ChainEventGraph(nx.MultiDiGraph):
     def create_figure(self, filename):
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        edge_probabilities = list(self.edges(data='probability', default=1, keys=True))
+        edge_probabilities = list(
+            self.edges(data='probability', default=1, keys=True)
+        )
 
         for (u, v, k, p) in edge_probabilities:
             full_label = "{}\n{:.2f}".format(k, p)
@@ -310,11 +309,11 @@ class ChainEventGraph(nx.MultiDiGraph):
                 fill_colour = self.nodes[node]['colour']
             except KeyError:
                 fill_colour = 'white'
-
+            label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
                     name=node,
-                    label=node,
+                    label=label,
                     style='filled',
                     fillcolor=fill_colour
                 )

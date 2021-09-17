@@ -12,7 +12,7 @@ import os.path
 class TestUnitCEG(object):
     def setup(self):
         self.node_prefix = 'w'
-        self.sink_suffix = 'inf'
+        self.sink_suffix = '&infin;'
         df_path = Path(__file__).resolve(
             ).parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
@@ -25,7 +25,7 @@ class TestUnitCEG(object):
         self.ceg = ChainEventGraph(
             incoming_graph_data=self.st,
             # node_prefix='w',
-            # sink_suffix='inf'
+            # sink_suffix='&infin;'
         )
 
     def test_node_name_generation(self):
@@ -161,7 +161,7 @@ class TestUnitCEG(object):
     def test_generation(self) -> None:
         self.ceg.generate()
         path_list = self.ceg.path_list
-        nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'winf']
+        nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'w&infin;']
 
         subgraph = self.ceg.subgraph(nodes).copy()
         fname = Util.create_path('out/Subgraph_test', True, 'pdf')
@@ -172,7 +172,7 @@ class TestUnitCEG(object):
 class TestEvidence(object):
     def setup(self):
         G = nx.MultiDiGraph()
-        nodes = ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'winf']
+        nodes = ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w&infin;']
         edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w1', 'b'),
@@ -190,8 +190,8 @@ class TestEvidence(object):
             ('w5', 'w7', 'n'),
             ('w6', 'w7', 'o'),
             ('w7', 'w8', 'p'),
-            ('w8', 'winf', 'q'),
-            ('w4', 'winf', 'r'),
+            ('w8', 'w&infin;', 'q'),
+            ('w4', 'w&infin;', 'r'),
             ('w0', 'w3', 's')
         ]
         G.add_nodes_from(nodes)
@@ -252,7 +252,7 @@ class TestEvidence(object):
         fname = Util.create_path('out/Evidence_pre_test', False, 'pdf')
         self.evidence._Evidence__graph.create_figure(fname)
         update_path_lists()
-        self.evidence.add_edge('w8', 'winf', 'q', Evidence.CERTAIN)
+        self.evidence.add_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
         self.evidence.add_vertex('w4', Evidence.CERTAIN)
         reduced = self.evidence.reduced_graph
         fname = Util.create_path('out/Evidence_test_certain', False, 'pdf')
@@ -260,25 +260,25 @@ class TestEvidence(object):
 
         expected_paths = [
             [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
-                ('w8', 'winf', 'q')]
+                ('w8', 'w&infin;', 'q')]
         ]
         for path in expected_paths:
             assert path in self.evidence.path_list
         assert len(expected_paths) == len(self.evidence.path_list)
 
-        self.evidence.remove_edge('w8', 'winf', 'q', Evidence.CERTAIN)
+        self.evidence.remove_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
         self.evidence.remove_vertex('w4', Evidence.CERTAIN)
         update_path_lists()
         self.evidence.add_vertex('w6', Evidence.UNCERTAIN)
@@ -289,25 +289,25 @@ class TestEvidence(object):
 
         expected_paths = [
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'winf', 'q')],
+                ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'winf', 'q')],
+                ('w8', 'w&infin;', 'q')],
             [('w0', 'w5', 'j'), ('w5', 'w6', 'm'), ('w6', 'w7', 'o'),
-                ('w7', 'w8', 'p'), ('w8', 'winf', 'q')],
+                ('w7', 'w8', 'p'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w6', 'l'), ('w6', 'w7', 'o'), ('w7', 'w8', 'p'),
-                ('w8', 'winf', 'q')],
+                ('w8', 'w&infin;', 'q')],
             [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
-                ('w8', 'winf', 'q')],
-            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'winf', 'r')],
-            [('w0', 'w3', 's'), ('w3', 'w8', 'h'), ('w8', 'winf', 'q')]
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w&infin;', 'r')],
+            [('w0', 'w3', 's'), ('w3', 'w8', 'h'), ('w8', 'w&infin;', 'q')]
         ]
         for path in expected_paths:
             assert path in self.evidence.path_list
@@ -327,25 +327,25 @@ class TestEvidence(object):
 
         expected_paths = [
             [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
             [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
             [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'winf', 'q')],
+                ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'winf', 'q')],
+                ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'winf', 'q')],
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
             [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'winf', 'r')],
+                ('w4', 'w&infin;', 'r')],
         ]
         for path in expected_paths:
             assert path in self.evidence.path_list

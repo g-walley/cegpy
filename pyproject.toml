@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [tool.pytest.ini_options]
 addopts = "-n4"
-testpaths = [
-    "tests",
-    "integration",
-]
+# testpaths = [
+#     "tests",
+#     "integration",
+# ]

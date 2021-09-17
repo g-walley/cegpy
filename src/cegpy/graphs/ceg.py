@@ -187,17 +187,28 @@ class ChainEventGraph(nx.MultiDiGraph):
                             t1_edge['prior'] + t2_edge['prior']
                         new_edge_data['posterior'] = \
                             t1_edge['posterior'] + t2_edge['posterior']
-                        new_edge_data['probability'] = \
-                            t1_edge['probability']
-                        self.add_edge(
-                            u_for_edge=new_node,
-                            v_for_edge=succ,
-                            key=label,
-                            count=new_edge_data['count'],
-                            prior=new_edge_data['prior'],
-                            posterior=new_edge_data['posterior'],
-                            probability=new_edge_data['probability']
+                        try:
+
+                            new_edge_data['probability'] = \
+                                t1_edge['probability']
+                            self.add_edge(
+                                u_for_edge=new_node,
+                                v_for_edge=succ,
+                                key=label,
+                                count=new_edge_data['count'],
+                                prior=new_edge_data['prior'],
+                                posterior=new_edge_data['posterior'],
+                                probability=new_edge_data['probability']
                         )
+                        except KeyError:
+                            self.add_edge(
+                                u_for_edge=new_node,
+                                v_for_edge=succ,
+                                key=label,
+                                count=new_edge_data['count'],
+                                prior=new_edge_data['prior'],
+                                posterior=new_edge_data['posterior']
+                            )
                         ebunch_to_remove.append((temp_1, succ, label))
                         ebunch_to_remove.append((temp_2, succ, label))
 
@@ -428,6 +439,10 @@ class ChainEventGraph(nx.MultiDiGraph):
                     for edge_label, edge in edges.items():
                         # Create new edge that points to the sink node,
                         # with all the same data as the edge we will delete.
+                        try:
+                            prob = edge['probability']
+                        except KeyError:
+                            prob = 1
                         self.add_edge(
                             pred_node,
                             self.sink_node,
@@ -435,12 +450,15 @@ class ChainEventGraph(nx.MultiDiGraph):
                             count=edge['count'],
                             prior=edge['prior'],
                             posterior=edge['posterior'],
-                            probability=edge['probability']
+                            probability=prob
                         )
                 self.remove_node(node)
 
 
 class Evidence:
+    CERTAIN = True
+    UNCERTAIN = False
+
     def __init__(self, graph):
         self.__graph = graph
 
@@ -485,6 +503,47 @@ class Evidence:
     @vertices.setter
     def vertices(self, value):
         self._vertices = value
+
+    def add_edge(self, u, v, label, certain):
+        edge = (u, v, label)
+        if certain:
+            self.certain_edges.append(edge)
+        else:
+            self.uncertain_edges.append(edge)
+
+    def add_edges_from(self, edges, certain):
+        for (u, v, k) in edges:
+            self.add_edge(u, v, k, certain)
+
+    def remove_edge(self, u, v, label, certain):
+        if certain:
+            self.certain_edges.remove((u, v, label))
+        else:
+            self.uncertain_edges.remove((u, v, label))
+
+    def remove_edges_from(self, edges, certain):
+        for (u, v, k) in edges:
+            self.remove_edge(u, v, k, certain)
+
+    def add_vertex(self, vertex, certain):
+        if certain:
+            self.certain_vertices.add(vertex)
+        else:
+            self.uncertain_vertices.add(vertex)
+
+    def add_vertices_from(self, vertices, certain):
+        for vertex in vertices:
+            self.add_vertex(vertex, certain)
+
+    def remove_vertex(self, vertex, certain):
+        if certain:
+            self.certain_vertices.remove(vertex)
+        else:
+            self.uncertain_vertices.remove(vertex)
+
+    def remove_vertices_from(self, vertices, certain):
+        for vertex in vertices:
+            self.remove_vertex(vertex, certain)
 
     def __repr__(self) -> str:
         repr = "Evidence(CertainEdges={}, CertainVertices={}," +\
@@ -536,30 +595,69 @@ class Evidence:
             for path in paths_to_remove:
                 paths_list.remove(path)
 
-        path_list = self.__graph.path_list.copy()
-        paths_to_remove = []
-        for edge in self.certain_edges:
-            for path in path_list:
-                if edge not in path:
-                    paths_to_remove.append(path)
+        # Certain Evidence
+        certain_path_list = self.__graph.path_list.copy()
+        # Uncertain Evidence
+        uncertain_path_list = self.__graph.path_list.copy()
 
-        remove_paths(path_list, paths_to_remove)
-        paths_to_remove = []
-        for vertex in self.certain_vertices:
-            for path in path_list:
-                vertex_in_path = False
-                for (u, v, _) in path:
-                    if vertex == u or vertex == v:
-                        vertex_in_path = True
-                        break
+        if self.certain_edges or self.certain_vertices:
+            # Apply certain Edges
+            paths_to_remove = []
+            for edge in self.certain_edges:
+                for path in certain_path_list:
+                    if edge not in path:
+                        paths_to_remove.append(path)
 
-                if not vertex_in_path:
-                    paths_to_remove.append(path)
+            remove_paths(certain_path_list, paths_to_remove)
 
-        remove_paths(path_list, paths_to_remove)
-        paths_to_remove = []
+            # Apply certain vertices
+            paths_to_remove = []
+            for vertex in self.certain_vertices:
+                for path in certain_path_list:
+                    vertex_in_path = False
+                    for (u, v, _) in path:
+                        if vertex == u or vertex == v:
+                            vertex_in_path = True
+                            break
 
-        self.path_list = path_list
+                    if not vertex_in_path:
+                        paths_to_remove.append(path)
+
+            remove_paths(certain_path_list, paths_to_remove)
+
+        if self.uncertain_edges or self.uncertain_vertices:
+            # Apply uncertain Edges
+            paths_to_include = []
+            for edge in self.uncertain_edges:
+                for path in uncertain_path_list:
+                    if edge in path:
+                        paths_to_include.append(path)
+
+            # Apply uncertain Vertices
+            for vertex in self.uncertain_vertices:
+                for path in uncertain_path_list:
+                    vertex_in_path = False
+                    for (u, v, _) in path:
+                        if vertex == u or vertex == v:
+                            vertex_in_path = True
+                            break
+
+                    if vertex_in_path:
+                        paths_to_include.append(path)
+
+            uncertain_path_list = paths_to_include
+
+        # Take paths that are found in both certain and uncertain lists
+        if not self.uncertain_edges and not self.uncertain_vertices:
+            self.path_list = certain_path_list
+        elif not self.certain_edges and not self.certain_vertices:
+            self.path_list = uncertain_path_list
+        else:
+            new_path_list = []
+            for path in certain_path_list:
+                if path in uncertain_path_list:
+                    new_path_list.append(path)
+            self.path_list = new_path_list
 
     def __update_edges_and_vertices(self):
         edges = set()
@@ -585,28 +683,3 @@ class Evidence:
             return True
         else:
             return False
-
-    def add_edge(self, u, v, label, certain):
-        edge = (u, v, label)
-        if certain:
-            self.certain_edges.append(edge)
-        else:
-            self.uncertain_edges.append(edge)
-
-    def remove_edge(self, u, v, label, certain):
-        if certain:
-            self.certain_edges.remove((u, v, label))
-        else:
-            self.uncertain_edges.remove((u, v, label))
-
-    def add_vertex(self, vertex, certain):
-        if certain:
-            self.certain_vertices.add(vertex)
-        else:
-            self.uncertain_vertices.add(vertex)
-
-    def remove_vertex(self, vertex, certain):
-        if certain:
-            self.certain_vertices.remove(vertex)
-        else:
-            self.uncertain_vertices.remove(vertex)

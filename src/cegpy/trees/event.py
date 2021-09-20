@@ -1,6 +1,4 @@
 from collections import defaultdict
-# from typing import OrderedDict
-# import pandas as pd
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -9,188 +7,203 @@ from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
 import textwrap
+import networkx as nx
 # create logger object for this module
 logger = logging.getLogger('pyceg.event_tree')
 
 
-class EventTree(object):
-    """Creates event trees from pandas dataframe."""
-    def __init__(self, params) -> None:
+class EventTree(nx.MultiDiGraph):
+    """
+    Class for event trees.
+
+    This class extends the networkx DiGraph class to allow the creation
+    of event trees from data provided in a pandas dataframe.
+
+    A DiGraph stores nodes and edges with optional data, or attributes.
+
+    DiGraphs hold directed edges.  Self loops are allowed but multiple
+    (parallel) edges are not.
+
+    Nodes can be arbitrary (hashable) Python objects with optional
+    key/value attributes. By convention `None` is not used as a node.
+
+    Edges are represented as links between nodes with optional
+    key/value attributes.
+
+    Parameters
+    ----------
+    dataframe : Pandas dataframe (required)
+        Dataframe containing variables as column headers, with event
+        name strings in each cell. These event names will be used to
+        create the edges of the event tree. Counts of each event will
+        be extracted and attached to each edge.
+
+    sampling_zero_paths: list of tuples containing paths to sampling
+        zeros.
+        Format is as follows: \
+            [('edge_1',), ('edge_1', 'edge_2'), ...]
+
+    incoming_graph_data : input graph (optional, default: None)
+        Data to initialize graph.  If None (default) an empty
+        graph is created.  The data can be an edge list, or any
+        NetworkX graph object.  If the corresponding optional Python
+        packages are installed the data can also be a NumPy matrix
+        or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+
+    attr : keyword arguments, optional (default= no attributes)
+        Attributes to add to graph as key=value pairs.
+
+    See Also
+    --------
+    StagedTrees \n
+    ChainEventGraph
+
+    Examples
+    --------
+    >>> G = nx.Graph()  # or DiGraph, MultiGraph, MultiDiGraph, etc
+    >>> G = nx.Graph(name="my graph")
+    >>> e = [(1, 2), (2, 3), (3, 4)]  # list of edges
+    >>> G = nx.Graph(e)
+
+    Arbitrary graph attribute pairs (key=value) may be assigned
+
+    >>> G = nx.Graph(e, day="Friday")
+    >>> G.graph
+    {'day': 'Friday'}
+
+    """
+    def __init__(self, dataframe, sampling_zero_paths=None,
+                 incoming_graph_data=None, **attr) -> None:
+        """Initialize an event tree graph with edges, name, or graph attributes.
+        This class extends the networkx DiGraph class to allow the creation
+        of event trees from data provided in a pandas dataframe.
+
+        Parameters
+        ----------
+        dataframe : Pandas dataframe (required)
+            Dataframe containing variables as column headers, with event
+            name strings in each cell. These event names will be used to
+            create the edges of the event tree. Counts of each event will
+            be extracted and attached to each edge.
+
+        sampling_zero_paths: list of tuples containing paths to sampling
+            zeros.
+            Format is as follows: \
+                [('edge_1',), ('edge_1', 'edge_2'), ...]
+
+        incoming_graph_data : input graph (optional, default: None)
+            Data to initialize graph.  If None (default) an empty
+            graph is created.  The data can be an edge list, or any
+            NetworkX graph object.  If the corresponding optional Python
+            packages are installed the data can also be a NumPy matrix
+            or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+
+        attr : keyword arguments, optional (default= no attributes)
+            Attributes to add to graph as key=value pairs.
+
+        See Also
+        --------
+        convert
+
+        Examples
+        --------
+        >>> G = nx.Graph()  # or DiGraph, MultiGraph, MultiDiGraph, etc
+        >>> G = nx.Graph(name="my graph")
+        >>> e = [(1, 2), (2, 3), (3, 4)]  # list of edges
+        >>> G = nx.Graph(e)
+
+        Arbitrary graph attribute pairs (key=value) may be assigned
+
+        >>> G = nx.Graph(e, day="Friday")
+        >>> G.graph
+        {'day': 'Friday'}
+
+        """
         logger.info('Initialising')
-        self.params = params
-        self.sampling_zero_paths = None
-        self.nodes = []
-        self.leaves = None
-        self.edges = None
-        self.edge_labels = None
-        self.situations = None
-        self.emanating_nodes = None
-        self.terminating_nodes = None
-        self.variables = None
-        self.edge_counts = None
+        # Initialise Networkx DiGraph class
+        super().__init__(incoming_graph_data, **attr)
 
-        # Root node of the tree is always defined as s0.
-        self.root = 's0'
+        self.sampling_zeros = sampling_zero_paths
 
-        # Paths taken from dataframe in order of occurance
-        self.unsorted_paths = defaultdict(int)
         # Paths sorted alphabetically in order of length
-        self.sorted_paths = defaultdict(int)
+        self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self.dataframe = params.get("dataframe")
+        self._dataframe = dataframe
         # Format of event_tree dict:
 
-        self.event_tree = self._construct_event_tree()
+        self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
-    def get_root(self):
-        return self.root
+    @property
+    def root(self) -> str:
+        """Root node of the event tree.
+        Currently hard coded to 's0'"""
+        return 's0'
 
-    def get_variables(self) -> list:
-        if self.variables:
-            return self.variables
+    @property
+    def variables(self) -> list:
+        """The column headers of the dataset"""
+        vars = list(self._dataframe.columns)
+        logger.info('Variables extracted from dataframe were:')
+        logger.info(vars)
+        return vars
+
+    @property
+    def sampling_zeros(self):
+        try:
+            if self._sampling_zero_paths is None:
+                logger.info("EventTree.sampling_zero_paths \
+                        has not been set.")
+            return self._sampling_zero_paths
+        except AttributeError:
+            logger.info("something has gone seriously wrong.")
+
+    @sampling_zeros.setter
+    def sampling_zeros(self, sz_paths):
+        """Use this function to set the sampling zero paths.
+        If different to previous value, will re-generate the event tree."""
+        if sz_paths is None:
+            self._sampling_zero_paths = None
         else:
-            try:
-                self.variables = list(self.dataframe.columns)
-                logger.info('Variables extracted from dataframe were:')
-                logger.info(self.variables)
-                return self.variables
-            except AttributeError:
-                logger.critical('A require parameter \
-                                (dataframe) was not provided!')
-                raise ValueError("Required Parameter: No Dataframe provided. ")
+            # checkes if the user has inputted sz paths correctly
+            sz_paths = self.__check_sampling_zero_paths_param(sz_paths)
 
-    def get_sampling_zero_paths(self):
-        if not self.sampling_zero_paths:
-            logger.info("EventTree.get_sampling_zero_paths() \
-                        called but no paths have been set.")
+            if sz_paths:
+                self._sampling_zero_paths = sz_paths
+            else:
+                error_str = "Parameter 'sampling_zero_paths' not in expected format. \
+                             Should be a list of tuples like so:\n \
+                             [('edge_1',), ('edge_1', 'edge_2'), ...]"
+                if logger.getEffectiveLevel() is logging.DEBUG:
+                    logger.debug(error_str)
+                    raise ValueError(error_str)
 
-        return self.sampling_zero_paths
-
-    def get_edge_labels(self) -> list:
-        """Once event tree dict has been populated, a list of all
-        edge labels can be obtained with this function"""
-        if not self.edge_labels:
-            self.edge_labels = [key[0] for key in list(
-                                self.event_tree.keys())]
-
-        return self.edge_labels
-
-    def get_edges(self) -> list:
-        """Returns list of all edges in the event_tree"""
-        if not self.edges:
-            self.edges = [key[1] for key in list(
-                            self.event_tree.keys())]
-
-        return self.edges
-
-    def get_nodes(self) -> list:
-        """Returns node list"""
-        if not self.nodes:
-            self.nodes = self._create_node_list_from_paths(self.sorted_paths)
-
-        return self.nodes
-
-    def get_situations(self) -> list:
+    @property
+    def situations(self) -> list:
         """Returns list of event tree situations.
         (non-leaf nodes)"""
-        if not self.situations:
-            nodes = self.get_nodes()
-            leaves = self.get_leaves()
-            self.situations = [node for node in nodes if node not in leaves]
+        return [
+            node for node, out_degree in self.out_degree
+            if out_degree != 0
+        ]
 
-        return self.situations
-
-    def get_leaves(self) -> list:
+    @property
+    def leaves(self) -> list:
         """Returns leaves of the event tree."""
         # if not already generated, create self.leaves
-        if not self.leaves:
-            eminating_nodes = self.get_emanating_nodes()
-            edges = self.get_edges()
-            self.leaves = [edge_pair[1] for edge_pair in edges
-                           if edge_pair[1] not in eminating_nodes]
+        return [
+            node for node, out_degree in self.out_degree
+            if out_degree == 0
+        ]
 
-        return self.leaves
-
-    def get_emanating_nodes(self) -> list:
-        """Returns list of situations where edges start."""
-        # if not already generated, create self.emanating_nodes
-        if not self.emanating_nodes:
-            edges = self.get_edges()
-            self.emanating_nodes = [edge_pair[0] for edge_pair in edges]
-
-        return self.emanating_nodes
-
-    def get_terminating_nodes(self) -> list:
-        """Returns list of suations where edges terminate."""
-        if not self.terminating_nodes:
-            edges = self.get_edges()
-            self.terminating_nodes = [edge_pair[1] for edge_pair in edges]
-
-        return self.terminating_nodes
-
-    def get_edge_counts(self) -> list:
+    @property
+    def edge_counts(self) -> dict:
         '''list of counts along edges. Indexed same as edges and edge_labels'''
-        if not self.edge_counts:
-            tree = self.event_tree
-            self.edge_counts = [tree[x] for x in list(tree.keys())]
+        return nx.get_edge_attributes(self, 'count')
 
-        return self.edge_counts
-
-    def get_event_tree(self) -> dict:
-        return self.event_tree
-
-    def _generate_graph(self, colours=None):
-        node_list = self.get_nodes()
-        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        for key, count in self.event_tree.items():
-            # edge_index = self.edges.index(edge)
-            path = key[0]
-            edge = key[1]
-            edge_details = str(path[-1]) + '\n' + str(count)
-
-            graph.add_edge(
-                pdp.Edge(
-                    edge[0],
-                    edge[1],
-                    label=edge_details,
-                    labelfontcolor="#009933",
-                    fontsize="10.0",
-                    color="black"
-                )
-            )
-
-        for node in node_list:
-            if colours:
-                fill_colour = colours[node]
-            else:
-                fill_colour = 'lightgrey'
-
-            graph.add_node(
-                pdp.Node(
-                    name=node,
-                    label=node,
-                    style="filled",
-                    fillcolor=fill_colour))
-        return graph
-
-    def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
-        filename, filetype = Util.generate_filename_and_mkdir(filename)
-        logger.info("--- generating graph ---")
-        graph = self._generate_graph()
-        logger.info("--- writing " + filetype + " file ---")
-        graph.write(str(filename), format=filetype)
-
-        if get_ipython() is None:
-            return None
-        else:
-            logger.info("--- Exporting graph to notebook ---")
-            return Image(graph.create_png())
-
-    def get_categories_per_variable(self) -> dict:
+    @property
+    def categories_per_variable(self) -> dict:
         '''list of number of unique categories/levels for each variable
         (a column in the df)'''
         def display_nan_warning():
@@ -208,11 +221,11 @@ class EventTree(object):
             )
 
         categories_to_ignore = {"N/A", "NA", "n/a", "na", "NAN", "nan"}
-        catagories_per_variable = {}
+        self._catagories_per_variable = {}
         nans_filtered = False
 
-        for var in self.get_variables():
-            categories = set(self.dataframe[var].unique().tolist())
+        for var in self.variables:
+            categories = set(self._dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
             if pd_filtered_categories != categories:
@@ -223,40 +236,67 @@ class EventTree(object):
             if pd_filtered_categories != filtered_cats:
                 nans_filtered = True
 
-            catagories_per_variable[var] = len(filtered_cats)
+            self._catagories_per_variable[var] = len(filtered_cats)
 
         if nans_filtered:
             display_nan_warning()
 
-        return catagories_per_variable
+        return self._catagories_per_variable
 
-    def _set_sampling_zero_paths(self, sz_paths):
-        """Use this function to set the sampling zero paths.
-        If different to previous value, will re-generate the event tree."""
-        if sz_paths is None:
-            self.sampling_zero_paths = None
+    def _generate_pdp_graph(self):
+        node_list = list(self)
+        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
+        for edge, count in self.edge_counts.items():
+            edge_details = edge[2] + '\n' + str(count)
+
+            graph.add_edge(
+                pdp.Edge(
+                    edge[0],
+                    edge[1],
+                    label=edge_details,
+                    labelfontcolor="#009933",
+                    fontsize="10.0",
+                    color="black"
+                )
+            )
+
+        for node in node_list:
+            try:
+                fill_colour = self.nodes[node]['colour']
+            except KeyError:
+                fill_colour = 'lightgrey'
+
+            graph.add_node(
+                pdp.Node(
+                    name=node,
+                    label=node,
+                    style="filled",
+                    fillcolor=fill_colour))
+        return graph
+
+    def create_figure(self, filename):
+        """Draws the event tree for the process described by the dataset,
+        and saves it to <filename>.png"""
+        filename, filetype = Util.generate_filename_and_mkdir(filename)
+        logger.info("--- generating graph ---")
+        graph = self._generate_pdp_graph()
+        logger.info("--- writing " + filetype + " file ---")
+        graph.write(str(filename), format=filetype)
+
+        if get_ipython() is None:
+            return None
         else:
-            # checkes if the user has inputted sz paths correctly
-            sz_paths = self._check_sampling_zero_paths_param(sz_paths)
+            logger.info("--- Exporting graph to notebook ---")
+            return Image(graph.create_png())
 
-            if sz_paths:
-                self.sampling_zero_paths = sz_paths
-            else:
-                error_str = "Parameter 'sampling_zero_paths' not in expected format. \
-                             Should be a list of tuples like so:\n \
-                             [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                if logger.getEffectiveLevel() is logging.DEBUG:
-                    logger.debug(error_str)
-                    raise ValueError(error_str)
-
-    def _create_unsorted_paths_dict(self) -> defaultdict:
+    def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,
         in the order in which they are given."""
         unsorted_paths = defaultdict(int)
 
-        for variable_number in range(0, len(self.get_variables())):
-            dataframe_upto_variable = self.dataframe.loc[
-                :, self.get_variables()[0:variable_number+1]]
+        for variable_number in range(0, len(self.variables)):
+            dataframe_upto_variable = self._dataframe.loc[
+                :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():
                 row = row[1:]
@@ -269,33 +309,30 @@ class EventTree(object):
 
                 # checking if the last edge label in row was nan. That would
                 # result in double counting nan must be identified as string
-                if (row[-1] != np.nan and
-                   str(row[-1]) != 'NaN' and
-                   str(row[-1]) != 'nan' and
-                   row[-1] != ''):
+                if (row[-1] != np.nan and str(row[-1]) != 'NaN' and
+                   str(row[-1]) != 'nan' and row[-1] != ''):
                     unsorted_paths[new_row] += 1
 
         return unsorted_paths
 
-    def _create_path_dict_entries(self):
+    def __create_path_dict_entries(self):
         '''Create path dict entries for each path, including the
         sampling zero paths if any.
         Each path is an ordered sequence of edge labels starting
         from the root.
         The keys in the dict are ordered alphabetically.
-        Also calls the method self.sampling zeros to ensure
+        Also calls the method self._sampling_zeros to ensure
         manually added path format is correct.
         Added functionality to remove NaN/null edge labels
         assuming they are structural zeroes'''
+        unsorted_paths = self.__create_unsorted_paths_dict()
 
-        self.unsorted_paths = self._create_unsorted_paths_dict()
+        if self.sampling_zeros is not None:
+            unsorted_paths = Util.create_sampling_zeros(
+                self.sampling_zeros, unsorted_paths)
 
-        if self.sampling_zero_paths is not None:
-            self.unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zero_paths, self.unsorted_paths)
-
-        depth = len(max(list(self.unsorted_paths.keys()), key=len))
-        keys_of_list = list(self.unsorted_paths.keys())
+        depth = len(max(list(unsorted_paths.keys()), key=len))
+        keys_of_list = list(unsorted_paths.keys())
         sorted_keys = []
         for deep in range(0, depth + 1):
             unsorted_mini_list = [key for key in keys_of_list if
@@ -303,9 +340,12 @@ class EventTree(object):
             sorted_keys = sorted_keys + sorted(unsorted_mini_list)
 
         for key in sorted_keys:
-            self.sorted_paths[key] = self.unsorted_paths[key]
+            self._sorted_paths[key] = unsorted_paths[key]
 
-    def _check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
+        node_list = self.__create_node_list_from_paths(self._sorted_paths)
+        self.add_nodes_from(node_list)
+
+    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
         """Check param 'sampling_zero_paths' is in the correct format"""
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
@@ -316,46 +356,42 @@ class EventTree(object):
 
         return sampling_zero_paths
 
-    def _create_node_list_from_paths(self, paths) -> list:
+    def __create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
-        node_list = [self.root]  # root node
+        node_list = [self.root]
 
         for vertex_number, _ in enumerate(list(paths.keys()), start=1):
             node_list.append('s%d' % vertex_number)
 
         return node_list
 
-    def _construct_event_tree(self) -> defaultdict:
-        """Constructs event_tree dictionary.
-        Format of the dictionary is:
-        {
-            key:	(('path','to','leaf'), ('s4','s5')):
-            value:	<Edge counts>
-        }
+    def __construct_event_tree(self):
+        """Constructs event_tree DiGraph.
+        Takes the paths, and adds all the nodes and edges to the Graph"""
 
-        A key constructed from a tuple containing a tuple(path to leaf),
-        and a tuple(eminating node, terminating node)."""
         logger.info('Starting construction of event tree')
-        self._set_sampling_zero_paths(self.params.get('sampling_zero_paths'))
-        self._create_path_dict_entries()
-        node_list = self.get_nodes()
-
-        # sampling zeros paths added manually via parameters
-        event_tree = defaultdict(int)
+        self.__create_path_dict_entries()
+        # Taking a list of a networkx graph object (self) provides a list
+        # of all the nodes
+        node_list = list(self)
 
         # Work through the sorted paths list to build the event tree.
         edge_labels_list = ['root']
-        edges_list = []
-        for path in list(self.sorted_paths.keys()):
+        for path, count in list(self._sorted_paths.items()):
             path = list(path)
             edge_labels_list.append(path)
             if path[:-1] in edge_labels_list:
                 path_edge_comes_from = edge_labels_list.index(path[:-1])
-                edges_list.append([node_list[path_edge_comes_from],
-                                   node_list[edge_labels_list.index(path)]])
+                self.add_edge(
+                    u_for_edge=node_list[path_edge_comes_from],
+                    v_for_edge=node_list[edge_labels_list.index(path)],
+                    key=path[-1],
+                    count=count
+                )
             else:
-                edges_list.append([node_list[0],
-                                   node_list[edge_labels_list.index(path)]])
-            event_tree[((*path,),
-                       (*edges_list[-1],))] = self.sorted_paths[tuple(path)]
-        return event_tree
+                self.add_edge(
+                    u_for_edge=node_list[0],
+                    v_for_edge=node_list[edge_labels_list.index(path)],
+                    key=path[-1],
+                    count=count
+                )

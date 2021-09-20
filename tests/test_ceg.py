@@ -1,59 +1,48 @@
 from ..src.cegpy.graphs.ceg import ChainEventGraph
+from ..src.cegpy.graphs.ceg import Evidence
 from ..src.cegpy.trees.staged import StagedTree
 from ..src.cegpy.utilities.util import Util
 # from collections import defaultdict
 from pathlib import Path
+import networkx as nx
 import pandas as pd
+import os.path
 
 
-class TestCEG(object):
+class TestUnitCEG(object):
     def setup(self):
+        self.node_prefix = 'w'
+        self.sink_suffix = '&infin;'
         df_path = Path(__file__).resolve(
             ).parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
-        st_params = {
-            'dataframe': pd.read_excel(df_path)
-        }
-        self.st = StagedTree(st_params)
+
+        self.st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name="medical_staged"
+        )
         self.st.calculate_AHC_transitions()
         self.ceg = ChainEventGraph(
-            staged_tree=self.st,
-            root='s0'
+            incoming_graph_data=self.st,
+            # node_prefix='w',
+            # sink_suffix='&infin;'
         )
 
-    def test_integration(self):
-
-        self.ceg._create_graph_representation()
-
-    def test_create_graph_representation(self) -> None:
-        nodes = self.st.get_nodes()
-        edges = self.st.get_edges()
-        edge_labels = self.st.get_edge_labels()
-
-        # check that all nodes exist
-        for node in nodes:
-            assert self.ceg.graph['nodes'].get(node) is not None
-
-        # check edges were created correctly
-        for idx, edge in enumerate(edges):
-            edge_list = self.ceg.graph['edges'].get(edge)
-            src, dest = edge
-            assert edge_list is not None
-            label_found = False
-            for elem in edge_list:
-                label_found = True \
-                    if elem['label'] == edge_labels[idx][-1] \
-                    else False
-                assert src == elem['src']
-                assert dest == elem['dest']
-            assert label_found
+    def test_node_name_generation(self):
+        prefix = self.ceg.node_prefix
+        largest = 20
+        node_names = [
+            self.ceg._ChainEventGraph__get_next_node_name()
+            for _ in range(0, largest)
+        ]
+        assert (prefix + '1') == node_names[0]
+        assert (prefix + str(largest)) == node_names[largest - 1]
 
     def test_trim_leaves_from_graph(self) -> None:
-        _ = self.ceg._trim_leaves_from_graph(self.ceg.graph)
-        leaves = self.st.get_leaves()
-        for leaf in leaves:
+        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        for leaf in self.st.leaves:
             try:
-                self.ceg.graph['nodes'][leaf]
+                self.ceg.nodes[leaf]
                 leaf_removed = False
 
             except KeyError:
@@ -61,23 +50,19 @@ class TestCEG(object):
 
             assert leaf_removed
 
-            for edge_list_key in self.ceg.graph['edges'].keys():
+            for edge_list_key in self.ceg.edges.keys():
                 assert edge_list_key[1] != leaf
 
-    def test_identify_root_node(self) -> None:
-        root = self.ceg._identify_root_node(self.ceg.graph)
-        assert root == 's0'
-
     def test_update_distances_of_nodes_to_sink(self) -> None:
-        def create_node_dist_dict(graph) -> dict:
-            node_dists = {}
-            for key in graph['nodes'].keys():
-                node_dists[key] = graph['nodes'][key]['max_dist_to_sink']
-            return node_dists
-
-        med_graph = self.ceg.graph.copy()
+        def check_distances():
+            actual_node_dists = \
+                nx.get_node_attributes(self.ceg, 'max_dist_to_sink')
+            for node, distance in actual_node_dists.items():
+                assert distance == expected_node_dists[node]
+        root_node = self.node_prefix + '0'
+        sink_node = self.node_prefix + self.sink_suffix
         expected_node_dists = {
-            's0': 4,
+            root_node: 4,
             's1': 3,
             's2': 3,
             's3': 2,
@@ -98,63 +83,20 @@ class TestCEG(object):
             's18': 1,
             's19': 1,
             's20': 1,
-            's21': 0,
-            's22': 0,
-            's23': 0,
-            's24': 0,
-            's25': 0,
-            's26': 0,
-            's27': 0,
-            's28': 0,
-            's29': 0,
-            's30': 0,
-            's31': 0,
-            's32': 0,
-            's33': 0,
-            's34': 0,
-            's35': 0,
-            's36': 0,
-            's37': 0,
-            's38': 0,
-            's39': 0,
-            's40': 0,
-            's41': 0,
-            's42': 0,
-            's43': 0,
-            's44': 0
+            sink_node: 0
         }
-        self.ceg._update_distances_of_nodes_to_sink(
-            med_graph, self.st.get_leaves().copy()
-        )
-        actual_node_dists = create_node_dist_dict(med_graph)
-        assert actual_node_dists == expected_node_dists
+        nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
+        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        check_distances()
 
-        new_edge_1 = ('s3', 's24')
-        new_edge_2 = ('s1', 's29')
         # Add another edge to the dictionary, to show that the path is max,
         # and not min distance to sink
-        med_graph['edges'][new_edge_1] = [
-            self.ceg._create_new_edge(
-                src=new_edge_1[0], dest=new_edge_2[1], label='new_edge_1'
-            )
-        ]
-        med_graph['nodes'][new_edge_1[1]]['ingoing_edges'].append(new_edge_1)
-        med_graph['nodes'][new_edge_1[0]]['outgoing_edges'].append(new_edge_1)
-
-        # Add a second edge to the dictionary
-        med_graph['edges'][new_edge_2] = [
-            self.ceg._create_new_edge(
-                src=new_edge_2[0], dest=new_edge_2[1], label='new_edge_2'
-            )
-        ]
-        med_graph['nodes'][new_edge_2[1]]['ingoing_edges'].append(new_edge_2)
-        med_graph['nodes'][new_edge_2[0]]['outgoing_edges'].append(new_edge_2)
-
-        self.ceg._update_distances_of_nodes_to_sink(
-            med_graph, self.st.get_leaves().copy()
-        )
-        actual_node_dists = create_node_dist_dict(med_graph)
-        assert actual_node_dists == expected_node_dists
+        self.ceg.add_edge('s3', self.ceg.sink_node)
+        self.ceg.add_edge('s1', self.ceg.sink_node)
+        self.ceg.add_edge('s2', 's10')
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
         expected_nodes = {
@@ -166,11 +108,13 @@ class TestCEG(object):
             2: ['s3', 's4', 's5', 's6', 's7', 's8'],
             3: ['s1', 's2']
         }
-
-        nodes_gen = self.ceg._gen_nodes_with_increasing_distance(
-            graph=self.ceg.graph,
-            start=0
-        )
+        nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
+        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        nodes_gen = self.ceg.\
+            _ChainEventGraph__gen_nodes_with_increasing_distance(
+                start=0
+            )
 
         for nodes in range(len(expected_nodes)):
             expected_node_list = expected_nodes[nodes]
@@ -178,170 +122,231 @@ class TestCEG(object):
             assert actual_node_list.sort() == expected_node_list.sort()
 
     def test_creation_of_ceg(self) -> None:
-        self.ceg.generate_CEG()
-        # path = Util.create_path('out/medical_dm_CEG', True, 'pdf')
-        # string = self.ceg.get_evidence_str()
-        # self.ceg.create_figure(path)
-        pass
+        self.ceg.generate()
+        fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
+        self.ceg.create_figure(fname)
+        assert os.path.isfile(fname)
 
     def test_adding_evidence(self) -> None:
-        certain_variables = {
-            self.st.get_variables()[1]: 'Experienced'
-        }
-        try:
-            self.ceg.add_evidence(
-                type_of_evidence='variables',
-                evidence=certain_variables,
-                certain=True
-            )
-            assert False  # We shouldn't be able to add variables!
-        except ValueError:
-            pass
-
-        certain_edges = {
-            ('s1', 's3'): 'Experienced',
-            ('s3', 's12'): 'Hard'
-        }
-        self.ceg.add_evidence(
-            type_of_evidence='edges',
-            evidence=certain_edges,
-            certain=True
-        )
+        certain_edges = [
+            ('w1', 'w4', 'Experienced'),
+            ('w4', 'w10', 'Hard'),
+        ]
+        for (u, v, k) in certain_edges:
+            self.ceg.evidence.add_edge(u, v, k, Evidence.CERTAIN)
+            assert (u, v, k) in self.ceg.evidence.certain_edges
 
         certain_vertices = {
-            's3', 's12'
+            'w4', 'w10'
         }
-        self.ceg.add_evidence(
-            type_of_evidence='vertices',
-            evidence=certain_vertices,
-            certain=True
-        )
+        for vertex in certain_vertices:
+            self.ceg.evidence.add_vertex(vertex, Evidence.CERTAIN)
+            assert vertex in self.ceg.evidence.certain_vertices
 
-        uncertain_variables = {
-            self.st.get_variables()[1]: ['Inexperienced', 'Novice'],
-            self.st.get_variables()[2]: ['Easy']
-        }
-        try:
-            self.ceg.add_evidence(
-                type_of_evidence='variables',
-                evidence=uncertain_variables,
-                certain=False
-            )
-            assert False  # We shouldn't be able to add variables!
-        except ValueError:
-            pass
-
-        uncertain_edges = {
-            ('s2', 's8'): 'Experienced',
-            ('s6', 's15'): 'Hard'
-        }
-        self.ceg.add_evidence(
-            type_of_evidence='edges',
-            evidence=uncertain_edges,
-            certain=False
-        )
+        uncertain_edges = [
+            ('w2', 'w5', 'Experienced'),
+            ('w2', 'w6', 'Novice')
+        ]
+        for (u, v, k) in uncertain_edges:
+            self.ceg.evidence.add_edge(u, v, k, Evidence.UNCERTAIN)
+            assert (u, v, k) in self.ceg.evidence.uncertain_edges
 
         uncertain_vertices = {
-            's2', 's15'
+            'w2', 'w13'
         }
-        self.ceg.add_evidence(
-            type_of_evidence='vertices',
-            evidence=uncertain_vertices,
-            certain=False
-        )
+        for vertex in uncertain_vertices:
+            self.ceg.evidence.add_vertex(vertex, Evidence.UNCERTAIN)
+            assert vertex in self.ceg.evidence.uncertain_vertices
 
-        print(self.ceg.get_evidence_str())
+    def test_generation(self) -> None:
+        self.ceg.generate()
+        path_list = self.ceg.path_list
+        nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'w&infin;']
 
-        self.ceg.clear_evidence()
-        evidence = self.ceg.get_evidence_dict()
-        assert evidence['certain'] == {
-            'edges': {
-                'evidence': {},
-                'paths': set()
-            },
-            'vertices': {
-                'evidence': set(),
-                'paths': set()
-            }
-        }
-        assert evidence['uncertain'] == {
-            'edges': {
-                'evidence': {},
-                'paths': set()
-            },
-            'vertices': {
-                'evidence': set(),
-                'paths': set()
-            }
-        }
+        subgraph = self.ceg.subgraph(nodes).copy()
+        fname = Util.create_path('out/Subgraph_test', True, 'pdf')
+        subgraph.create_figure(fname)
+        print(path_list)
 
-    def test_find_paths_from_edge(self) -> None:
-        self.ceg.generate_CEG()
-        expected_paths = [
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Experienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Experienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Non-blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Inexperienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Inexperienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Non-blast')
-            ]
+
+class TestEvidence(object):
+    def setup(self):
+        G = nx.MultiDiGraph()
+        nodes = ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w&infin;']
+        edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w1', 'b'),
+            ('w1', 'w2', 'c'),
+            ('w1', 'w3', 'd'),
+            ('w2', 'w4', 'e'),
+            ('w2', 'w4', 'f'),
+            ('w3', 'w4', 'g'),
+            ('w3', 'w8', 'h'),
+            ('w4', 'w8', 'i'),
+            ('w0', 'w5', 'j'),
+            ('w0', 'w7', 'k'),
+            ('w0', 'w6', 'l'),
+            ('w5', 'w6', 'm'),
+            ('w5', 'w7', 'n'),
+            ('w6', 'w7', 'o'),
+            ('w7', 'w8', 'p'),
+            ('w8', 'w&infin;', 'q'),
+            ('w4', 'w&infin;', 'r'),
+            ('w0', 'w3', 's')
         ]
-        expected_path_set = set(map(frozenset, expected_paths))
-        edge = ('s3', 's9', 'Easy')
-        actual_path_set = self.ceg._find_paths_containing_edge(edge)
-        assert expected_path_set == actual_path_set
+        G.add_nodes_from(nodes)
+        G.add_edges_from(edges)
+        H = ChainEventGraph(G)
+        self.evidence = Evidence(H)
+        print(self.evidence)
 
-    def test_find_paths_from_node(self) -> None:
-        self.ceg.generate_CEG()
-        sink_actual_paths = self.ceg._find_paths_containing_node('w_inf')
-        assert len(sink_actual_paths) == 24
-        root_actual_paths = self.ceg._find_paths_containing_node('s0')
-        assert len(root_actual_paths) == 24
+    def test_edge_add_and_remove(self):
+        certain_edges = [
+            ('s1', 's2', 'Experienced'),
+            ('s1', 's2', 'Other'),
+            ('s1', 's2', 'Novice'),
+        ]
+        for edge in certain_edges:
+            self.evidence.add_edge(edge[0], edge[1], edge[2], certain=True)
+        assert certain_edges == self.evidence.certain_edges
+        self.evidence.remove_edge('s1', 's2', 'Other', certain=True)
+        certain_edges.remove(('s1', 's2', 'Other'))
+        assert certain_edges == self.evidence.certain_edges
+
+        uncertain_edges = [
+            ('s1', 's2', 'Experienced'),
+            ('s1', 's2', 'Other'),
+            ('s1', 's2', 'Novice'),
+        ]
+        for edge in uncertain_edges:
+            self.evidence.add_edge(edge[0], edge[1], edge[2], certain=False)
+        assert uncertain_edges == self.evidence.uncertain_edges
+        self.evidence.remove_edge('s1', 's2', 'Other', certain=False)
+        uncertain_edges.remove(('s1', 's2', 'Other'))
+        assert uncertain_edges == self.evidence.uncertain_edges
+
+    def test_add_vertex_add_and_remove(self):
+        uncertain_vertices = {'s1', 's2', 's3', 's45'}
+        for vertex in uncertain_vertices:
+            self.evidence.add_vertex(vertex, certain=False)
+        assert uncertain_vertices == self.evidence.uncertain_vertices
+
+        self.evidence.remove_vertex('s2', certain=False)
+        uncertain_vertices.remove('s2')
+        assert uncertain_vertices == self.evidence.uncertain_vertices
+
+        certain_vertices = {'s1', 's2', 's3', 's45'}
+        for vertex in certain_vertices:
+            self.evidence.add_vertex(vertex, certain=True)
+        assert certain_vertices == self.evidence.certain_vertices
+
+        self.evidence.remove_vertex('s2', certain=True)
+        certain_vertices.remove('s2')
+        assert certain_vertices == self.evidence.certain_vertices
+
+    def test_subgraph(self):
+        def update_path_lists():
+            self.evidence._Evidence__graph._ChainEventGraph__update_path_list()
+            self.evidence._Evidence__update_path_list()
+
+        fname = Util.create_path('out/Evidence_pre_test', False, 'pdf')
+        self.evidence._Evidence__graph.create_figure(fname)
+        update_path_lists()
+        self.evidence.add_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
+        self.evidence.add_vertex('w4', Evidence.CERTAIN)
+        reduced = self.evidence.reduced_graph
+        fname = Util.create_path('out/Evidence_test_certain', False, 'pdf')
+        reduced.create_figure(fname)
 
         expected_paths = [
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Experienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Experienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Non-blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Inexperienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Blast')
-            ],
-            [
-                ('s0', 's1', 'Blast'),
-                ('s1', 's3', 'Inexperienced'),
-                ('s3', 's9', 'Easy'),
-                ('s9', 'w_inf', 'Non-blast')
-            ]
+            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
+                ('w8', 'w&infin;', 'q')]
         ]
-        expected_path_set = set(map(frozenset, expected_paths))
-        s_nine_actual_path_set = self.ceg._find_paths_containing_node('s9')
+        for path in expected_paths:
+            assert path in self.evidence.path_list
+        assert len(expected_paths) == len(self.evidence.path_list)
 
-        assert s_nine_actual_path_set == expected_path_set
+        self.evidence.remove_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
+        self.evidence.remove_vertex('w4', Evidence.CERTAIN)
+        update_path_lists()
+        self.evidence.add_vertex('w6', Evidence.UNCERTAIN)
+        self.evidence.add_vertex('w3', Evidence.UNCERTAIN)
+        reduced = self.evidence.reduced_graph
+        fname = Util.create_path('out/Evidence_test_uncertain', False, 'pdf')
+        reduced.create_figure(fname)
+
+        expected_paths = [
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w&infin;', 'r')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w&infin;', 'r')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w5', 'j'), ('w5', 'w6', 'm'), ('w6', 'w7', 'o'),
+                ('w7', 'w8', 'p'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w6', 'l'), ('w6', 'w7', 'o'), ('w7', 'w8', 'p'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w&infin;', 'r')],
+            [('w0', 'w3', 's'), ('w3', 'w8', 'h'), ('w8', 'w&infin;', 'q')]
+        ]
+        for path in expected_paths:
+            assert path in self.evidence.path_list
+        assert len(expected_paths) == len(self.evidence.path_list)
+
+        self.evidence.remove_vertex('w3', Evidence.UNCERTAIN)
+        self.evidence.remove_vertex('w6', Evidence.UNCERTAIN)
+        update_path_lists()
+        self.evidence.add_edge('w2', 'w4', 'e', Evidence.UNCERTAIN)
+        self.evidence.add_edge('w3', 'w4', 'g', Evidence.UNCERTAIN)
+        self.evidence.add_edge('w3', 'w8', 'h', Evidence.UNCERTAIN)
+        self.evidence.add_vertex('w1', Evidence.CERTAIN)
+
+        reduced = self.evidence.reduced_graph
+        fname = Util.create_path('out/Evidence_test_uncertain', False, 'pdf')
+        reduced.create_figure(fname)
+
+        expected_paths = [
+            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w&infin;', 'r')],
+            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w&infin;', 'r')],
+            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w&infin;', 'r')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
+                ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
+            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
+                ('w4', 'w&infin;', 'r')],
+        ]
+        for path in expected_paths:
+            assert path in self.evidence.path_list
+        assert len(expected_paths) == len(self.evidence.path_list)

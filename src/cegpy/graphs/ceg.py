@@ -271,7 +271,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 for node_2 in next_set_of_nodes:
                     mergeable = check_vertices_can_be_merged(node_1, node_2)
                     if mergeable:
-                        # next_set_of_nodes.remove(node_2)
                         nodes_to_merge.add((node_1, node_2))
 
             merge_nodes(nodes_to_merge)

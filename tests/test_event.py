@@ -4,7 +4,8 @@ import pandas as pd
 # from ceg_util import CegUtil as util
 from pathlib import Path
 import re
-
+import numpy as np
+import networkx as nx
 
 class TestEventTree():
     def setup(self):
@@ -135,3 +136,135 @@ def check_list_contains_strings(str_list) -> bool:
     assert isinstance(str_list, list)
     for elem in str_list:
         assert isinstance(elem, str)
+
+class TestUsecase():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_et = EventTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_et = EventTree(
+            dataframe=self.fall_df
+        )
+        def test_add_emptycol(self) -> None:
+            edited_df=self.fall_df
+            edited_df["extra"]=""
+            edited_et = EventTree(
+                dataframe=edited_df
+        )
+            assert edited_df == self.fall_et
+
+        expected_fall_cats_per_var = {
+            "HousingAssessment": 4,
+            "Risk": 2,
+            "Treatment": 3,
+            "Fall": 2,
+        }
+        actual_fall_cats_per_var = self.fall_et.categories_per_variable
+        assert expected_fall_cats_per_var == actual_fall_cats_per_var
+
+
+class TestChangingDataFrame():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_et = EventTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_et = EventTree(
+            dataframe=self.fall_df,
+            sampling_zero_path=self.fall_s_z_paths
+        )
+    def test_add_empty_column(self) -> None:
+        #adding empty column
+        med_empty_column_df=self.med_df
+        med_empty_column_df["extra"]=""
+        med_empty_column_et = EventTree(
+        dataframe=med_empty_column_df
+        )
+        assert med_empty_column_et.adj == self.med_et.adj
+
+        fall_empty_column_df=self.fall_df
+        fall_empty_column_df["extra"]=""
+        fall_empty_column_et = EventTree(
+        dataframe=fall_empty_column_df
+        )
+        assert fall_empty_column_et.adj == self.fall_et.adj
+
+    def test_add_NA_column(self) -> None:
+        #adding NA column
+        med_add_NA_df=self.med_df
+        med_add_NA_df["extra"]=np.nan
+        med_add_NA_et = EventTree(
+        dataframe=med_add_NA_df
+        )
+        assert med_add_NA_et.adj == self.med_et.adj
+
+        fall_add_NA_df=self.fall_df
+        fall_add_NA_df["extra"]=np.nan
+        fall_add_NA_et = EventTree(
+        dataframe=fall_add_NA_df
+        )
+        assert fall_add_NA_et.adj == self.fall_et.adj
+
+    def test_add_same_column(self) -> None:
+        #adding column with no more information 
+        med_add_same_df=self.med_df
+        med_add_same_df["extra"]="same for all"
+        med_add_same_et = EventTree(
+        dataframe=med_add_same_df
+        )
+        med_add_same_et.remove_nodes_from(med_add_same_et.leaves)
+        assert nx.is_isomorphic(med_add_same_et,self.med_et)
+
+        fall_add_same_df=self.fall_df
+        fall_add_same_df["extra"]="same for all"
+        fall_add_same_et = EventTree(
+        dataframe=fall_add_same_df
+        )
+        fall_add_same_et.remove_nodes_from(fall_add_same_et.leaves)
+        assert nx.is_isomorphic(fall_add_same_et,self.fall_et)
+
+    def test_add_same_column_int(self) -> None:
+        #adding column with no more information 
+        med_add_same_df=self.med_df
+        med_add_same_df["extra"]=1
+        med_add_same_et = EventTree(
+        dataframe=med_add_same_df
+        )
+        med_add_same_et.remove_nodes_from(med_add_same_et.leaves)
+        assert nx.is_isomorphic(med_add_same_et,self.med_et)
+
+        fall_add_same_df=self.fall_df
+        fall_add_same_df["extra"]=1
+        fall_add_same_et = EventTree(
+        dataframe=fall_add_same_df
+        )
+        fall_add_same_et.remove_nodes_from(fall_add_same_et.leaves)
+        assert nx.is_isomorphic(fall_add_same_et,self.fall_et)
+    

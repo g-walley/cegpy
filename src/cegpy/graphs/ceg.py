@@ -91,11 +91,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     @property
     def reduced(self):
-        return self.subgraph().copy()
-
-    @reduced.setter
-    def reduced(self, value):
-        self._reduced = value
+        return self.evidence.reduced_graph
 
     @property
     def stages(self):
@@ -467,16 +463,7 @@ class Evidence:
 
     @property
     def reduced_graph(self):
-        self.__update_path_list()
-        self.__update_edges_and_vertices()
-        subgraph = ChainEventGraph(
-            nx.subgraph_view(
-                G=self.__graph,
-                filter_node=self.__filter_node,
-                filter_edge=self.__filter_edge
-            )
-        ).copy()
-        return subgraph
+        return self.__create_reduced_graph()
 
     @property
     def path_list(self):
@@ -681,3 +668,56 @@ class Evidence:
             return True
         else:
             return False
+
+    def __propagate_reduced_graph_probabilities(self, graph) -> None:
+        sink = graph.sink_node
+        root = graph.root_node
+        graph.nodes[sink]['emphasis'] = 1
+        node_set = set([sink])
+
+        while node_set != {root}:
+            try:
+                v_node = node_set.pop()
+            except KeyError:
+                break
+
+            for u_node, edges in graph.pred[v_node].items():
+                for edge_label, data in edges.items():
+                    edge = (u_node, v_node, edge_label)
+                    emph = graph.nodes[v_node]['emphasis']
+                    prob = data['probability']
+                    graph.edges[edge]['potential'] = \
+                        prob * emph
+                successors = graph.succ[u_node]
+
+                try:
+                    emphasis = 0
+                    for _, edges in successors.items():
+                        for edge_label, data in edges.items():
+                            emphasis += data['potential']
+
+                    graph.nodes[u_node]['emphasis'] = emphasis
+                    node_set.add(u_node)
+                except KeyError:
+                    pass
+
+        for (u, v, k) in list(graph.edges):
+            edge_potential = graph.edges[(u, v, k)]['potential']
+            pred_node_emphasis = graph.nodes[u]['emphasis']
+            probability = edge_potential / pred_node_emphasis
+            graph.edges[(u, v, k)]['probability'] = probability
+
+    def __create_reduced_graph(self) -> ChainEventGraph:
+        self.__update_path_list()
+        self.__update_edges_and_vertices()
+        subgraph = ChainEventGraph(
+            nx.subgraph_view(
+                G=self.__graph,
+                filter_node=self.__filter_node,
+                filter_edge=self.__filter_edge
+            )
+        ).copy()
+
+        self.__propagate_reduced_graph_probabilities(subgraph)
+
+        return subgraph

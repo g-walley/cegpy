@@ -150,6 +150,19 @@ class TestUnitCEG(object):
             self.ceg.evidence.add_vertex(vertex, Evidence.UNCERTAIN)
             assert vertex in self.ceg.evidence.uncertain_vertices
 
+    def test_propagation(self) -> None:
+        self.ceg.generate()
+        uncertain_edges = [
+            ('w2', 'w5', 'Experienced'),
+            ('w2', 'w6', 'Novice')
+        ]
+        certain_nodes = {
+            'w12'
+        }
+        self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
+        self.ceg.evidence.add_vertices_from(certain_nodes, Evidence.CERTAIN)
+        reduced = self.ceg.reduced
+
 
 class TestEvidence(object):
     def setup(self):

@@ -14,10 +14,8 @@ class TestStagedTrees():
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
         self.med_st = StagedTree(
-            {
-                'dataframe': self.med_df,
-                'sampling_zero_paths': self.med_s_z_paths
-            }
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
         )
 
         # non-stratified dataset
@@ -27,18 +25,9 @@ class TestStagedTrees():
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
         self.fall_st = StagedTree(
-            {
-                'dataframe': self.fall_df,
-                'sampling_zero_paths': self.fall_s_z_paths,
-            }
+            dataframe=self.fall_df,
+            sampling_zero_paths=self.fall_s_z_paths,
         )
-
-    def test_event_tree_calls(self) -> None:
-        assert isinstance(self.med_st.get_edges(), list)
-        assert isinstance(self.med_st.get_nodes(), list)
-        assert isinstance(self.med_st.get_sampling_zero_paths(),
-                          type(self.med_s_z_paths))
-        assert isinstance(self.med_st.get_edge_labels(), list)
 
     def test_create_default_prior(self) -> None:
         # stratified medical dataset
@@ -97,11 +86,11 @@ class TestStagedTrees():
 
         alpha = 3
         # check that prior is correct.
-        prior = self.med_st._create_default_prior(alpha)
+        prior = self.med_st._StagedTree__create_default_prior(alpha)
         assert med_expected_prior == prior
 
         alpha = 4
-        prior = self.fall_st._create_default_prior(alpha)
+        prior = self.fall_st._StagedTree__create_default_prior(alpha)
         assert fall_expected_prior == prior
 
     def test_create_default_hyperstage(self) -> None:
@@ -119,17 +108,40 @@ class TestStagedTrees():
             ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
              "s22", "s23", "s24", "s25", "s26"]
         ]
-        med_hyperstage = self.med_st._create_default_hyperstage()
+        med_hyperstage = self.med_st._StagedTree__create_default_hyperstage()
         print(med_expected_hyperstage)
         print(med_hyperstage)
 
-        fall_hyperstage = self.fall_st._create_default_hyperstage()
+        fall_hyperstage = self.fall_st._StagedTree__create_default_hyperstage()
         print(fall_expected_hyperstage)
         print(fall_hyperstage)
         assert med_hyperstage == med_expected_hyperstage
         assert fall_hyperstage == fall_expected_hyperstage
 
-    def test_falls_calculate_posterior(self) -> None:
+    def test_calculate_posterior(self) -> None:
+        def calculate_posterior(staged_tree, expected_countset,
+                                alpha, expected_likelihood):
+            actual_countset = staged_tree._StagedTree__create_edge_countset()
+            assert actual_countset == expected_countset
+
+            prior = staged_tree._StagedTree__create_default_prior(alpha)
+            staged_tree.prior = prior
+            expected_posterior = []
+            for idx, countset in enumerate(actual_countset):
+                p_elem = []
+                for jdx, count in enumerate(countset):
+                    p_elem.append(count + prior[idx][jdx])
+
+                expected_posterior.append(p_elem)
+
+            actual_posterior = staged_tree.get_posterior_as_list()
+            assert actual_posterior == expected_posterior
+            actual_likelihood = staged_tree._calculate_initial_loglikelihood(
+                staged_tree.get_prior_as_list(),
+                staged_tree.get_posterior_as_list()
+            )
+            actual_likelihood = round(actual_likelihood, 2)
+            assert actual_likelihood == expected_likelihood
 
         falls_expected_edge_countset = [
             [379, 1539, 2871, 45211],
@@ -156,47 +168,26 @@ class TestStagedTrees():
             [974, 292],
             [133, 23]
         ]
-        assert len(falls_expected_edge_countset) == 23
-        actual_countset = self.fall_st._create_edge_countset()
-        assert actual_countset == falls_expected_edge_countset
         alpha = 4
-        prior = self.fall_st._create_default_prior(alpha)
-        expected_posterior = []
-        for idx, countset in enumerate(actual_countset):
-            p_elem = []
-            for jdx, count in enumerate(countset):
-                p_elem.append(count + prior[idx][jdx])
-
-            expected_posterior.append(p_elem)
-
-        actual_posterior = self.fall_st._calculate_posterior(prior)
-        assert actual_posterior == expected_posterior
-
-        # xlsx_path = Path(__file__).resolve(
-        #     ).parent.parent.joinpath(
-        #     'data/Falls_posterior_prior.xlsx')
-
-        # write_posterior_and_prior_to_excel(xlsx_path,
-        #     prior, actual_posterior)
-
         expected_likelihood = -68721.50  # Calculated manually
-        actual_likelihood = self.fall_st._calculate_initial_loglikelihood(
-            prior, actual_posterior
+        assert len(falls_expected_edge_countset) == 23
+        calculate_posterior(
+            self.fall_st,
+            falls_expected_edge_countset,
+            alpha,
+            expected_likelihood
         )
-        actual_likelihood = round(actual_likelihood, 2)
-        assert actual_likelihood == expected_likelihood
 
-    def test_med_calculate_posterior(self) -> None:
         med_expected_edge_countset = [
-            [5500, 5500],
-            [800, 1000, 3700],
-            [800, 1000, 3700],
-            [400, 400],
+            [5491, 5493],
+            [798, 1000, 3693],
+            [799, 998, 3696],
+            [399, 399],
             [500, 500],
-            [1850, 1850],
-            [400, 400],
-            [500, 500],
-            [1850, 1850],
+            [1846, 1847],
+            [400, 399],
+            [500, 498],
+            [1849, 1847],
             [393, 6],
             [347, 52],
             [480, 20],
@@ -210,35 +201,15 @@ class TestStagedTrees():
             [338, 1511],
             [716, 1131]
         ]
-        assert len(med_expected_edge_countset) == 21
-        actual_countset = self.med_st._create_edge_countset()
-        assert actual_countset == med_expected_edge_countset
-
         alpha = 3
-        prior = self.med_st._create_default_prior(alpha)
-        expected_posterior = []
-        for idx, countset in enumerate(actual_countset):
-            p_elem = []
-            for jdx, count in enumerate(countset):
-                p_elem.append(count + prior[idx][jdx])
-
-            expected_posterior.append(p_elem)
-
-        actual_posterior = self.med_st._calculate_posterior(prior)
-        assert actual_posterior == expected_posterior
-        # xlsx_path = Path(__file__).resolve(
-        #     ).parent.parent.joinpath(
-        #     'data/medical_dm_posterior_prior.xlsx')
-        # write_posterior_and_prior_to_excel(
-        #     xlsx_path,
-        #     prior,
-        #     actual_posterior)
-        expected_likelihood = -30169.82  # Calculated manually
-        actual_likelihood = self.med_st._calculate_initial_loglikelihood(
-            prior, actual_posterior
+        expected_likelihood = -30134.07
+        assert len(med_expected_edge_countset) == 21
+        calculate_posterior(
+            self.med_st,
+            med_expected_edge_countset,
+            alpha,
+            expected_likelihood
         )
-        actual_likelihood = round(actual_likelihood, 2)
-        assert actual_likelihood == expected_likelihood
 
 
 def write_posterior_and_prior_to_excel(path, pri, post):

@@ -1,9 +1,10 @@
 import os
+import colorutils
+import math
 from collections import defaultdict
 from pathlib import Path
 from colorutils import Color as Colour
-import colorutils
-import math
+from datetime import datetime
 
 ST_OUTPUT = {
     "Merged Situations": [],
@@ -13,6 +14,7 @@ ST_OUTPUT = {
 
 
 class Util:
+    @staticmethod
     def check_list_contains_strings(str_list) -> bool:
         """Ensure that a list only contains strings"""
         for tup in str_list:
@@ -20,6 +22,7 @@ class Util:
                 return False
         return True
 
+    @staticmethod
     def check_tuple_contains_strings(tup) -> bool:
         """Check each element of the tuple to ensure it is a string"""
         if isinstance(tup, tuple):
@@ -30,6 +33,7 @@ class Util:
         else:
             return False
 
+    @staticmethod
     def generate_colours(number) -> list:
         """Generates a list of hex colour strings that are evenly spaced
         around the colour spectrum"""
@@ -62,6 +66,7 @@ class Util:
 
         return hex_colours
 
+    @staticmethod
     def generate_colour_run(number, starts, ends) -> list:
         split = [0, 0, 0]
         for i in range(number):
@@ -85,6 +90,7 @@ class Util:
 
         return hex_colours
 
+    @staticmethod
     def generate_filename_and_mkdir(filename) -> str:
         if filename is not Path:
             filename = Path(filename)
@@ -97,6 +103,7 @@ class Util:
         os.makedirs(filename.parent, exist_ok=True)
         return filename, filetype
 
+    @staticmethod
     def create_sampling_zeros(sampling_zero_paths, path_dict) -> defaultdict:
         '''The list of paths to zero must only contain tuples.
         Each tuple is a sampling zero path that needs to be added.
@@ -117,3 +124,21 @@ class Util:
                     added first. Ensure the tuple ends with a comma.")
 
         return path_dict
+
+    @staticmethod
+    def create_path(filename, add_time=False, filetype='png'):
+        dt_string = ''
+        if add_time:
+            now = datetime.now()
+            dt_string = now.strftime("__%d-%m-%Y_%H-%M-%S")
+        fig_path = Path(__file__).resolve().parent\
+            .parent.parent.parent.joinpath(
+                filename + dt_string + '.' + filetype)
+        return fig_path
+
+    @staticmethod
+    def flatten_list_of_lists(list_of_lists) -> list:
+        flat_list = []
+        for sublist in list_of_lists:
+            flat_list = flat_list + sublist
+        return flat_list

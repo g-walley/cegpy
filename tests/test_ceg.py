@@ -161,6 +161,8 @@ class TestUnitCEG(object):
         self.ceg.evidence.add_vertices_from(certain_nodes, Evidence.CERTAIN)
         reduced = self.ceg.reduced
 
+        self.ceg.clear_evidence()
+
 
 class TestEvidence(object):
     def setup(self):

@@ -22,9 +22,7 @@ class TestUnitCEG(object):
             name="medical_staged"
         )
         self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(
-            incoming_graph_data=self.st,
-        )
+        self.ceg = ChainEventGraph(self.st)
 
     def test_node_name_generation(self):
         prefix = self.ceg.node_prefix

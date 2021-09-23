@@ -8,7 +8,7 @@ import networkx as nx
 import scipy.special
 import logging
 
-logger = logging.getLogger('pyceg.staged_tree')
+logger = logging.getLogger('cegpy.staged_tree')
 
 
 class StagedTree(EventTree):
@@ -487,8 +487,11 @@ class StagedTree(EventTree):
         return self.ahc_output
 
     def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+        """Draws the coloured staged tree for the process described by
+        the dataset, and saves it to "<filename>.filetype". Supports
+        any filetype that graphviz supports. e.g: "event_tree.png" or
+        "event_tree.svg" etc.
+        """
         try:
             self.ahc_output
             filename, filetype = Util.generate_filename_and_mkdir(filename)

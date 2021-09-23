@@ -18,11 +18,12 @@
 # -- Project information -----------------------------------------------------
 
 project = 'pyceg'
-copyright = '2021, Aditi Shenvi, Gareth Walley'
-author = 'Aditi Shenvi, Gareth Walley'
+copyright = '2021, Gareth Walley, Aditi Shenvi'
+author = 'Gareth Walley, Aditi Shenvi'
 
+version = '0.1'
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = '0.1.0'
 
 
 # -- General configuration ---------------------------------------------------
@@ -33,6 +34,9 @@ release = '0.0.1'
 extensions = [
 ]
 
+source_suffix = {
+    '.rst': 'restructuredtext'
+}
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

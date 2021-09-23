@@ -9,7 +9,7 @@ import pandas as pd
 import textwrap
 import networkx as nx
 # create logger object for this module
-logger = logging.getLogger('pyceg.event_tree')
+logger = logging.getLogger('cegpy.event_tree')
 
 
 class EventTree(nx.MultiDiGraph):
@@ -276,7 +276,9 @@ class EventTree(nx.MultiDiGraph):
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+        and saves it to "<filename>.filetype". Supports any filetype that
+        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
         graph = self._generate_pdp_graph()

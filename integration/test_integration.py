@@ -235,20 +235,16 @@ class TestReducedOutputs:
 
 class TestCegOutput:
     def setup(self):
-        self.node_prefix = 'w'
-        self.sink_suffix = '&infin;'
         df_path = Path(__file__).resolve(
             ).parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
 
-        self.st = StagedTree(
+        st = StagedTree(
             dataframe=pd.read_excel(df_path),
             name="medical_staged"
         )
-        self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(
-            incoming_graph_data=self.st,
-        )
+        st.calculate_AHC_transitions()
+        self.ceg = ChainEventGraph(st)
 
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate()

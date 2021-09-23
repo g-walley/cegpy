@@ -97,8 +97,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         return self.__stages
 
     def clear_evidence(self):
-        self.certain_evidence = Evidence()
-        self.uncertain_evidence = Evidence()
+        self.evidence = Evidence(self)
 
     def generate(self):
         '''

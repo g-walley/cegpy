@@ -130,7 +130,7 @@ class TestUnitCEG(object):
             'w4', 'w10'
         }
         for vertex in certain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.CERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.CERTAIN)
             assert vertex in self.ceg.evidence.certain_vertices
 
         uncertain_edges = [
@@ -145,7 +145,7 @@ class TestUnitCEG(object):
             'w2', 'w13'
         }
         for vertex in uncertain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.UNCERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.UNCERTAIN)
             assert vertex in self.ceg.evidence.uncertain_vertices
 
     def test_propagation(self) -> None:
@@ -222,18 +222,18 @@ class TestEvidence(object):
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in uncertain_vertices:
-            self.evidence.add_vertex(vertex, certain=False)
+            self.evidence.add_node(vertex, certain=False)
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
-        self.evidence.remove_vertex('s2', certain=False)
+        self.evidence.remove_node('s2', certain=False)
         uncertain_vertices.remove('s2')
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
         certain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in certain_vertices:
-            self.evidence.add_vertex(vertex, certain=True)
+            self.evidence.add_node(vertex, certain=True)
         assert certain_vertices == self.evidence.certain_vertices
 
-        self.evidence.remove_vertex('s2', certain=True)
+        self.evidence.remove_node('s2', certain=True)
         certain_vertices.remove('s2')
         assert certain_vertices == self.evidence.certain_vertices

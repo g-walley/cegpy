@@ -506,25 +506,25 @@ class Evidence:
         for (u, v, k) in edges:
             self.remove_edge(u, v, k, certain)
 
-    def add_vertex(self, vertex, certain):
+    def add_node(self, node, certain):
         if certain:
-            self.certain_vertices.add(vertex)
+            self.certain_vertices.add(node)
         else:
-            self.uncertain_vertices.add(vertex)
+            self.uncertain_vertices.add(node)
 
-    def add_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.add_vertex(vertex, certain)
+    def add_vertices_from(self, nodes, certain):
+        for node in nodes:
+            self.add_node(node, certain)
 
-    def remove_vertex(self, vertex, certain):
+    def remove_node(self, node, certain):
         if certain:
-            self.certain_vertices.remove(vertex)
+            self.certain_vertices.remove(node)
         else:
-            self.uncertain_vertices.remove(vertex)
+            self.uncertain_vertices.remove(node)
 
-    def remove_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.remove_vertex(vertex, certain)
+    def remove_nodes_from(self, nodes, certain):
+        for node in nodes:
+            self.remove_node(node, certain)
 
     def __repr__(self) -> str:
         repr = "Evidence(CertainEdges={}, CertainVertices={}," +\

@@ -265,11 +265,11 @@ class EventTree(nx.MultiDiGraph):
                 fill_colour = self.nodes[node]['colour']
             except KeyError:
                 fill_colour = 'lightgrey'
-
+            label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
                     name=node,
-                    label=node,
+                    label=label,
                     style="filled",
                     fillcolor=fill_colour))
         return graph

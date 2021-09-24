@@ -261,3 +261,19 @@ class TestCegOutput:
         fname = Util.create_path('out/Subgraph_test', True, 'pdf')
         subgraph.create_figure(fname)
         print(path_list)
+
+
+class TestCegNonStrat:
+    def setup(self):
+        df_path = Path(__file__).resolve().parent.parent.joinpath(
+            'data/Falls_Data.xlsx'
+        )
+        st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name='Falls Staged Tree'
+        )
+        st.calculate_AHC_transitions()
+        self.ceg = ChainEventGraph(st)
+
+    def test_generation(self):
+        self.ceg.generate()

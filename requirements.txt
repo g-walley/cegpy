@@ -6,6 +6,6 @@ pydotplus==2.0.2
 pathlib==1.0.1
 ipython==7.25.0
 openpyxl==3.0.7
-xlsxwriter==1.4.4
+networkx==2.6.3
 scipy==1.7.0
 colorutils==0.3.0

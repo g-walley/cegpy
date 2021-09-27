@@ -1,12 +1,12 @@
 from ..src.cegpy.graphs.ceg import ChainEventGraph
 from ..src.cegpy.graphs.ceg import Evidence
 from ..src.cegpy.trees.staged import StagedTree
-from ..src.cegpy.utilities.util import Util
+# from ..src.cegpy.utilities.util import Util
 # from collections import defaultdict
 from pathlib import Path
 import networkx as nx
 import pandas as pd
-import os.path
+# import os.path
 
 
 class TestUnitCEG(object):
@@ -22,11 +22,7 @@ class TestUnitCEG(object):
             name="medical_staged"
         )
         self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(
-            incoming_graph_data=self.st,
-            # node_prefix='w',
-            # sink_suffix='&infin;'
-        )
+        self.ceg = ChainEventGraph(self.st)
 
     def test_node_name_generation(self):
         prefix = self.ceg.node_prefix
@@ -121,12 +117,6 @@ class TestUnitCEG(object):
             actual_node_list = next(nodes_gen)
             assert actual_node_list.sort() == expected_node_list.sort()
 
-    def test_creation_of_ceg(self) -> None:
-        self.ceg.generate()
-        fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
-        self.ceg.create_figure(fname)
-        assert os.path.isfile(fname)
-
     def test_adding_evidence(self) -> None:
         certain_edges = [
             ('w1', 'w4', 'Experienced'),
@@ -140,7 +130,7 @@ class TestUnitCEG(object):
             'w4', 'w10'
         }
         for vertex in certain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.CERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.CERTAIN)
             assert vertex in self.ceg.evidence.certain_vertices
 
         uncertain_edges = [
@@ -155,24 +145,30 @@ class TestUnitCEG(object):
             'w2', 'w13'
         }
         for vertex in uncertain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.UNCERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.UNCERTAIN)
             assert vertex in self.ceg.evidence.uncertain_vertices
 
-    def test_generation(self) -> None:
+    def test_propagation(self) -> None:
         self.ceg.generate()
-        path_list = self.ceg.path_list
-        nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'w&infin;']
+        uncertain_edges = [
+            ('w2', 'w5', 'Experienced'),
+            ('w2', 'w6', 'Novice')
+        ]
+        certain_nodes = {
+            'w12'
+        }
+        self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
+        self.ceg.evidence.add_vertices_from(certain_nodes, Evidence.CERTAIN)
+        reduced = self.ceg.reduced
 
-        subgraph = self.ceg.subgraph(nodes).copy()
-        fname = Util.create_path('out/Subgraph_test', True, 'pdf')
-        subgraph.create_figure(fname)
-        print(path_list)
+        self.ceg.clear_evidence()
 
 
 class TestEvidence(object):
     def setup(self):
         G = nx.MultiDiGraph()
-        nodes = ['w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w6', 'w7', 'w8', 'w&infin;']
+        nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
+                 'w5', 'w6', 'w7', 'w8', 'w&infin;']
         edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w1', 'b'),
@@ -228,125 +224,18 @@ class TestEvidence(object):
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in uncertain_vertices:
-            self.evidence.add_vertex(vertex, certain=False)
+            self.evidence.add_node(vertex, certain=False)
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
-        self.evidence.remove_vertex('s2', certain=False)
+        self.evidence.remove_node('s2', certain=False)
         uncertain_vertices.remove('s2')
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
         certain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in certain_vertices:
-            self.evidence.add_vertex(vertex, certain=True)
+            self.evidence.add_node(vertex, certain=True)
         assert certain_vertices == self.evidence.certain_vertices
 
-        self.evidence.remove_vertex('s2', certain=True)
+        self.evidence.remove_node('s2', certain=True)
         certain_vertices.remove('s2')
         assert certain_vertices == self.evidence.certain_vertices
-
-    def test_subgraph(self):
-        def update_path_lists():
-            self.evidence._Evidence__graph._ChainEventGraph__update_path_list()
-            self.evidence._Evidence__update_path_list()
-
-        fname = Util.create_path('out/Evidence_pre_test', False, 'pdf')
-        self.evidence._Evidence__graph.create_figure(fname)
-        update_path_lists()
-        self.evidence.add_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
-        self.evidence.add_vertex('w4', Evidence.CERTAIN)
-        reduced = self.evidence.reduced_graph
-        fname = Util.create_path('out/Evidence_test_certain', False, 'pdf')
-        reduced.create_figure(fname)
-
-        expected_paths = [
-            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'f'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
-                ('w8', 'w&infin;', 'q')]
-        ]
-        for path in expected_paths:
-            assert path in self.evidence.path_list
-        assert len(expected_paths) == len(self.evidence.path_list)
-
-        self.evidence.remove_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
-        self.evidence.remove_vertex('w4', Evidence.CERTAIN)
-        update_path_lists()
-        self.evidence.add_vertex('w6', Evidence.UNCERTAIN)
-        self.evidence.add_vertex('w3', Evidence.UNCERTAIN)
-        reduced = self.evidence.reduced_graph
-        fname = Util.create_path('out/Evidence_test_uncertain', False, 'pdf')
-        reduced.create_figure(fname)
-
-        expected_paths = [
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w&infin;', 'r')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w&infin;', 'r')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w5', 'j'), ('w5', 'w6', 'm'), ('w6', 'w7', 'o'),
-                ('w7', 'w8', 'p'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w6', 'l'), ('w6', 'w7', 'o'), ('w7', 'w8', 'p'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w8', 'i'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w3', 's'), ('w3', 'w4', 'g'), ('w4', 'w&infin;', 'r')],
-            [('w0', 'w3', 's'), ('w3', 'w8', 'h'), ('w8', 'w&infin;', 'q')]
-        ]
-        for path in expected_paths:
-            assert path in self.evidence.path_list
-        assert len(expected_paths) == len(self.evidence.path_list)
-
-        self.evidence.remove_vertex('w3', Evidence.UNCERTAIN)
-        self.evidence.remove_vertex('w6', Evidence.UNCERTAIN)
-        update_path_lists()
-        self.evidence.add_edge('w2', 'w4', 'e', Evidence.UNCERTAIN)
-        self.evidence.add_edge('w3', 'w4', 'g', Evidence.UNCERTAIN)
-        self.evidence.add_edge('w3', 'w8', 'h', Evidence.UNCERTAIN)
-        self.evidence.add_vertex('w1', Evidence.CERTAIN)
-
-        reduced = self.evidence.reduced_graph
-        fname = Util.create_path('out/Evidence_test_uncertain', False, 'pdf')
-        reduced.create_figure(fname)
-
-        expected_paths = [
-            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w&infin;', 'r')],
-            [('w0', 'w1', 'a'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w&infin;', 'r')],
-            [('w0', 'w1', 'b'), ('w1', 'w2', 'c'), ('w2', 'w4', 'e'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w&infin;', 'r')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w8', 'h'),
-                ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w8', 'i'), ('w8', 'w&infin;', 'q')],
-            [('w0', 'w1', 'b'), ('w1', 'w3', 'd'), ('w3', 'w4', 'g'),
-                ('w4', 'w&infin;', 'r')],
-        ]
-        for path in expected_paths:
-            assert path in self.evidence.path_list
-        assert len(expected_paths) == len(self.evidence.path_list)

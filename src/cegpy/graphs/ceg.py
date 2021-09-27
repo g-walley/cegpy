@@ -8,7 +8,7 @@ from IPython.display import Image
 from IPython import get_ipython
 import logging
 
-logger = logging.getLogger('pyceg.chain_event_graph')
+logger = logging.getLogger('cegpy.chain_event_graph')
 
 
 class ChainEventGraph(nx.MultiDiGraph):
@@ -18,28 +18,19 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    def __init__(self, incoming_graph_data=None, **attr):
-        super().__init__(incoming_graph_data, **attr)
-        self.incoming_graph_data = incoming_graph_data
+    def __init__(self, staged_tree=None, **attr):
+        super().__init__(staged_tree, **attr)
         self.sink_suffix = '&infin;'
         self.node_prefix = 'w'
 
-        if incoming_graph_data is not None:
+        if staged_tree is not None:
             try:
-                self.ahc_output = deepcopy(incoming_graph_data.ahc_output)
+                self.ahc_output = deepcopy(staged_tree.ahc_output)
             except AttributeError:
                 self.ahc_output = {}
         else:
             logger.info("Class called with no incoming graph.")
         self.evidence = Evidence(self)
-
-    @property
-    def incoming_graph_data(self):
-        return self._incoming_graph_data
-
-    @incoming_graph_data.setter
-    def incoming_graph_data(self, value):
-        self._incoming_graph_data = value
 
     @property
     def node_prefix(self):
@@ -91,11 +82,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     @property
     def reduced(self):
-        return self.subgraph().copy()
-
-    @reduced.setter
-    def reduced(self, value):
-        self._reduced = value
+        return self.evidence.reduced_graph
 
     @property
     def stages(self):
@@ -110,8 +97,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         return self.__stages
 
     def clear_evidence(self):
-        self.certain_evidence = Evidence()
-        self.uncertain_evidence = Evidence()
+        self.evidence = Evidence(self)
 
     def generate(self):
         '''
@@ -271,7 +257,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 for node_2 in next_set_of_nodes:
                     mergeable = check_vertices_can_be_merged(node_1, node_2)
                     if mergeable:
-                        # next_set_of_nodes.remove(node_2)
                         nodes_to_merge.add((node_1, node_2))
 
             merge_nodes(nodes_to_merge)
@@ -285,6 +270,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.__update_path_list()
 
     def create_figure(self, filename):
+        """
+        Draws the chain event graph representation of the stage tree,
+        and saves it to "<filename>.filetype". Supports any filetype that
+        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         edge_probabilities = list(
@@ -468,16 +458,7 @@ class Evidence:
 
     @property
     def reduced_graph(self):
-        self.__update_path_list()
-        self.__update_edges_and_vertices()
-        subgraph = ChainEventGraph(
-            nx.subgraph_view(
-                G=self.__graph,
-                filter_node=self.__filter_node,
-                filter_edge=self.__filter_edge
-            )
-        ).copy()
-        return subgraph
+        return self.__create_reduced_graph()
 
     @property
     def path_list(self):
@@ -524,25 +505,25 @@ class Evidence:
         for (u, v, k) in edges:
             self.remove_edge(u, v, k, certain)
 
-    def add_vertex(self, vertex, certain):
+    def add_node(self, node, certain):
         if certain:
-            self.certain_vertices.add(vertex)
+            self.certain_vertices.add(node)
         else:
-            self.uncertain_vertices.add(vertex)
+            self.uncertain_vertices.add(node)
 
-    def add_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.add_vertex(vertex, certain)
+    def add_vertices_from(self, nodes, certain):
+        for node in nodes:
+            self.add_node(node, certain)
 
-    def remove_vertex(self, vertex, certain):
+    def remove_node(self, node, certain):
         if certain:
-            self.certain_vertices.remove(vertex)
+            self.certain_vertices.remove(node)
         else:
-            self.uncertain_vertices.remove(vertex)
+            self.uncertain_vertices.remove(node)
 
-    def remove_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.remove_vertex(vertex, certain)
+    def remove_nodes_from(self, nodes, certain):
+        for node in nodes:
+            self.remove_node(node, certain)
 
     def __repr__(self) -> str:
         repr = "Evidence(CertainEdges={}, CertainVertices={}," +\
@@ -682,3 +663,56 @@ class Evidence:
             return True
         else:
             return False
+
+    def __propagate_reduced_graph_probabilities(self, graph) -> None:
+        sink = graph.sink_node
+        root = graph.root_node
+        graph.nodes[sink]['emphasis'] = 1
+        node_set = set([sink])
+
+        while node_set != {root}:
+            try:
+                v_node = node_set.pop()
+            except KeyError:
+                break
+
+            for u_node, edges in graph.pred[v_node].items():
+                for edge_label, data in edges.items():
+                    edge = (u_node, v_node, edge_label)
+                    emph = graph.nodes[v_node]['emphasis']
+                    prob = data['probability']
+                    graph.edges[edge]['potential'] = \
+                        prob * emph
+                successors = graph.succ[u_node]
+
+                try:
+                    emphasis = 0
+                    for _, edges in successors.items():
+                        for edge_label, data in edges.items():
+                            emphasis += data['potential']
+
+                    graph.nodes[u_node]['emphasis'] = emphasis
+                    node_set.add(u_node)
+                except KeyError:
+                    pass
+
+        for (u, v, k) in list(graph.edges):
+            edge_potential = graph.edges[(u, v, k)]['potential']
+            pred_node_emphasis = graph.nodes[u]['emphasis']
+            probability = edge_potential / pred_node_emphasis
+            graph.edges[(u, v, k)]['probability'] = probability
+
+    def __create_reduced_graph(self) -> ChainEventGraph:
+        self.__update_path_list()
+        self.__update_edges_and_vertices()
+        subgraph = ChainEventGraph(
+            nx.subgraph_view(
+                G=self.__graph,
+                filter_node=self.__filter_node,
+                filter_edge=self.__filter_edge
+            )
+        ).copy()
+
+        self.__propagate_reduced_graph_probabilities(subgraph)
+
+        return subgraph

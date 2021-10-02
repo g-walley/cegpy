@@ -514,7 +514,7 @@ class Evidence:
         else:
             self.uncertain_vertices.add(node)
 
-    def add_vertices_from(self, nodes, certain):
+    def add_nodes_from(self, nodes, certain):
         for node in nodes:
             self.add_node(node, certain)
 

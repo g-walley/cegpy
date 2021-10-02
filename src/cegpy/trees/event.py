@@ -247,7 +247,7 @@ class EventTree(nx.MultiDiGraph):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
-            edge_details = edge[2] + '\n' + str(count)
+            edge_details = str(edge[2]) + '\n' + str(count)
 
             graph.add_edge(
                 pdp.Edge(

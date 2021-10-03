@@ -339,7 +339,8 @@ class TestChangingDataFrame():
             dataframe=med_add_same_df
         )
         med_add_same_st.calculate_AHC_transitions()
-        med_add_same_st.create_figure("out/test_add_same_column_int_med_fig.pdf")
+        med_add_same_st.create_figure(
+            "out/test_add_same_column_int_med_fig.pdf")
 
         first_set = set(
             tuple(x) for x in self.med_st.ahc_output['Merged Situations']
@@ -356,7 +357,8 @@ class TestChangingDataFrame():
             dataframe=fall_add_same_df
         )
         fall_add_same_st.calculate_AHC_transitions()
-        fall_add_same_st.create_figure("out/test_add_same_column_int_fall_fig.pdf")
+        fall_add_same_st.create_figure(
+            "out/test_add_same_column_int_fall_fig.pdf")
 
         first_set = set(
             tuple(x) for x in self.fall_st.ahc_output['Merged Situations']

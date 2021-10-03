@@ -387,11 +387,14 @@ class ChainEventGraph(nx.MultiDiGraph):
             for pred in self.predecessors(node):
                 max_dist_to_sink = set()
                 for succ in self.successors(pred):
-                    max_dist_to_sink.add(
-                        self.nodes[succ][max_dist]
-                    )
+                    try:
+                        max_dist_to_sink.add(
+                            self.nodes[succ][max_dist]
+                        )
+                        self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
+                    except KeyError:
+                        break
 
-                self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
                 if pred not in node_queue:
                     node_queue.append(pred)
 
@@ -511,7 +514,7 @@ class Evidence:
         else:
             self.uncertain_vertices.add(node)
 
-    def add_vertices_from(self, nodes, certain):
+    def add_nodes_from(self, nodes, certain):
         for node in nodes:
             self.add_node(node, certain)
 

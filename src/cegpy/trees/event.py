@@ -130,8 +130,6 @@ class EventTree(nx.MultiDiGraph):
 
         # pandas dataframe passed via parameters
         self._dataframe = dataframe
-        # Format of event_tree dict:
-
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 

@@ -158,7 +158,7 @@ class TestUnitCEG(object):
             'w12'
         }
         self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
-        self.ceg.evidence.add_vertices_from(certain_nodes, Evidence.CERTAIN)
+        self.ceg.evidence.add_nodes_from(certain_nodes, Evidence.CERTAIN)
         reduced = self.ceg.reduced
 
         self.ceg.clear_evidence()

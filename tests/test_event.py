@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 import re
 import numpy as np
-import networkx as nx
+
 
 class TestEventTree():
     def setup(self):
@@ -250,7 +250,7 @@ class TestChangingDataFrame():
             dataframe=med_add_same_df
         )
         med_add_same_et.create_figure("et_fig_path.pdf")
-        assert len(med_add_same_et.leaves)==len(self.med_et.leaves)
+        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
 
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = 1
@@ -258,4 +258,4 @@ class TestChangingDataFrame():
             dataframe=fall_add_same_df
         )
         fall_add_same_et.create_figure("et_fig_path.pdf")
-        assert len(fall_add_same_et.leaves)==len(self.fall_et.leaves)
+        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)

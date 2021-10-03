@@ -1,4 +1,4 @@
-from ..src.cegpy.trees.staged import StagedTree
+from cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac

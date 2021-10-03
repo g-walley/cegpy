@@ -1,12 +1,7 @@
-from ..src.cegpy.graphs.ceg import ChainEventGraph
-from ..src.cegpy.graphs.ceg import Evidence
-from ..src.cegpy.trees.staged import StagedTree
-# from ..src.cegpy.utilities.util import Util
-# from collections import defaultdict
+from cegpy import StagedTree, Evidence, ChainEventGraph
 from pathlib import Path
 import networkx as nx
 import pandas as pd
-# import os.path
 
 
 class TestUnitCEG(object):

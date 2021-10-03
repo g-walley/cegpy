@@ -2,7 +2,7 @@ from ..src.cegpy.trees.staged import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
-import xlsxwriter
+# import xlsxwriter
 import numpy as np
 
 
@@ -216,27 +216,23 @@ class TestStagedTrees():
         # check that no leaves have been merged
         self.med_st.calculate_AHC_transitions()
         for leaf in self.med_st.leaves:
-            assert not any([int(leaf[1:]) in list for list in self.med_st.ahc_output['Merged Situations']])
+            node_number = int(leaf[1:])
+            merged_situations = self.med_st.ahc_output['Merged Situations']
+            leaf_in_merged_situations = [
+                node_number in situ_list for situ_list in merged_situations
+            ]
+
+            assert not any(leaf_in_merged_situations)
 
     def test_merged_leaves_fall(self) -> None:
         self.fall_st.calculate_AHC_transitions()
         for leaf in self.fall_st.leaves:
-            assert not any([int(leaf[1:]) in list for list in self.fall_st.ahc_output['Merged Situations']])
-
-
-def write_posterior_and_prior_to_excel(path, pri, post):
-    data = xlsxwriter.Workbook(path)
-
-    ws = data.add_worksheet()
-    for idx, pr in enumerate(pri):
-        row = [float(x) for x in pr]
-        ws.write_row(idx, 0, row)
-
-    for jdx, posterior in enumerate(post, start=(idx+2)):
-        row = [float(x) for x in posterior]
-        ws.write_row(jdx, 0, row)
-
-    data.close()
+            node_number = int(leaf[1:])
+            merged_situations = self.fall_st.ahc_output['Merged Situations']
+            leaf_in_merged_situations = [
+                node_number in situ_list for situ_list in merged_situations
+            ]
+            assert not any(leaf_in_merged_situations)
 
 
 class TestChangingDataFrame():

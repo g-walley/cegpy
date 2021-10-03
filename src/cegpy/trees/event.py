@@ -181,7 +181,7 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def situations(self) -> list:
-        """Returns list of event tree situations.
+        """List of situations of the tree.
         (non-leaf nodes)"""
         return [
             node for node, out_degree in self.out_degree
@@ -190,7 +190,7 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def leaves(self) -> list:
-        """Returns leaves of the event tree."""
+        """List of leaves of the tree."""
         # if not already generated, create self.leaves
         return [
             node for node, out_degree in self.out_degree

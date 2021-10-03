@@ -4,7 +4,7 @@ import pandas as pd
 from pathlib import Path
 import re
 import numpy as np
-import networkx as nx
+
 
 class TestEventTree():
     def setup(self):
@@ -136,6 +136,7 @@ def check_list_contains_strings(str_list) -> bool:
     for elem in str_list:
         assert isinstance(elem, str)
 
+
 class TestUsecase():
     def setup(self):
         # stratified dataset
@@ -158,13 +159,6 @@ class TestUsecase():
         self.fall_et = EventTree(
             dataframe=self.fall_df
         )
-        def test_add_emptycol(self) -> None:
-            edited_df=self.fall_df
-            edited_df["extra"]=""
-            edited_et = EventTree(
-                dataframe=edited_df
-        )
-            assert edited_df == self.fall_et
 
         expected_fall_cats_per_var = {
             "HousingAssessment": 4,
@@ -199,68 +193,69 @@ class TestChangingDataFrame():
             dataframe=self.fall_df,
             sampling_zero_path=self.fall_s_z_paths
         )
+
     def test_add_empty_column(self) -> None:
-        #adding empty column
-        med_empty_column_df=self.med_df
-        med_empty_column_df["extra"]=""
+        # adding empty column
+        med_empty_column_df = self.med_df
+        med_empty_column_df["extra"] = ""
         med_empty_column_et = EventTree(
-        dataframe=med_empty_column_df
+            dataframe=med_empty_column_df
         )
         assert med_empty_column_et.adj == self.med_et.adj
 
-        fall_empty_column_df=self.fall_df
-        fall_empty_column_df["extra"]=""
+        fall_empty_column_df = self.fall_df
+        fall_empty_column_df["extra"] = ""
         fall_empty_column_et = EventTree(
-        dataframe=fall_empty_column_df
+            dataframe=fall_empty_column_df
         )
         assert fall_empty_column_et.adj == self.fall_et.adj
 
     def test_add_NA_column(self) -> None:
-        #adding NA column
-        med_add_NA_df=self.med_df
-        med_add_NA_df["extra"]=np.nan
+        # adding NA column
+        med_add_NA_df = self.med_df
+        med_add_NA_df["extra"] = np.nan
         med_add_NA_et = EventTree(
-        dataframe=med_add_NA_df
+            dataframe=med_add_NA_df
         )
         assert med_add_NA_et.adj == self.med_et.adj
 
-        fall_add_NA_df=self.fall_df
-        fall_add_NA_df["extra"]=np.nan
+        fall_add_NA_df = self.fall_df
+        fall_add_NA_df["extra"] = np.nan
         fall_add_NA_et = EventTree(
-        dataframe=fall_add_NA_df
+            dataframe=fall_add_NA_df
         )
         assert fall_add_NA_et.adj == self.fall_et.adj
 
     def test_add_same_column(self) -> None:
-        #adding column with no more information 
-        med_add_same_df=self.med_df
-        med_add_same_df["extra"]="same for all"
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = "same for all"
         med_add_same_et = EventTree(
-        dataframe=med_add_same_df
+            dataframe=med_add_same_df
         )
-        assert len(med_add_same_et.leaves)==len(self.med_et.leaves)
+        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
 
-        fall_add_same_df=self.fall_df
-        fall_add_same_df["extra"]="same for all"
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = "same for all"
         fall_add_same_et = EventTree(
-        dataframe=fall_add_same_df
+            dataframe=fall_add_same_df
         )
-        assert len(fall_add_same_et.leaves)==len(self.fall_et.leaves)
+        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
     def test_add_same_column_int(self) -> None:
-        #adding column with no more information 
-        med_add_same_df=self.med_df
-        med_add_same_df["extra"]=1
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = 1
         med_add_same_et = EventTree(
-        dataframe=med_add_same_df
+            dataframe=med_add_same_df
         )
         med_add_same_et.create_figure("et_fig_path.pdf")
-        assert len(med_add_same_et.leaves)==len(self.med_et.leaves)
+        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
 
-        fall_add_same_df=self.fall_df
-        fall_add_same_df["extra"]=1
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = 1
         fall_add_same_et = EventTree(
-        dataframe=fall_add_same_df
+            dataframe=fall_add_same_df
         )
         fall_add_same_et.create_figure("et_fig_path.pdf")
-        assert len(fall_add_same_et.leaves)==len(self.fall_et.leaves)
+        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)

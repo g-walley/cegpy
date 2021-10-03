@@ -17,13 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pyceg'
+project = 'cegpy'
 copyright = '2021, Gareth Walley, Aditi Shenvi'
 author = 'Gareth Walley, Aditi Shenvi'
 
-version = '0.1'
 # The full version, including alpha/beta/rc tags
-release = '0.1.0'
+release = 'x.x.x'
 
 
 # -- General configuration ---------------------------------------------------
@@ -32,11 +31,9 @@ release = '0.1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc'
 ]
 
-source_suffix = {
-    '.rst': 'restructuredtext'
-}
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 

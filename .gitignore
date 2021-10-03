@@ -5,7 +5,7 @@ out/
 *.pyc
 .vscode/settings.json
 src/main.py
-docs/
+docs/build/*
 .vscode/launch.json
 .vscode/workspace.code-workspace
 src/cegpy.egg-info/*

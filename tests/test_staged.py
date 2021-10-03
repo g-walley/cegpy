@@ -213,7 +213,7 @@ class TestStagedTrees():
         )
 
     def test_merged_leaves_med(self) -> None:
-        #check that no leaves have been merged
+        # check that no leaves have been merged
         self.med_st.calculate_AHC_transitions()
         for leaf in self.med_st.leaves:
             assert not any([int(leaf[1:]) in list for list in self.med_st.ahc_output['Merged Situations']])
@@ -222,7 +222,7 @@ class TestStagedTrees():
         self.fall_st.calculate_AHC_transitions()
         for leaf in self.fall_st.leaves:
             assert not any([int(leaf[1:]) in list for list in self.fall_st.ahc_output['Merged Situations']])
-  
+
 
 def write_posterior_and_prior_to_excel(path, pri, post):
     data = xlsxwriter.Workbook(path)
@@ -237,7 +237,6 @@ def write_posterior_and_prior_to_excel(path, pri, post):
         ws.write_row(jdx, 0, row)
 
     data.close()
-
 
 
 class TestChangingDataFrame():
@@ -266,79 +265,107 @@ class TestChangingDataFrame():
         self.fall_st.calculate_AHC_transitions()
 
     def test_add_empty_column(self) -> None:
-        #adding empty column
-        med_empty_column_df=self.med_df
-        med_empty_column_df["extra"]=""
+        # adding empty column
+        med_empty_column_df = self.med_df
+        med_empty_column_df["extra"] = ""
         med_empty_column_st = StagedTree(
-        dataframe=med_empty_column_df
+            dataframe=med_empty_column_df
         )
         med_empty_column_st.calculate_AHC_transitions()
         assert med_empty_column_st.ahc_output == self.med_st.ahc_output
 
-        fall_empty_column_df=self.fall_df
-        fall_empty_column_df["extra"]=""
+        fall_empty_column_df = self.fall_df
+        fall_empty_column_df["extra"] = ""
         fall_empty_column_st = StagedTree(
-        dataframe=fall_empty_column_df
+            dataframe=fall_empty_column_df
         )
         fall_empty_column_st.calculate_AHC_transitions()
         assert fall_empty_column_st.ahc_output == self.fall_st.ahc_output
 
     def test_add_NA_column(self) -> None:
-        #adding NA column
-        med_add_NA_df=self.med_df
-        med_add_NA_df["extra"]=np.nan
+        # adding NA column
+        med_add_NA_df = self.med_df
+        med_add_NA_df["extra"] = np.nan
         med_add_NA_st = StagedTree(
-        dataframe=med_add_NA_df
+            dataframe=med_add_NA_df
         )
         med_add_NA_st.calculate_AHC_transitions()
         assert med_add_NA_st.ahc_output == self.med_st.ahc_output
-        
-        fall_add_NA_df=self.fall_df
-        fall_add_NA_df["extra"]=np.nan
+
+        fall_add_NA_df = self.fall_df
+        fall_add_NA_df["extra"] = np.nan
         fall_add_NA_st = StagedTree(
-        dataframe=fall_add_NA_df
+            dataframe=fall_add_NA_df
         )
         fall_add_NA_st.calculate_AHC_transitions()
         assert fall_add_NA_st.ahc_output == self.fall_st.ahc_output
 
     def test_add_same_column_med(self) -> None:
-        #adding column with no more information 
-        med_add_same_df=self.med_df
-        med_add_same_df["extra"]="same for all"
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = "same for all"
         med_add_same_st = StagedTree(
-        dataframe=med_add_same_df
+            dataframe=med_add_same_df
         )
         med_add_same_st.calculate_AHC_transitions()
         med_add_same_st.create_figure("st_fig_path.pdf")
-        assert set(tuple(x) for x in self.med_st.ahc_output['Merged Situations']).issubset(tuple(x) for x in med_add_same_st.ahc_output['Merged Situations'])
 
-    def test_add_same_column_fall(self) -> None:        
-        fall_add_same_df=self.fall_df
-        fall_add_same_df["extra"]="same for all"
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
+
+    def test_add_same_column_fall(self) -> None:
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = "same for all"
         fall_add_same_st = StagedTree(
-        dataframe=fall_add_same_df
+            dataframe=fall_add_same_df
         )
         fall_add_same_st.calculate_AHC_transitions()
         fall_add_same_st.create_figure("st_fig_path.pdf")
-        assert set(tuple(x) for x in self.fall_st.ahc_output['Merged Situations']).issubset(tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations'])
+
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
 
     def test_add_same_column_int_med(self) -> None:
-        #adding column with no more information 
-        med_add_same_df=self.med_df
-        med_add_same_df["extra"]=1
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = 1
         med_add_same_st = StagedTree(
-        dataframe=med_add_same_df
+            dataframe=med_add_same_df
         )
         med_add_same_st.calculate_AHC_transitions()
         med_add_same_st.create_figure("st_fig_path.pdf")
-        assert set(tuple(x) for x in self.med_st.ahc_output['Merged Situations']).issubset(tuple(x) for x in med_add_same_st.ahc_output['Merged Situations'])
 
-    def test_add_same_column_int_fall(self) -> None:        
-        fall_add_same_df=self.fall_df
-        fall_add_same_df["extra"]=1
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
+
+    def test_add_same_column_int_fall(self) -> None:
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = 1
         fall_add_same_st = StagedTree(
-        dataframe=fall_add_same_df
+            dataframe=fall_add_same_df
         )
         fall_add_same_st.calculate_AHC_transitions()
         fall_add_same_st.create_figure("st_fig_path.pdf")
-        assert set(tuple(x) for x in self.fall_st.ahc_output['Merged Situations']).issubset(tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations'])
+
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)

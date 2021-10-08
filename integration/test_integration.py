@@ -1,11 +1,11 @@
-from ..src.cegpy.graphs.ceg import ChainEventGraph
-from ..src.cegpy.graphs.ceg import Evidence
-from ..src.cegpy.trees.staged import StagedTree
-from ..src.cegpy.utilities.util import Util
 from pathlib import Path
 import networkx as nx
 import pandas as pd
 import os.path
+from src.cegpy.graphs.ceg import ChainEventGraph
+from src.cegpy.graphs.ceg import Evidence
+from src.cegpy.trees.staged import StagedTree
+from src.cegpy.utilities.util import Util
 
 
 class TestReducedOutputs:

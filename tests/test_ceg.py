@@ -1,7 +1,7 @@
-from cegpy import StagedTree, Evidence, ChainEventGraph
-from pathlib import Path
 import networkx as nx
 import pandas as pd
+from src.cegpy import StagedTree, Evidence, ChainEventGraph
+from pathlib import Path
 
 
 class TestUnitCEG(object):

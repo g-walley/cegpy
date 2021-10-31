@@ -31,3 +31,5 @@ data/voting.xlsx
 scripts/docker/run_example_docker.sh
 data/tic-tac-toe.xlsx
 *.pdf
+.tox/
+.coverage

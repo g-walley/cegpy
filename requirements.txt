@@ -10,3 +10,5 @@ networkx==2.6.3
 scipy==1.7.0
 colorutils==0.3.0
 pytest-xdist
+tox
+pytest-cov

@@ -2,6 +2,7 @@ from src.cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
+from pytest_mock import MockerFixture
 # import xlsxwriter
 import numpy as np
 
@@ -296,7 +297,8 @@ class TestChangingDataFrame():
         fall_add_NA_st.calculate_AHC_transitions()
         assert fall_add_NA_st.ahc_output == self.fall_st.ahc_output
 
-    def test_add_same_column_med(self) -> None:
+    def test_add_same_column_med(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = "same for all"
@@ -314,7 +316,8 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_fall(self) -> None:
+    def test_add_same_column_fall(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = "same for all"
         fall_add_same_st = StagedTree(
@@ -331,7 +334,8 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_int_med(self) -> None:
+    def test_add_same_column_int_med(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1
@@ -350,7 +354,8 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_int_fall(self) -> None:
+    def test_add_same_column_int_fall(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = 1
         fall_add_same_st = StagedTree(

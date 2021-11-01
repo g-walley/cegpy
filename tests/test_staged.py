@@ -235,6 +235,10 @@ class TestStagedTrees():
             ]
             assert not any(leaf_in_merged_situations)
 
+    def test_independent_hyperstage_generator(self) -> None:
+        """generator correctly establishes which subsets have
+        cross-over, and returns correct number of subsets"""
+
 
 class TestChangingDataFrame():
     def setup(self):

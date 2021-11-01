@@ -4,6 +4,7 @@ from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
+from typing import List
 import networkx as nx
 import scipy.special
 import logging
@@ -357,6 +358,13 @@ class StagedTree(EventTree):
                 [round(element/total, 3) for element in arr]
             )
         return mean_posterior_probs
+
+    def _independent_hyperstage_generator(
+            self, hyperstage: List[List]) -> List[List]:
+        """Spit out the next hyperstage that can be dealt with
+        independently."""
+        raise NotImplementedError
+        return []
 
     def _execute_AHC_algoritm(self):
         # prior = self.prior.copy()

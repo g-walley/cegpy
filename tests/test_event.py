@@ -4,6 +4,7 @@ import pandas as pd
 from pathlib import Path
 import re
 import numpy as np
+from pytest_mock import MockerFixture
 
 
 class TestEventTree():
@@ -242,7 +243,8 @@ class TestChangingDataFrame():
         )
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
-    def test_add_same_column_int(self) -> None:
+    def test_add_same_column_int(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1

@@ -1,6 +1,7 @@
 from ..utilities.util import Util
 from ..trees.event import EventTree
 from fractions import Fraction
+from copy import deepcopy
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
@@ -360,11 +361,23 @@ class StagedTree(EventTree):
         return mean_posterior_probs
 
     def _independent_hyperstage_generator(
-            self, hyperstage: List[List]) -> List[List]:
+            self, hyperstage: List[List]) -> List[List[List]]:
         """Spit out the next hyperstage that can be dealt with
         independently."""
-        raise NotImplementedError
-        return []
+        new_hyperstages = [[hyperstage[0]]]
+
+        for sublist in hyperstage[1:]:
+            hs_to_add = [sublist]
+
+            for hs in new_hyperstages.copy():
+                for other_sublist in hs:
+                    if not set(other_sublist).isdisjoint(set(sublist)):
+                        hs_to_add.extend(hs)
+                        new_hyperstages.remove(hs)
+
+            new_hyperstages.append(hs_to_add)
+
+        return new_hyperstages
 
     def _execute_AHC_algoritm(self):
         # prior = self.prior.copy()

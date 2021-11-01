@@ -242,21 +242,25 @@ class TestStagedTrees():
         example_hyperstage = [
             ['s1', 's2', 's3'],
             ['s3', 's4'],
-            ['s5', 's6', 's7', 's8']]
+            ['s5', 's6'],
+            ['s7', 's8'],
+            ['s6', 's4']]
+        first_hyperstage = set()
+        first_hyperstage.add(frozenset(example_hyperstage[0]))
+        first_hyperstage.add(frozenset(example_hyperstage[1]))
+        first_hyperstage.add(frozenset(example_hyperstage[2]))
+        first_hyperstage.add(frozenset(example_hyperstage[4]))
+        second_hyperstage = set()
+        second_hyperstage.add(frozenset(example_hyperstage[3]))
+        expected_hyperstages = set()
+        expected_hyperstages.add(frozenset(first_hyperstage))
+        expected_hyperstages.add(frozenset(second_hyperstage))
 
-        expected_hyperstages = [
-            [
-                example_hyperstage[0],
-                example_hyperstage[1]
-            ],
-            [
-                example_hyperstage[2]
-            ]
-        ]
-        actual_hyperstages = []
+        actual_hyperstages = set()
         for hyperstage in self.fall_st._independent_hyperstage_generator(
                 hyperstage=example_hyperstage):
-            actual_hyperstages.append(hyperstage)
+            actual_hyperstages.add(
+                frozenset([frozenset(sublist) for sublist in hyperstage]))
 
         assert actual_hyperstages == expected_hyperstages
 

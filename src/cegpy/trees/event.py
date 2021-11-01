@@ -129,7 +129,7 @@ class EventTree(nx.MultiDiGraph):
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self._dataframe = dataframe
+        self.dataframe = dataframe
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -146,6 +146,19 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
+
+    @property
+    def dataframe(self):
+        return self._dataframe
+
+    @dataframe.setter
+    def dataframe(self, value: pd.DataFrame):
+        if isinstance(value, pd.DataFrame):
+            self._dataframe = value
+        else:
+            raise ValueError(
+                "Package currently only supports Pandas DataFrame"
+                " objects provided as the dataframe")
 
     @property
     def sampling_zeros(self):

@@ -183,8 +183,6 @@ class EventTree(nx.MultiDiGraph):
                 error_str = "Parameter 'sampling_zero_paths' not in expected format. \
                              Should be a list of tuples like so:\n \
                              [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                if logger.getEffectiveLevel() is logging.DEBUG:
-                    logger.debug(error_str)
                 raise ValueError(error_str)
 
     @property
@@ -305,7 +303,7 @@ class EventTree(nx.MultiDiGraph):
         unsorted_paths = defaultdict(int)
 
         for variable_number in range(0, len(self.variables)):
-            dataframe_upto_variable = self._dataframe.loc[
+            dataframe_upto_variable = self.dataframe.loc[
                 :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():

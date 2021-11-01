@@ -5,6 +5,22 @@ from pathlib import Path
 import re
 import numpy as np
 from pytest_mock import MockerFixture
+import pytest
+
+
+class TestEventTreeAPI():
+    def setup(self):
+        df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.df = pd.read_excel(df_path)
+
+    def test_required_argument_missing_fails(self):
+        pytest.raises(TypeError, EventTree)
+
+    def test_required_argument_wrong_type_fails(self):
+        dataframe = 5
+        pytest.raises(ValueError, EventTree, dataframe=dataframe)
 
 
 class TestEventTree():
@@ -161,6 +177,7 @@ class TestUsecase():
             dataframe=self.fall_df
         )
 
+    def test_fall_cats_per_var(self):
         expected_fall_cats_per_var = {
             "HousingAssessment": 4,
             "Risk": 2,

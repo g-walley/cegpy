@@ -149,13 +149,10 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def sampling_zeros(self):
-        try:
-            if self._sampling_zero_paths is None:
-                logger.info("EventTree.sampling_zero_paths \
-                        has not been set.")
-            return self._sampling_zero_paths
-        except AttributeError:
-            logger.info("something has gone seriously wrong.")
+        if self._sampling_zero_paths is None:
+            logger.info("EventTree.sampling_zero_paths \
+                    has not been set.")
+        return self._sampling_zero_paths
 
     @sampling_zeros.setter
     def sampling_zeros(self, sz_paths):

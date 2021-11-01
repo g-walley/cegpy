@@ -5,6 +5,7 @@ from fractions import Fraction as frac
 from pytest_mock import MockerFixture
 # import xlsxwriter
 import numpy as np
+import pytest
 
 
 class TestStagedTrees():
@@ -238,6 +239,26 @@ class TestStagedTrees():
     def test_independent_hyperstage_generator(self) -> None:
         """generator correctly establishes which subsets have
         cross-over, and returns correct number of subsets"""
+        example_hyperstage = [
+            ['s1', 's2', 's3'],
+            ['s3', 's4'],
+            ['s5', 's6', 's7', 's8']]
+
+        expected_hyperstages = [
+            [
+                example_hyperstage[0],
+                example_hyperstage[1]
+            ],
+            [
+                example_hyperstage[2]
+            ]
+        ]
+        actual_hyperstages = []
+        for hyperstage in self.fall_st._independent_hyperstage_generator(
+                hyperstage=example_hyperstage):
+            actual_hyperstages.append(hyperstage)
+
+        assert actual_hyperstages == expected_hyperstages
 
 
 class TestChangingDataFrame():

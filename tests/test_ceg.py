@@ -154,7 +154,7 @@ class TestUnitCEG(object):
         }
         self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
         self.ceg.evidence.add_nodes_from(certain_nodes, Evidence.CERTAIN)
-        reduced = self.ceg.reduced
+        self.ceg.reduced
 
         self.ceg.clear_evidence()
 

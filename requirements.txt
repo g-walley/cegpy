@@ -11,5 +11,5 @@ scipy==1.7.0
 colorutils==0.3.0
 pytest-xdist
 pytest-cov
-pytest-mock
+pytest-mock==3.6
 tox

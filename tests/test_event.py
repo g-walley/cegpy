@@ -1,3 +1,4 @@
+from pandas.core.frame import DataFrame
 from src.cegpy import EventTree
 from collections import defaultdict
 import pandas as pd
@@ -21,6 +22,14 @@ class TestEventTreeAPI():
     def test_required_argument_wrong_type_fails(self):
         dataframe = 5
         pytest.raises(ValueError, EventTree, dataframe=dataframe)
+
+    def test_incorrect_sampling_zero_fails(self):
+        szp = [('edge_1'), ('edge_1', 'edge_2')]
+        pytest.raises(
+            ValueError,
+            EventTree,
+            dataframe=self.df,
+            sampling_zero_paths=szp)
 
 
 class TestEventTree():

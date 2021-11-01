@@ -1,12 +1,12 @@
-from pandas.core.frame import DataFrame
-from src.cegpy import EventTree
-from collections import defaultdict
+from IPython.display import Image
 import pandas as pd
-from pathlib import Path
 import re
 import numpy as np
-from pytest_mock import MockerFixture
 import pytest
+from collections import defaultdict
+from pathlib import Path
+from pytest_mock import MockerFixture
+from src.cegpy import EventTree
 
 
 class TestEventTreeAPI():

@@ -122,7 +122,7 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Initialising')
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
-
+        self._sampling_zero_paths = None
         self.sampling_zeros = sampling_zero_paths
 
         # Paths sorted alphabetically in order of length
@@ -185,7 +185,7 @@ class EventTree(nx.MultiDiGraph):
                              [('edge_1',), ('edge_1', 'edge_2'), ...]"
                 if logger.getEffectiveLevel() is logging.DEBUG:
                     logger.debug(error_str)
-                    raise ValueError(error_str)
+                raise ValueError(error_str)
 
     @property
     def situations(self) -> list:

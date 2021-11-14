@@ -1,12 +1,7 @@
-from ..src.cegpy.graphs.ceg import ChainEventGraph
-from ..src.cegpy.graphs.ceg import Evidence
-from ..src.cegpy.trees.staged import StagedTree
-# from ..src.cegpy.utilities.util import Util
-# from collections import defaultdict
-from pathlib import Path
 import networkx as nx
 import pandas as pd
-# import os.path
+from src.cegpy import StagedTree, Evidence, ChainEventGraph
+from pathlib import Path
 
 
 class TestUnitCEG(object):
@@ -22,9 +17,7 @@ class TestUnitCEG(object):
             name="medical_staged"
         )
         self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(
-            incoming_graph_data=self.st,
-        )
+        self.ceg = ChainEventGraph(self.st)
 
     def test_node_name_generation(self):
         prefix = self.ceg.node_prefix
@@ -132,7 +125,7 @@ class TestUnitCEG(object):
             'w4', 'w10'
         }
         for vertex in certain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.CERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.CERTAIN)
             assert vertex in self.ceg.evidence.certain_vertices
 
         uncertain_edges = [
@@ -147,7 +140,7 @@ class TestUnitCEG(object):
             'w2', 'w13'
         }
         for vertex in uncertain_vertices:
-            self.ceg.evidence.add_vertex(vertex, Evidence.UNCERTAIN)
+            self.ceg.evidence.add_node(vertex, Evidence.UNCERTAIN)
             assert vertex in self.ceg.evidence.uncertain_vertices
 
     def test_propagation(self) -> None:
@@ -160,8 +153,10 @@ class TestUnitCEG(object):
             'w12'
         }
         self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
-        self.ceg.evidence.add_vertices_from(certain_nodes, Evidence.CERTAIN)
-        reduced = self.ceg.reduced
+        self.ceg.evidence.add_nodes_from(certain_nodes, Evidence.CERTAIN)
+        self.ceg.reduced
+
+        self.ceg.clear_evidence()
 
 
 class TestEvidence(object):
@@ -224,18 +219,18 @@ class TestEvidence(object):
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in uncertain_vertices:
-            self.evidence.add_vertex(vertex, certain=False)
+            self.evidence.add_node(vertex, certain=False)
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
-        self.evidence.remove_vertex('s2', certain=False)
+        self.evidence.remove_node('s2', certain=False)
         uncertain_vertices.remove('s2')
         assert uncertain_vertices == self.evidence.uncertain_vertices
 
         certain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in certain_vertices:
-            self.evidence.add_vertex(vertex, certain=True)
+            self.evidence.add_node(vertex, certain=True)
         assert certain_vertices == self.evidence.certain_vertices
 
-        self.evidence.remove_vertex('s2', certain=True)
+        self.evidence.remove_node('s2', certain=True)
         certain_vertices.remove('s2')
         assert certain_vertices == self.evidence.certain_vertices

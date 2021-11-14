@@ -8,7 +8,7 @@ from IPython.display import Image
 from IPython import get_ipython
 import logging
 
-logger = logging.getLogger('pyceg.chain_event_graph')
+logger = logging.getLogger('cegpy.chain_event_graph')
 
 
 class ChainEventGraph(nx.MultiDiGraph):
@@ -18,28 +18,19 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    def __init__(self, incoming_graph_data=None, **attr):
-        super().__init__(incoming_graph_data, **attr)
-        self.incoming_graph_data = incoming_graph_data
+    def __init__(self, staged_tree=None, **attr):
+        super().__init__(staged_tree, **attr)
         self.sink_suffix = '&infin;'
         self.node_prefix = 'w'
 
-        if incoming_graph_data is not None:
+        if staged_tree is not None:
             try:
-                self.ahc_output = deepcopy(incoming_graph_data.ahc_output)
+                self.ahc_output = deepcopy(staged_tree.ahc_output)
             except AttributeError:
                 self.ahc_output = {}
         else:
             logger.info("Class called with no incoming graph.")
         self.evidence = Evidence(self)
-
-    @property
-    def incoming_graph_data(self):
-        return self._incoming_graph_data
-
-    @incoming_graph_data.setter
-    def incoming_graph_data(self, value):
-        self._incoming_graph_data = value
 
     @property
     def node_prefix(self):
@@ -106,8 +97,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         return self.__stages
 
     def clear_evidence(self):
-        self.certain_evidence = Evidence()
-        self.uncertain_evidence = Evidence()
+        self.evidence = Evidence(self)
 
     def generate(self):
         '''
@@ -280,6 +270,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.__update_path_list()
 
     def create_figure(self, filename):
+        """
+        Draws the chain event graph representation of the stage tree,
+        and saves it to "<filename>.filetype". Supports any filetype that
+        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         edge_probabilities = list(
@@ -392,11 +387,14 @@ class ChainEventGraph(nx.MultiDiGraph):
             for pred in self.predecessors(node):
                 max_dist_to_sink = set()
                 for succ in self.successors(pred):
-                    max_dist_to_sink.add(
-                        self.nodes[succ][max_dist]
-                    )
+                    try:
+                        max_dist_to_sink.add(
+                            self.nodes[succ][max_dist]
+                        )
+                        self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
+                    except KeyError:
+                        break
 
-                self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
                 if pred not in node_queue:
                     node_queue.append(pred)
 
@@ -510,25 +508,25 @@ class Evidence:
         for (u, v, k) in edges:
             self.remove_edge(u, v, k, certain)
 
-    def add_vertex(self, vertex, certain):
+    def add_node(self, node, certain):
         if certain:
-            self.certain_vertices.add(vertex)
+            self.certain_vertices.add(node)
         else:
-            self.uncertain_vertices.add(vertex)
+            self.uncertain_vertices.add(node)
 
-    def add_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.add_vertex(vertex, certain)
+    def add_nodes_from(self, nodes, certain):
+        for node in nodes:
+            self.add_node(node, certain)
 
-    def remove_vertex(self, vertex, certain):
+    def remove_node(self, node, certain):
         if certain:
-            self.certain_vertices.remove(vertex)
+            self.certain_vertices.remove(node)
         else:
-            self.uncertain_vertices.remove(vertex)
+            self.uncertain_vertices.remove(node)
 
-    def remove_vertices_from(self, vertices, certain):
-        for vertex in vertices:
-            self.remove_vertex(vertex, certain)
+    def remove_nodes_from(self, nodes, certain):
+        for node in nodes:
+            self.remove_node(node, certain)
 
     def __repr__(self) -> str:
         repr = "Evidence(CertainEdges={}, CertainVertices={}," +\

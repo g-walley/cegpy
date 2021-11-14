@@ -1,5 +1,5 @@
 from collections import defaultdict
-from ..src.cegpy.utilities.util import Util
+from src.cegpy import Util
 
 
 class TestCegUtil(object):

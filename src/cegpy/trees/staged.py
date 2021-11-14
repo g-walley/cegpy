@@ -8,7 +8,7 @@ import networkx as nx
 import scipy.special
 import logging
 
-logger = logging.getLogger('pyceg.staged_tree')
+logger = logging.getLogger('cegpy.staged_tree')
 
 
 class StagedTree(EventTree):
@@ -392,7 +392,7 @@ class StagedTree(EventTree):
 
                         if is_subset and not any_non_zero:
                             model2 = [prior_list[sit_2], posterior_list[sit_2]]
-                            local[(sit_1, sit_2)] = \
+                            local[(situ[sit_1], situ[sit_2])] = \
                                 self._calculate_bayes_factor(
                                     *model1, *model2
                                 )
@@ -402,29 +402,31 @@ class StagedTree(EventTree):
 
             if local != {} and bayesfactor_score > 0:
                 merged_situation_list.append(list(max_key))
+                key_0 = situ.index(max_key[0])
+                key_1 = situ.index(max_key[1])
 
-                prior_list[max_key[0]] = list(
+                prior_list[key_0] = list(
                     map(
                         add,
-                        prior_list[max_key[0]],
-                        prior_list[max_key[1]]
+                        prior_list[key_0],
+                        prior_list[key_1]
                     )
                 )
-                posterior_list[max_key[0]] = list(
+                posterior_list[key_0] = list(
                     map(
                         add,
-                        posterior_list[max_key[0]],
-                        posterior_list[max_key[1]]
+                        posterior_list[key_0],
+                        posterior_list[key_1]
                     )
                 )
 
-                prior_list[max_key[1]] = \
-                    [0] * len(prior_list[max_key[0]])
-                posterior_list[max_key[1]] = \
-                    [0] * len(prior_list[max_key[0]])
+                prior_list[key_1] = \
+                    [0] * len(prior_list[key_0])
+                posterior_list[key_1] = \
+                    [0] * len(prior_list[key_0])
 
-                posterior_probs[max_key[0]] = posterior_list[max_key[0]]
-                posterior_probs[max_key[1]] = posterior_list[max_key[0]]
+                posterior_probs[key_0] = posterior_list[key_0]
+                posterior_probs[key_1] = posterior_list[key_0]
 
                 loglikelihood += bayesfactor_score
 
@@ -432,15 +434,14 @@ class StagedTree(EventTree):
 
         return posterior_probs, loglikelihood, merged_situation_list
 
-    def _mark_nodes_with_stage_number(self, merged_situation_indexes) -> list:
+    def _mark_nodes_with_stage_number(self, merged_situations) -> list:
         """AHC algorithm creates a list of indexes to the situations list.
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
-        list_of_merged_situations = self._sort_list(merged_situation_indexes)
+        list_of_merged_situations = self._sort_list(merged_situations)
         for index, stage in enumerate(list_of_merged_situations):
-            for node_number in stage:
-                node_name = 's' + str(node_number)
+            for node_name in stage:
                 self.nodes[node_name]['stage'] = index
 
         return list_of_merged_situations
@@ -469,13 +470,13 @@ class StagedTree(EventTree):
         self.__store_params(prior, alpha, hyperstage)
 
         posterior_probs, loglikelihood, \
-            merged_situation_indexes = self._execute_AHC_algoritm()
+            merged_situations = self._execute_AHC_algoritm()
 
         mean_posterior_probs = \
             self._calculate_mean_posterior_probs(posterior_probs)
 
         merged_situations = \
-            self._mark_nodes_with_stage_number(merged_situation_indexes)
+            self._mark_nodes_with_stage_number(merged_situations)
 
         self._generate_colours_for_situations(merged_situations)
 
@@ -487,8 +488,11 @@ class StagedTree(EventTree):
         return self.ahc_output
 
     def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+        """Draws the coloured staged tree for the process described by
+        the dataset, and saves it to "<filename>.filetype". Supports
+        any filetype that graphviz supports. e.g: "event_tree.png" or
+        "event_tree.svg" etc.
+        """
         try:
             self.ahc_output
             filename, filetype = Util.generate_filename_and_mkdir(filename)

@@ -1,11 +1,11 @@
-from ..src.cegpy.graphs.ceg import ChainEventGraph
-from ..src.cegpy.graphs.ceg import Evidence
-from ..src.cegpy.trees.staged import StagedTree
-from ..src.cegpy.utilities.util import Util
 from pathlib import Path
 import networkx as nx
 import pandas as pd
 import os.path
+from src.cegpy.graphs.ceg import ChainEventGraph
+from src.cegpy.graphs.ceg import Evidence
+from src.cegpy.trees.staged import StagedTree
+from src.cegpy.utilities.util import Util
 
 
 class TestReducedOutputs:
@@ -55,7 +55,7 @@ class TestReducedOutputs:
         self.evidence._Evidence__graph.create_figure(fname)
         update_path_lists()
         self.evidence.add_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
-        self.evidence.add_vertex('w4', Evidence.CERTAIN)
+        self.evidence.add_node('w4', Evidence.CERTAIN)
         reduced = self.evidence.reduced_graph
 
         expected_reduced_probabilities = {
@@ -106,10 +106,10 @@ class TestReducedOutputs:
         assert len(expected_paths) == len(self.evidence.path_list)
 
         self.evidence.remove_edge('w8', 'w&infin;', 'q', Evidence.CERTAIN)
-        self.evidence.remove_vertex('w4', Evidence.CERTAIN)
+        self.evidence.remove_node('w4', Evidence.CERTAIN)
         update_path_lists()
-        self.evidence.add_vertex('w6', Evidence.UNCERTAIN)
-        self.evidence.add_vertex('w3', Evidence.UNCERTAIN)
+        self.evidence.add_node('w6', Evidence.UNCERTAIN)
+        self.evidence.add_node('w3', Evidence.UNCERTAIN)
         reduced = self.evidence.reduced_graph
 
         expected_reduced_probabilities = {
@@ -169,13 +169,13 @@ class TestReducedOutputs:
             assert path in self.evidence.path_list
         assert len(expected_paths) == len(self.evidence.path_list)
 
-        self.evidence.remove_vertex('w3', Evidence.UNCERTAIN)
-        self.evidence.remove_vertex('w6', Evidence.UNCERTAIN)
+        self.evidence.remove_node('w3', Evidence.UNCERTAIN)
+        self.evidence.remove_node('w6', Evidence.UNCERTAIN)
         update_path_lists()
         self.evidence.add_edge('w2', 'w4', 'e', Evidence.UNCERTAIN)
         self.evidence.add_edge('w3', 'w4', 'g', Evidence.UNCERTAIN)
         self.evidence.add_edge('w3', 'w8', 'h', Evidence.UNCERTAIN)
-        self.evidence.add_vertex('w1', Evidence.CERTAIN)
+        self.evidence.add_node('w1', Evidence.CERTAIN)
 
         reduced = self.evidence.reduced_graph
 
@@ -235,20 +235,16 @@ class TestReducedOutputs:
 
 class TestCegOutput:
     def setup(self):
-        self.node_prefix = 'w'
-        self.sink_suffix = '&infin;'
         df_path = Path(__file__).resolve(
             ).parent.parent.joinpath(
             'data/medical_dm_modified.xlsx')
 
-        self.st = StagedTree(
+        st = StagedTree(
             dataframe=pd.read_excel(df_path),
             name="medical_staged"
         )
-        self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(
-            incoming_graph_data=self.st,
-        )
+        st.calculate_AHC_transitions()
+        self.ceg = ChainEventGraph(st)
 
     def test_creation_of_ceg(self) -> None:
         self.ceg.generate()
@@ -265,3 +261,19 @@ class TestCegOutput:
         fname = Util.create_path('out/Subgraph_test', True, 'pdf')
         subgraph.create_figure(fname)
         print(path_list)
+
+
+class TestCegNonStrat:
+    def setup(self):
+        df_path = Path(__file__).resolve().parent.parent.joinpath(
+            'data/Falls_Data.xlsx'
+        )
+        st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name='Falls Staged Tree'
+        )
+        st.calculate_AHC_transitions()
+        self.ceg = ChainEventGraph(st)
+
+    def test_generation(self):
+        self.ceg.generate()

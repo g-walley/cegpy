@@ -9,7 +9,7 @@ import pandas as pd
 import textwrap
 import networkx as nx
 # create logger object for this module
-logger = logging.getLogger('pyceg.event_tree')
+logger = logging.getLogger('cegpy.event_tree')
 
 
 class EventTree(nx.MultiDiGraph):
@@ -122,16 +122,14 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Initialising')
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
-
+        self._sampling_zero_paths = None
         self.sampling_zeros = sampling_zero_paths
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self._dataframe = dataframe
-        # Format of event_tree dict:
-
+        self.dataframe = dataframe
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -150,14 +148,24 @@ class EventTree(nx.MultiDiGraph):
         return vars
 
     @property
+    def dataframe(self):
+        return self._dataframe
+
+    @dataframe.setter
+    def dataframe(self, value: pd.DataFrame):
+        if isinstance(value, pd.DataFrame):
+            self._dataframe = value
+        else:
+            raise ValueError(
+                "Package currently only supports Pandas DataFrame"
+                " objects provided as the dataframe")
+
+    @property
     def sampling_zeros(self):
-        try:
-            if self._sampling_zero_paths is None:
-                logger.info("EventTree.sampling_zero_paths \
-                        has not been set.")
-            return self._sampling_zero_paths
-        except AttributeError:
-            logger.info("something has gone seriously wrong.")
+        if self._sampling_zero_paths is None:
+            logger.info("EventTree.sampling_zero_paths \
+                    has not been set.")
+        return self._sampling_zero_paths
 
     @sampling_zeros.setter
     def sampling_zeros(self, sz_paths):
@@ -175,13 +183,11 @@ class EventTree(nx.MultiDiGraph):
                 error_str = "Parameter 'sampling_zero_paths' not in expected format. \
                              Should be a list of tuples like so:\n \
                              [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                if logger.getEffectiveLevel() is logging.DEBUG:
-                    logger.debug(error_str)
-                    raise ValueError(error_str)
+                raise ValueError(error_str)
 
     @property
     def situations(self) -> list:
-        """Returns list of event tree situations.
+        """List of situations of the tree.
         (non-leaf nodes)"""
         return [
             node for node, out_degree in self.out_degree
@@ -190,7 +196,7 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def leaves(self) -> list:
-        """Returns leaves of the event tree."""
+        """List of leaves of the tree."""
         # if not already generated, create self.leaves
         return [
             node for node, out_degree in self.out_degree
@@ -247,7 +253,7 @@ class EventTree(nx.MultiDiGraph):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
-            edge_details = edge[2] + '\n' + str(count)
+            edge_details = str(edge[2]) + '\n' + str(count)
 
             graph.add_edge(
                 pdp.Edge(
@@ -265,18 +271,20 @@ class EventTree(nx.MultiDiGraph):
                 fill_colour = self.nodes[node]['colour']
             except KeyError:
                 fill_colour = 'lightgrey'
-
+            label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
                     name=node,
-                    label=node,
+                    label=label,
                     style="filled",
                     fillcolor=fill_colour))
         return graph
 
     def create_figure(self, filename):
         """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+        and saves it to "<filename>.filetype". Supports any filetype that
+        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
         graph = self._generate_pdp_graph()
@@ -295,7 +303,7 @@ class EventTree(nx.MultiDiGraph):
         unsorted_paths = defaultdict(int)
 
         for variable_number in range(0, len(self.variables)):
-            dataframe_upto_variable = self._dataframe.loc[
+            dataframe_upto_variable = self.dataframe.loc[
                 :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():

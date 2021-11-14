@@ -1,8 +1,10 @@
-from ..src.cegpy.trees.staged import StagedTree
+from src.cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
-import xlsxwriter
+from pytest_mock import MockerFixture
+# import xlsxwriter
+import numpy as np
 
 
 class TestStagedTrees():
@@ -211,17 +213,162 @@ class TestStagedTrees():
             expected_likelihood
         )
 
+    def test_merged_leaves_med(self) -> None:
+        # check that no leaves have been merged
+        self.med_st.calculate_AHC_transitions()
+        for leaf in self.med_st.leaves:
+            node_number = int(leaf[1:])
+            merged_situations = self.med_st.ahc_output['Merged Situations']
+            leaf_in_merged_situations = [
+                node_number in situ_list for situ_list in merged_situations
+            ]
 
-def write_posterior_and_prior_to_excel(path, pri, post):
-    data = xlsxwriter.Workbook(path)
+            assert not any(leaf_in_merged_situations)
 
-    ws = data.add_worksheet()
-    for idx, pr in enumerate(pri):
-        row = [float(x) for x in pr]
-        ws.write_row(idx, 0, row)
+    def test_merged_leaves_fall(self) -> None:
+        self.fall_st.calculate_AHC_transitions()
+        for leaf in self.fall_st.leaves:
+            node_number = int(leaf[1:])
+            merged_situations = self.fall_st.ahc_output['Merged Situations']
+            leaf_in_merged_situations = [
+                node_number in situ_list for situ_list in merged_situations
+            ]
+            assert not any(leaf_in_merged_situations)
 
-    for jdx, posterior in enumerate(post, start=(idx+2)):
-        row = [float(x) for x in posterior]
-        ws.write_row(jdx, 0, row)
 
-    data.close()
+class TestChangingDataFrame():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_st = StagedTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+        self.med_st.calculate_AHC_transitions()
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_st = StagedTree(
+            dataframe=self.fall_df,
+            sampling_zero_path=self.fall_s_z_paths
+        )
+        self.fall_st.calculate_AHC_transitions()
+
+    def test_add_empty_column(self) -> None:
+        # adding empty column
+        med_empty_column_df = self.med_df
+        med_empty_column_df["extra"] = ""
+        med_empty_column_st = StagedTree(
+            dataframe=med_empty_column_df
+        )
+        med_empty_column_st.calculate_AHC_transitions()
+        assert med_empty_column_st.ahc_output == self.med_st.ahc_output
+
+        fall_empty_column_df = self.fall_df
+        fall_empty_column_df["extra"] = ""
+        fall_empty_column_st = StagedTree(
+            dataframe=fall_empty_column_df
+        )
+        fall_empty_column_st.calculate_AHC_transitions()
+        assert fall_empty_column_st.ahc_output == self.fall_st.ahc_output
+
+    def test_add_NA_column(self) -> None:
+        # adding NA column
+        med_add_NA_df = self.med_df
+        med_add_NA_df["extra"] = np.nan
+        med_add_NA_st = StagedTree(
+            dataframe=med_add_NA_df
+        )
+        med_add_NA_st.calculate_AHC_transitions()
+        assert med_add_NA_st.ahc_output == self.med_st.ahc_output
+
+        fall_add_NA_df = self.fall_df
+        fall_add_NA_df["extra"] = np.nan
+        fall_add_NA_st = StagedTree(
+            dataframe=fall_add_NA_df
+        )
+        fall_add_NA_st.calculate_AHC_transitions()
+        assert fall_add_NA_st.ahc_output == self.fall_st.ahc_output
+
+    def test_add_same_column_med(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = "same for all"
+        med_add_same_st = StagedTree(
+            dataframe=med_add_same_df
+        )
+        med_add_same_st.calculate_AHC_transitions()
+        med_add_same_st.create_figure("out/test_add_same_column_med_fig.pdf")
+
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
+
+    def test_add_same_column_fall(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = "same for all"
+        fall_add_same_st = StagedTree(
+            dataframe=fall_add_same_df
+        )
+        fall_add_same_st.calculate_AHC_transitions()
+        fall_add_same_st.create_figure("out/test_add_same_column_fall_fig.pdf")
+
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
+
+    def test_add_same_column_int_med(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = 1
+        med_add_same_st = StagedTree(
+            dataframe=med_add_same_df
+        )
+        med_add_same_st.calculate_AHC_transitions()
+        med_add_same_st.create_figure(
+            "out/test_add_same_column_int_med_fig.pdf")
+
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)
+
+    def test_add_same_column_int_fall(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = 1
+        fall_add_same_st = StagedTree(
+            dataframe=fall_add_same_df
+        )
+        fall_add_same_st.calculate_AHC_transitions()
+        fall_add_same_st.create_figure(
+            "out/test_add_same_column_int_fall_fig.pdf")
+
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
+        second_set = set(
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
+        )
+        assert first_set.issubset(second_set)

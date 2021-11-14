@@ -39,6 +39,10 @@ class TestEventTree():
 
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
+        self.reordered_et = EventTree(
+            dataframe=self.df, 
+            var_order=self.df.columns[::-1]
+        )
         self.node_format = re.compile('^s\\d\\d*$')
 
     def test_check_sampling_zero_paths_param(self) -> None:
@@ -58,6 +62,9 @@ class TestEventTree():
         szp = [('Medium',), ('Medium', 'High')]
         self.et.sampling_zeros = szp
         assert self.et.sampling_zeros == szp
+    
+    def test_order_of_columns(self) -> None:
+        assert self.reordered_et.variables == self.df.coumns[::-1]
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)

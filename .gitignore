@@ -33,3 +33,4 @@ data/tic-tac-toe.xlsx
 *.pdf
 .tox/
 .coverage
+.coverage.*

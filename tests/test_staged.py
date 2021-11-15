@@ -5,7 +5,6 @@ from fractions import Fraction as frac
 from pytest_mock import MockerFixture
 # import xlsxwriter
 import numpy as np
-import pytest
 
 
 class TestStagedTrees():

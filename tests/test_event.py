@@ -64,7 +64,7 @@ class TestEventTree():
         assert self.et.sampling_zeros == szp
     
     def test_order_of_columns(self) -> None:
-        assert self.reordered_et.variables == self.df.coumns[::-1]
+        assert self.reordered_et.variables == list(self.df.columns[::-1])
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)

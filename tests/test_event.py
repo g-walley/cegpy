@@ -1,9 +1,34 @@
-from src.cegpy import EventTree
-from collections import defaultdict
 import pandas as pd
-from pathlib import Path
 import re
 import numpy as np
+import pytest
+from collections import defaultdict
+from pathlib import Path
+from pytest_mock import MockerFixture
+from src.cegpy import EventTree
+
+
+class TestEventTreeAPI():
+    def setup(self):
+        df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.df = pd.read_excel(df_path)
+
+    def test_required_argument_missing_fails(self):
+        pytest.raises(TypeError, EventTree)
+
+    def test_required_argument_wrong_type_fails(self):
+        dataframe = 5
+        pytest.raises(ValueError, EventTree, dataframe=dataframe)
+
+    def test_incorrect_sampling_zero_fails(self):
+        szp = [('edge_1'), ('edge_1', 'edge_2')]
+        pytest.raises(
+            ValueError,
+            EventTree,
+            dataframe=self.df,
+            sampling_zero_paths=szp)
 
 
 class TestEventTree():
@@ -14,6 +39,10 @@ class TestEventTree():
 
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
+        self.reordered_et = EventTree(
+            dataframe=self.df, 
+            var_order=self.df.columns[::-1]
+        )
         self.node_format = re.compile('^s\\d\\d*$')
 
     def test_check_sampling_zero_paths_param(self) -> None:
@@ -33,6 +62,9 @@ class TestEventTree():
         szp = [('Medium',), ('Medium', 'High')]
         self.et.sampling_zeros = szp
         assert self.et.sampling_zeros == szp
+    
+    def test_order_of_columns(self) -> None:
+        assert self.reordered_et.variables == list(self.df.columns[::-1])
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)
@@ -160,6 +192,7 @@ class TestUsecase():
             dataframe=self.fall_df
         )
 
+    def test_fall_cats_per_var(self):
         expected_fall_cats_per_var = {
             "HousingAssessment": 4,
             "Risk": 2,
@@ -242,7 +275,8 @@ class TestChangingDataFrame():
         )
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
-    def test_add_same_column_int(self) -> None:
+    def test_add_same_column_int(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1

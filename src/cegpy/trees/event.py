@@ -73,7 +73,7 @@ class EventTree(nx.MultiDiGraph):
 
     """
     def __init__(self, dataframe, sampling_zero_paths=None,
-                 incoming_graph_data=None, **attr) -> None:
+                 incoming_graph_data=None, var_order=None, **attr) -> None:
         """Initialize an event tree graph with edges, name, or graph attributes.
         This class extends the networkx DiGraph class to allow the creation
         of event trees from data provided in a pandas dataframe.
@@ -97,6 +97,10 @@ class EventTree(nx.MultiDiGraph):
             NetworkX graph object.  If the corresponding optional Python
             packages are installed the data can also be a NumPy matrix
             or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+        
+        var_order : ordered list of variable names. (optional, default order 
+            of variables in the event tree adopted from the order of columns in 
+            the dataframe). 
 
         attr : keyword arguments, optional (default= no attributes)
             Attributes to add to graph as key=value pairs.
@@ -122,14 +126,17 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Initialising')
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
-
+        self._sampling_zero_paths = None
         self.sampling_zeros = sampling_zero_paths
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self._dataframe = dataframe
+        if var_order is not None:
+            self.dataframe = dataframe[var_order]
+        else:
+            self.dataframe = dataframe
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -148,14 +155,24 @@ class EventTree(nx.MultiDiGraph):
         return vars
 
     @property
+    def dataframe(self):
+        return self._dataframe
+
+    @dataframe.setter
+    def dataframe(self, value: pd.DataFrame):
+        if isinstance(value, pd.DataFrame):
+            self._dataframe = value
+        else:
+            raise ValueError(
+                "Package currently only supports Pandas DataFrame"
+                " objects provided as the dataframe")
+
+    @property
     def sampling_zeros(self):
-        try:
-            if self._sampling_zero_paths is None:
-                logger.info("EventTree.sampling_zero_paths \
-                        has not been set.")
-            return self._sampling_zero_paths
-        except AttributeError:
-            logger.info("something has gone seriously wrong.")
+        if self._sampling_zero_paths is None:
+            logger.info("EventTree.sampling_zero_paths \
+                    has not been set.")
+        return self._sampling_zero_paths
 
     @sampling_zeros.setter
     def sampling_zeros(self, sz_paths):
@@ -173,9 +190,7 @@ class EventTree(nx.MultiDiGraph):
                 error_str = "Parameter 'sampling_zero_paths' not in expected format. \
                              Should be a list of tuples like so:\n \
                              [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                if logger.getEffectiveLevel() is logging.DEBUG:
-                    logger.debug(error_str)
-                    raise ValueError(error_str)
+                raise ValueError(error_str)
 
     @property
     def situations(self) -> list:
@@ -295,7 +310,7 @@ class EventTree(nx.MultiDiGraph):
         unsorted_paths = defaultdict(int)
 
         for variable_number in range(0, len(self.variables)):
-            dataframe_upto_variable = self._dataframe.loc[
+            dataframe_upto_variable = self.dataframe.loc[
                 :, self.variables[0:variable_number+1]]
 
             for row in dataframe_upto_variable.itertuples():

@@ -1,7 +1,7 @@
+from copy import deepcopy
 from ..utilities.util import Util
 from ..trees.event import EventTree
 from fractions import Fraction
-from copy import deepcopy
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
@@ -379,10 +379,12 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
+    def _find_subsets(self, hyperstage):
+        """finds all subsets and scores them"""
+        hyperstage = deepcopy(self.hyperstage)
+
     def _execute_AHC_algoritm(self):
-        # prior = self.prior.copy()
-        hyperstage = self.hyperstage.copy()
-        # posterior = self.posterior.copy()
+        hyperstage = deepcopy(self.hyperstage)
         prior_list = self.get_prior_as_list().copy()
         posterior_list = self.get_posterior_as_list().copy()
         loglikelihood = self._calculate_initial_loglikelihood(

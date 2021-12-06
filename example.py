@@ -8,7 +8,6 @@ from datetime import datetime
 import pickle
 # from time import sleep
 
-
 def create_path(filename, add_time=False, filetype='png'):
     dt_string = ''
     if add_time:
@@ -52,9 +51,12 @@ logger.info(str(df_path))
 df = pd.read_excel(df_path)
 falls_et = EventTree(dataframe=df)
 falls_st = StagedTree(dataframe=df)
-
+colours = [
+    '#8dd3c7', '#ffffb3','#bebada', '#fb8072', 
+    '#80b1d3', '#fdb462', '#b3de69', '#fccde5'
+]
 et_fig_path = create_path('out/falls_event_tree', True, 'pdf')
 st_fig_path = create_path('out/falls_staged_tree', True, 'pdf')
 falls_et.create_figure(et_fig_path)
-falls_st.calculate_AHC_transitions()
+falls_st.calculate_AHC_transitions(colour_list=colours)
 falls_st.create_figure(st_fig_path)

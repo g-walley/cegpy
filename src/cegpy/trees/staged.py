@@ -1,3 +1,4 @@
+from numpy import number
 from ..utilities.util import Util
 from ..trees.event import EventTree
 from fractions import Fraction
@@ -7,6 +8,7 @@ from IPython import get_ipython
 import networkx as nx
 import scipy.special
 import logging
+from itertools import cycle
 
 logger = logging.getLogger('cegpy.staged_tree')
 
@@ -446,25 +448,37 @@ class StagedTree(EventTree):
 
         return list_of_merged_situations
 
-    def _generate_colours_for_situations(self, merged_situations):
+    def _generate_colours_for_situations(self, merged_situations, colour_list):
         """Colours each stage of the tree with an individual colour"""
         number_of_stages = len(merged_situations)
-        stage_colours = Util.generate_colours(number_of_stages)
+        if colour_list is None:
+            stage_colours = Util.generate_colours(number_of_stages)
+        else: 
+            stage_colours = colour_list
+            if len(colour_list) < number_of_stages:
+                logger.warning(
+                    "The number of colours is less than the number" +
+                    "of stages. Colours will be recycled."
+                )
         self._stage_colours = stage_colours
-
+        iter_colour = cycle(stage_colours)
         for node in self.nodes:
             try:
                 stage = self.nodes[node]['stage']
-                self.nodes[node]['colour'] = stage_colours[stage]
+                self.nodes[node]['colour'] = next(iter_colour)
             except KeyError:
                 self.nodes[node]['colour'] = 'lightgrey'
 
     def calculate_AHC_transitions(self, prior=None,
-                                  alpha=None, hyperstage=None):
+                                  alpha=None, hyperstage=None, 
+                                  colour_list=None):
         '''Bayesian Agglommerative Hierarchical Clustering algorithm
         implementation. It returns a list of lists of the situations which
         have been merged together, the likelihood of the final model and
-        the mean posterior conditional probabilities of the stages.'''
+        the mean posterior conditional probabilities of the stages.
+        
+        User can specify a list of colours to be used for stages. Otherwise, 
+        colours evenly spaced around the colour spectrum are used.'''
         logger.info("\n\n --- Starting AHC Algorithm ---")
 
         self.__store_params(prior, alpha, hyperstage)
@@ -478,7 +492,7 @@ class StagedTree(EventTree):
         merged_situations = \
             self._mark_nodes_with_stage_number(merged_situations)
 
-        self._generate_colours_for_situations(merged_situations)
+        self._generate_colours_for_situations(merged_situations, colour_list)
 
         self.ahc_output = {
             "Merged Situations": merged_situations,

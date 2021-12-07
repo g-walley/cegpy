@@ -3,8 +3,8 @@ from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
-from itertools import combinations
-from typing import List
+from itertools import combinations, chain
+from typing import List, Tuple
 import networkx as nx
 import scipy.special
 import logging
@@ -328,40 +328,56 @@ class StagedTree(EventTree):
             + self._calculate_sum_of_lg(prior2)
         )
 
-    def _sort_list(self, a_list_of_lists) -> list:
+    def _sort_list(self, list_of_tuples) -> list:
         '''function to sort a list of lists to remove repetitions'''
 
-        for l1_idx in range(0, len(a_list_of_lists)):
-            for l2_idx in range(l1_idx+1, len(a_list_of_lists)):
-                list_1 = a_list_of_lists[l1_idx]
-                list_2 = a_list_of_lists[l2_idx]
-                lists_intersect = set(list_1) & set(list_2)
+        for l1_idx in range(0, len(list_of_tuples)):
+            for l2_idx in range(l1_idx+1, len(list_of_tuples)):
+                tup_1 = list_of_tuples[l1_idx]
+                tup_2 = list_of_tuples[l2_idx]
+                tups_intersect = set(tup_1) & set(tup_2)
 
-                if lists_intersect:
-                    lists_union = list(set(list_1) | set(list_2))
-                    # new_list_of_lists.append(lists_union)
-                    a_list_of_lists[l1_idx] = []
-                    a_list_of_lists[l2_idx] = lists_union
+                if tups_intersect:
+                    union = tuple(set(tup_1) | set(tup_2))
+                    list_of_tuples[l1_idx] = []
+                    list_of_tuples[l2_idx] = union
 
-        new_list_of_lists = [
-            elem for elem in a_list_of_lists
+        new_list_of_tuples = [
+            elem for elem in list_of_tuples
             if elem != []
         ]
 
-        if new_list_of_lists == a_list_of_lists:
-            return new_list_of_lists
+        if new_list_of_tuples == list_of_tuples:
+            return new_list_of_tuples
         else:
-            return self._sort_list(new_list_of_lists)
+            return self._sort_list(new_list_of_tuples)
 
-    def _calculate_mean_posterior_probs(self, probs) -> list:
+    def _calculate_mean_posterior_probs(
+        self,
+        merged_situations: List,
+        posteriors: List,
+    ) -> List:
         '''Iterates through array of lists, calculates mean
         posterior probabilities'''
         mean_posterior_probs = []
-        for arr in probs:
-            total = sum(arr)
+        situations = [int(sit[1:]) for sit in self.situations]
+        for sit in situations:
+            if sit not in list(chain(*merged_situations)):
+                merged_situations.append((sit,))
+
+        for stage in merged_situations:
+            for sit in stage:
+                if all(posteriors[sit]) != 0:
+                    stage_probs = posteriors[sit]
+                    break
+                else:
+                    stage_probs = []
+
+            total = sum(stage_probs)
             mean_posterior_probs.append(
-                [round(element/total, 3) for element in arr]
+                [round(elem/total, 3) for elem in stage_probs]
             )
+
         return mean_posterior_probs
 
     def _independent_hyperstage_generator(
@@ -383,7 +399,7 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
-    def _execute_AHC(self, hyperstage=None):
+    def _execute_AHC(self, hyperstage=None) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:
             hyperstage = deepcopy(self.hyperstage)
@@ -446,8 +462,14 @@ class StagedTree(EventTree):
                 loglikelihood += local_score
             else:
                 break
-
-        return loglikelihood, merged_situation_list
+        merged_situation_list = self._sort_list(merged_situation_list)
+        mean_posterior_probs = (
+            self._calculate_mean_posterior_probs(
+                merged_situation_list,
+                posteriors
+            )
+        )
+        return mean_posterior_probs, loglikelihood, merged_situation_list
 
     def _mark_nodes_with_stage_number(self, merged_situations) -> list:
         """AHC algorithm creates a list of indexes to the situations list.
@@ -484,13 +506,13 @@ class StagedTree(EventTree):
 
         self.__store_params(prior, alpha, hyperstage)
 
-        loglikelihood, merged_situations = self._execute_AHC()
+        mean_posterior_probs, loglikelihood, merged_situations = (
+            self._execute_AHC())
 
-        mean_posterior_probs = \
-            self._calculate_mean_posterior_probs(posterior_probs)
-
-        merged_situations = \
-            self._mark_nodes_with_stage_number(merged_situations)
+        self._mark_nodes_with_stage_number(
+            merged_situations,
+            mean_posterior_probs,
+        )
 
         self._generate_colours_for_situations(merged_situations)
 

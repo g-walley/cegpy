@@ -1,14 +1,15 @@
 from copy import deepcopy
-from ..utilities.util import Util
-from ..trees.event import EventTree
 from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
+from itertools import combinations
 from typing import List
 import networkx as nx
 import scipy.special
 import logging
+from ..utilities.util import Util
+from ..trees.event import EventTree
 
 logger = logging.getLogger('cegpy.staged_tree')
 
@@ -59,7 +60,9 @@ class StagedTree(EventTree):
                 self.edges[(node_name, succ_key, label)]['prior'] = \
                     node_priors[edge_prior_idx]
 
-    def get_prior_as_list(self):
+    @property
+    def prior_list(self):
+        """Priors provided as a list of lists"""
         prior_list = []
         prev_node = list(self.prior)[0][0]
         succ_list = []
@@ -93,7 +96,8 @@ class StagedTree(EventTree):
                 edge_dict['posterior'] = posterior
             return nx.get_edge_attributes(self, 'posterior')
 
-    def get_posterior_as_list(self):
+    @property
+    def posterior_list(self):
         posterior_list = []
         prev_node = list(self.posterior)[0][0]
         succ_list = []
@@ -379,83 +383,71 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
-    def _find_subsets(self, hyperstage):
+    def _execute_AHC(self, hyperstage=None):
         """finds all subsets and scores them"""
-        hyperstage = deepcopy(self.hyperstage)
+        if hyperstage is None:
+            hyperstage = deepcopy(self.hyperstage)
 
-    def _execute_AHC_algoritm(self):
-        hyperstage = deepcopy(self.hyperstage)
-        prior_list = self.get_prior_as_list().copy()
-        posterior_list = self.get_posterior_as_list().copy()
+        for sub_index, sub_hyper in enumerate(hyperstage):
+            sub_hyper = [
+                int(node[1:])
+                for node in sub_hyper
+            ]
+            hyperstage[sub_index] = sub_hyper
+
+        priors = deepcopy(self.prior_list)
+        posteriors = deepcopy(self.posterior_list)
+
         loglikelihood = self._calculate_initial_loglikelihood(
-            prior_list, posterior_list
+            priors, posteriors
         )
-        posterior_probs = self.get_posterior_as_list().copy()
-        situ = self.situations.copy()
+
         merged_situation_list = []
-        bayesfactor_score = 1
 
-        logger.info(" ----- Starting main loop of AHC algorithm -----")
-        logger.info("Prior is length %d" % len(prior_list))
-        while bayesfactor_score > 0:
-            local = {}
+        while True:
+            hyperstage_combinations = [
+                item for sub_hyper in hyperstage
+                for item in combinations(sub_hyper, 2)
+            ]
 
-            for sit_1 in range(len(prior_list)):
-                if all(items == 0 for items in posterior_list[sit_1]) is False:
-                    model1 = [prior_list[sit_1], posterior_list[sit_1]]
-                    for sit_2 in range(sit_1+1, len(prior_list)):
-                        is_subset = self._check_issubset(
-                            [situ[sit_1], situ[sit_2]],
-                            hyperstage
-                        )
+            newscores_list = [self._calculate_bayes_factor(
+                priors[sub_hyper[0]], posteriors[sub_hyper[0]],
+                priors[sub_hyper[1]], posteriors[sub_hyper[1]]
+            ) for sub_hyper in hyperstage_combinations]
 
-                        any_non_zero = all(
-                            items == 0 for items in posterior_list[sit_2]
-                        )
+            local_score = max(newscores_list)
 
-                        if is_subset and not any_non_zero:
-                            model2 = [prior_list[sit_2], posterior_list[sit_2]]
-                            local[(situ[sit_1], situ[sit_2])] = \
-                                self._calculate_bayes_factor(
-                                    *model1, *model2
-                                )
+            if local_score > 0:
+                local_merged = hyperstage_combinations[
+                    newscores_list.index(local_score)
+                ]
+                merge_situ_1, merge_situ_2 = local_merged
+                merged_situation_list.append(local_merged)
 
-            max_key = max(local, key=local.get)
-            bayesfactor_score = local[max_key]
-
-            if local != {} and bayesfactor_score > 0:
-                merged_situation_list.append(list(max_key))
-                key_0 = situ.index(max_key[0])
-                key_1 = situ.index(max_key[1])
-
-                prior_list[key_0] = list(
+                priors[merge_situ_1] = list(
                     map(
                         add,
-                        prior_list[key_0],
-                        prior_list[key_1]
+                        priors[merge_situ_1],
+                        priors[merge_situ_2]
                     )
                 )
-                posterior_list[key_0] = list(
+                posteriors[merge_situ_1] = list(
                     map(
                         add,
-                        posterior_list[key_0],
-                        posterior_list[key_1]
+                        posteriors[merge_situ_1],
+                        posteriors[merge_situ_2]
                     )
                 )
+                priors[merge_situ_2] = (
+                    [0] * len(priors[merge_situ_1]))
+                posteriors[merge_situ_2] = (
+                    [0] * len(posteriors[merge_situ_1]))
 
-                prior_list[key_1] = \
-                    [0] * len(prior_list[key_0])
-                posterior_list[key_1] = \
-                    [0] * len(prior_list[key_0])
+                loglikelihood += local_score
+            else:
+                break
 
-                posterior_probs[key_0] = posterior_list[key_0]
-                posterior_probs[key_1] = posterior_list[key_0]
-
-                loglikelihood += bayesfactor_score
-
-            logger.debug('--Current AHC score: %d' % bayesfactor_score)
-
-        return posterior_probs, loglikelihood, merged_situation_list
+        return loglikelihood, merged_situation_list
 
     def _mark_nodes_with_stage_number(self, merged_situations) -> list:
         """AHC algorithm creates a list of indexes to the situations list.
@@ -492,8 +484,7 @@ class StagedTree(EventTree):
 
         self.__store_params(prior, alpha, hyperstage)
 
-        posterior_probs, loglikelihood, \
-            merged_situations = self._execute_AHC_algoritm()
+        loglikelihood, merged_situations = self._execute_AHC()
 
         mean_posterior_probs = \
             self._calculate_mean_posterior_probs(posterior_probs)

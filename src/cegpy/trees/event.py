@@ -140,9 +140,6 @@ class EventTree(nx.MultiDiGraph):
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
-        # creat the dot graph representation
-        self._dot_graph = None
-
     @property
     def root(self) -> str:
         """Root node of the event tree.
@@ -309,7 +306,7 @@ class EventTree(nx.MultiDiGraph):
             return None
         else:
             logger.info("--- Exporting graph to notebook ---")
-            return Image(self.graph.create_png())
+            return Image(graph.create_png())
 
     def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,

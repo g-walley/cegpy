@@ -360,15 +360,15 @@ class StagedTree(EventTree):
         '''Iterates through array of lists, calculates mean
         posterior probabilities'''
         mean_posterior_probs = []
-        situations = [int(sit[1:]) for sit in self.situations]
-        for sit in situations:
+
+        for sit in self.situations:
             if sit not in list(chain(*merged_situations)):
                 merged_situations.append((sit,))
-
         for stage in merged_situations:
             for sit in stage:
-                if all(posteriors[sit]) != 0:
-                    stage_probs = posteriors[sit]
+                sit_idx = self.situations.index(sit)
+                if all(posteriors[sit_idx]) != 0:
+                    stage_probs = posteriors[sit_idx]
                     break
                 else:
                     stage_probs = []
@@ -404,13 +404,6 @@ class StagedTree(EventTree):
         if hyperstage is None:
             hyperstage = deepcopy(self.hyperstage)
 
-        for sub_index, sub_hyper in enumerate(hyperstage):
-            sub_hyper = [
-                int(node[1:])
-                for node in sub_hyper
-            ]
-            hyperstage[sub_index] = sub_hyper
-
         priors = deepcopy(self.prior_list)
         posteriors = deepcopy(self.posterior_list)
 
@@ -427,8 +420,10 @@ class StagedTree(EventTree):
             ]
 
             newscores_list = [self._calculate_bayes_factor(
-                priors[sub_hyper[0]], posteriors[sub_hyper[0]],
-                priors[sub_hyper[1]], posteriors[sub_hyper[1]]
+                priors[self.situations.index(sub_hyper[0])],
+                posteriors[self.situations.index(sub_hyper[0])],
+                priors[self.situations.index(sub_hyper[1])],
+                posteriors[self.situations.index(sub_hyper[1])],
             ) for sub_hyper in hyperstage_combinations]
 
             local_score = max(newscores_list)
@@ -438,26 +433,28 @@ class StagedTree(EventTree):
                     newscores_list.index(local_score)
                 ]
                 merge_situ_1, merge_situ_2 = local_merged
+                merge_situ_1_idx = self.situations.index(merge_situ_1)
+                merge_situ_2_idx = self.situations.index(merge_situ_2)
                 merged_situation_list.append(local_merged)
 
-                priors[merge_situ_1] = list(
+                priors[merge_situ_1_idx] = list(
                     map(
                         add,
-                        priors[merge_situ_1],
-                        priors[merge_situ_2]
+                        priors[merge_situ_1_idx],
+                        priors[merge_situ_2_idx]
                     )
                 )
-                posteriors[merge_situ_1] = list(
+                posteriors[merge_situ_1_idx] = list(
                     map(
                         add,
-                        posteriors[merge_situ_1],
-                        posteriors[merge_situ_2]
+                        posteriors[merge_situ_1_idx],
+                        posteriors[merge_situ_2_idx]
                     )
                 )
-                priors[merge_situ_2] = (
-                    [0] * len(priors[merge_situ_1]))
-                posteriors[merge_situ_2] = (
-                    [0] * len(posteriors[merge_situ_1]))
+                priors[merge_situ_2_idx] = (
+                    [0] * len(priors[merge_situ_1_idx]))
+                posteriors[merge_situ_2_idx] = (
+                    [0] * len(posteriors[merge_situ_1_idx]))
 
                 loglikelihood += local_score
             else:
@@ -471,17 +468,15 @@ class StagedTree(EventTree):
         )
         return mean_posterior_probs, loglikelihood, merged_situation_list
 
-    def _mark_nodes_with_stage_number(self, merged_situations) -> list:
+    def _mark_nodes_with_stage_number(self, merged_situations):
         """AHC algorithm creates a list of indexes to the situations list.
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
-        list_of_merged_situations = self._sort_list(merged_situations)
-        for index, stage in enumerate(list_of_merged_situations):
-            for node_name in stage:
-                self.nodes[node_name]['stage'] = index
-
-        return list_of_merged_situations
+        for index, stage in enumerate(merged_situations):
+            if len(stage) > 1:
+                for node in stage:
+                    self.nodes[node]['stage'] = index
 
     def _generate_colours_for_situations(self, merged_situations):
         """Colours each stage of the tree with an individual colour"""
@@ -509,10 +504,7 @@ class StagedTree(EventTree):
         mean_posterior_probs, loglikelihood, merged_situations = (
             self._execute_AHC())
 
-        self._mark_nodes_with_stage_number(
-            merged_situations,
-            mean_posterior_probs,
-        )
+        self._mark_nodes_with_stage_number(merged_situations)
 
         self._generate_colours_for_situations(merged_situations)
 

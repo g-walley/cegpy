@@ -121,7 +121,7 @@ class TestStagedTrees():
         assert fall_hyperstage == fall_expected_hyperstage
 
     def test_calculate_posterior(self) -> None:
-        def calculate_posterior(staged_tree, expected_countset,
+        def calculate_posterior(staged_tree: StagedTree, expected_countset,
                                 alpha, expected_likelihood):
             actual_countset = staged_tree._StagedTree__create_edge_countset()
             assert actual_countset == expected_countset
@@ -136,11 +136,11 @@ class TestStagedTrees():
 
                 expected_posterior.append(p_elem)
 
-            actual_posterior = staged_tree.get_posterior_as_list()
+            actual_posterior = staged_tree.posterior_list
             assert actual_posterior == expected_posterior
             actual_likelihood = staged_tree._calculate_initial_loglikelihood(
-                staged_tree.get_prior_as_list(),
-                staged_tree.get_posterior_as_list()
+                staged_tree.prior_list,
+                staged_tree.posterior_list,
             )
             actual_likelihood = round(actual_likelihood, 2)
             assert actual_likelihood == expected_likelihood
@@ -216,24 +216,15 @@ class TestStagedTrees():
     def test_merged_leaves_med(self) -> None:
         # check that no leaves have been merged
         self.med_st.calculate_AHC_transitions()
-        for leaf in self.med_st.leaves:
-            node_number = int(leaf[1:])
-            merged_situations = self.med_st.ahc_output['Merged Situations']
-            leaf_in_merged_situations = [
-                node_number in situ_list for situ_list in merged_situations
-            ]
-
-            assert not any(leaf_in_merged_situations)
+        for stage in self.med_st.ahc_output['Merged Situations']:
+            for situ in stage:
+                assert situ not in self.med_st.leaves
 
     def test_merged_leaves_fall(self) -> None:
         self.fall_st.calculate_AHC_transitions()
-        for leaf in self.fall_st.leaves:
-            node_number = int(leaf[1:])
-            merged_situations = self.fall_st.ahc_output['Merged Situations']
-            leaf_in_merged_situations = [
-                node_number in situ_list for situ_list in merged_situations
-            ]
-            assert not any(leaf_in_merged_situations)
+        for stage in self.fall_st.ahc_output['Merged Situations']:
+            for situ in stage:
+                assert situ not in self.fall_st.leaves
 
     def test_independent_hyperstage_generator(self) -> None:
         """generator correctly establishes which subsets have

@@ -256,7 +256,11 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    def _generate_pdp_graph(self):
+    @property
+    def dot_graph(self):
+        return self._generate_dot_graph()
+
+    def _generate_dot_graph(self):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
@@ -294,7 +298,7 @@ class EventTree(nx.MultiDiGraph):
         """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self._generate_pdp_graph()
+        graph = self.dot_graph
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 

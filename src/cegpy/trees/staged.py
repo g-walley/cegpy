@@ -511,7 +511,7 @@ class StagedTree(EventTree):
             self.ahc_output
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
-            graph = self._generate_pdp_graph()
+            graph = self.dot_graph
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
 

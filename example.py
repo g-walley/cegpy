@@ -60,3 +60,14 @@ st_fig_path = create_path('out/falls_staged_tree', True, 'pdf')
 falls_et.create_figure(et_fig_path)
 falls_st.calculate_AHC_transitions(colour_list=colours)
 falls_st.create_figure(st_fig_path)
+
+# get the dot graph 
+falls_st_dot = falls_st.dot_graph
+# modify nodes and edges
+falls_st_dot.get_edge("s1", "s5")[0].set_style("dotted")
+falls_st_dot.get_edge("s1", "s6")[0].set_style("dotted")
+falls_st_dot.get_node("s1")[0].set_shape("square")
+# save as a pdf
+falls_st_dot.write("out/falls_modified_staged_tree.pdf", format="pdf") 
+# or save as a dot
+falls_st_dot.write("out/falls_modified_staged_tree.dot", format="dot") 

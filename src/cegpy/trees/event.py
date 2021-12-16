@@ -140,6 +140,9 @@ class EventTree(nx.MultiDiGraph):
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
+        # creat the dot graph representation
+        self._dot_graph = None
+
     @property
     def root(self) -> str:
         """Root node of the event tree.
@@ -256,7 +259,11 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    def _generate_pdp_graph(self):
+    @property
+    def dot_graph(self):
+        return self._generate_dot_graph()
+
+    def _generate_dot_graph(self):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
@@ -294,7 +301,7 @@ class EventTree(nx.MultiDiGraph):
         """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self._generate_pdp_graph()
+        graph = self.dot_graph
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 
@@ -302,7 +309,7 @@ class EventTree(nx.MultiDiGraph):
             return None
         else:
             logger.info("--- Exporting graph to notebook ---")
-            return Image(graph.create_png())
+            return Image(self.graph.create_png())
 
     def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,

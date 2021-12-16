@@ -269,13 +269,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         relabel_nodes([self.root_node])
         self.__update_path_list()
 
-    def create_figure(self, filename):
-        """
-        Draws the chain event graph representation of the stage tree,
-        and saves it to "<filename>.filetype". Supports any filetype that
-        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
-        """
-        filename, filetype = Util.generate_filename_and_mkdir(filename)
+    @property
+    def dot_graph(self):
+        return self._generate_dot_graph()
+
+    def _generate_dot_graph(self):
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         edge_probabilities = list(
             self.edges(data='probability', default=1, keys=True)
@@ -308,7 +306,16 @@ class ChainEventGraph(nx.MultiDiGraph):
                     fillcolor=fill_colour
                 )
             )
+        return graph
 
+    def create_figure(self, filename):
+        """
+        Draws the chain event graph representation of the stage tree,
+        and saves it to "<filename>.filetype". Supports any filetype that
+        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """
+        filename, filetype = Util.generate_filename_and_mkdir(filename)
+        graph = self.dot_graph
         graph.write(str(filename), format=filetype)
 
         if get_ipython() is None:

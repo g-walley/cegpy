@@ -73,7 +73,7 @@ class EventTree(nx.MultiDiGraph):
 
     """
     def __init__(self, dataframe, sampling_zero_paths=None,
-                 incoming_graph_data=None, **attr) -> None:
+                 incoming_graph_data=None, var_order=None, **attr) -> None:
         """Initialize an event tree graph with edges, name, or graph attributes.
         This class extends the networkx DiGraph class to allow the creation
         of event trees from data provided in a pandas dataframe.
@@ -97,6 +97,10 @@ class EventTree(nx.MultiDiGraph):
             NetworkX graph object.  If the corresponding optional Python
             packages are installed the data can also be a NumPy matrix
             or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+        
+        var_order : ordered list of variable names. (optional, default order 
+            of variables in the event tree adopted from the order of columns in 
+            the dataframe). 
 
         attr : keyword arguments, optional (default= no attributes)
             Attributes to add to graph as key=value pairs.
@@ -129,7 +133,10 @@ class EventTree(nx.MultiDiGraph):
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        self.dataframe = dataframe
+        if var_order is not None:
+            self.dataframe = dataframe[var_order]
+        else:
+            self.dataframe = dataframe
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -249,7 +256,11 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    def _generate_pdp_graph(self):
+    @property
+    def dot_graph(self):
+        return self._generate_dot_graph()
+
+    def _generate_dot_graph(self):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
@@ -287,7 +298,7 @@ class EventTree(nx.MultiDiGraph):
         """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self._generate_pdp_graph()
+        graph = self.dot_graph
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 

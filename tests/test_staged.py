@@ -404,4 +404,3 @@ class TestWithDynamicDataset():
         ahc_out = st.calculate_AHC_transitions()
         ms = [set(merged_sits) for merged_sits in ahc_out["Merged Situations"]]
         assert {"s9", "s13", "s14"} in ms
-        st.create_figure("out/test_single_floret_stages.pdf")

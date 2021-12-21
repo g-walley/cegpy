@@ -1,9 +1,9 @@
 from copy import deepcopy
 from fractions import Fraction
-from operator import add, sub
+from operator import add, sub, itemgetter
 from IPython.display import Image
 from IPython import get_ipython
-from itertools import combinations, chain, cycle
+from itertools import combinations, chain
 from typing import List, Tuple
 import networkx as nx
 import scipy.special
@@ -413,12 +413,37 @@ class StagedTree(EventTree):
 
         merged_situation_list = []
 
-        while True:
-            hyperstage_combinations = [
-                item for sub_hyper in hyperstage
-                for item in combinations(sub_hyper, 2)
-            ]
+        # Which list in hyperstage have only 1 edge coming out of them
+        # For that list, add the list to the merged situation list, and
+        # add together their priors/posteriors, and remove it from the
+        # hyperstage
+        for sub_hyper in deepcopy(hyperstage):
+            if self.out_degree[sub_hyper[0]] == 1:
+                merged_situation_list.append(tuple(sub_hyper))
+                indexes = [self.situations.index(situ) for situ in sub_hyper]
+                sub_hyper_priors = list(chain(
+                    *itemgetter(*indexes)(priors)
+                ))
+                sub_hyper_posteriors = list(chain(
+                    *itemgetter(*indexes)(posteriors)
+                ))
+                for loop_idx, p_index in enumerate(indexes):
+                    if loop_idx == 0:
+                        priors[p_index] = [sum(sub_hyper_priors)]
+                        posteriors[p_index] = [sum(sub_hyper_posteriors)]
+                    else:
+                        priors[p_index] = [0]
+                        posteriors[p_index] = [0]
 
+                hyperstage.remove(sub_hyper)
+                print("blash")
+
+        hyperstage_combinations = [
+            item for sub_hyper in hyperstage
+            for item in combinations(sub_hyper, 2)
+        ]
+
+        while True:
             newscores_list = [self._calculate_bayes_factor(
                 priors[self.situations.index(sub_hyper[0])],
                 posteriors[self.situations.index(sub_hyper[0])],
@@ -459,6 +484,7 @@ class StagedTree(EventTree):
                 loglikelihood += local_score
             else:
                 break
+
         merged_situation_list = self._sort_list(merged_situation_list)
         mean_posterior_probs = (
             self._calculate_mean_posterior_probs(
@@ -486,16 +512,15 @@ class StagedTree(EventTree):
         else:
             stage_colours = colour_list
             if len(colour_list) < number_of_stages:
-                logger.warning(
-                    "The number of colours is less than the number" +
-                    "of stages. Colours will be recycled."
+                raise IndexError(
+                    f"The number of colours provided ({len(colour_list)}) is "
+                    f"less than the number of stages ({number_of_stages}). "
                 )
         self._stage_colours = stage_colours
-        iter_colour = cycle(stage_colours)
         for node in self.nodes:
             try:
                 stage = self.nodes[node]['stage']
-                self.nodes[node]['colour'] = next(iter_colour)
+                self.nodes[node]['colour'] = stage_colours[stage]
             except KeyError:
                 self.nodes[node]['colour'] = 'lightgrey'
 

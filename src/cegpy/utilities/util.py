@@ -104,6 +104,12 @@ class Util:
         return filename, filetype
 
     @staticmethod
+    def create_relative_path(relative_path) -> Path:
+        """Creates pathlib object from a relative path such as:
+        '/output/image.png'"""
+        return Path(__file__).resolve().parent.joinpath(relative_path)
+
+    @staticmethod
     def create_sampling_zeros(sampling_zero_paths, path_dict) -> defaultdict:
         '''The list of paths to zero must only contain tuples.
         Each tuple is a sampling zero path that needs to be added.

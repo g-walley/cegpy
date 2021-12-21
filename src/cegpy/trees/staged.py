@@ -1,14 +1,17 @@
-from ..utilities.util import Util
-from ..trees.event import EventTree
+from copy import deepcopy
 from fractions import Fraction
 from operator import add, sub
 from IPython.display import Image
 from IPython import get_ipython
+from itertools import combinations, chain, cycle
+from typing import List, Tuple
 import networkx as nx
 import scipy.special
 import logging
+from ..utilities.util import Util
+from ..trees.event import EventTree
 
-logger = logging.getLogger('pyceg.staged_tree')
+logger = logging.getLogger('cegpy.staged_tree')
 
 
 class StagedTree(EventTree):
@@ -57,7 +60,9 @@ class StagedTree(EventTree):
                 self.edges[(node_name, succ_key, label)]['prior'] = \
                     node_priors[edge_prior_idx]
 
-    def get_prior_as_list(self):
+    @property
+    def prior_list(self):
+        """Priors provided as a list of lists"""
         prior_list = []
         prev_node = list(self.prior)[0][0]
         succ_list = []
@@ -91,7 +96,8 @@ class StagedTree(EventTree):
                 edge_dict['posterior'] = posterior
             return nx.get_edge_attributes(self, 'posterior')
 
-    def get_posterior_as_list(self):
+    @property
+    def posterior_list(self):
         posterior_list = []
         prev_node = list(self.posterior)[0][0]
         succ_list = []
@@ -322,162 +328,197 @@ class StagedTree(EventTree):
             + self._calculate_sum_of_lg(prior2)
         )
 
-    def _sort_list(self, a_list_of_lists) -> list:
+    def _sort_list(self, list_of_tuples) -> list:
         '''function to sort a list of lists to remove repetitions'''
 
-        for l1_idx in range(0, len(a_list_of_lists)):
-            for l2_idx in range(l1_idx+1, len(a_list_of_lists)):
-                list_1 = a_list_of_lists[l1_idx]
-                list_2 = a_list_of_lists[l2_idx]
-                lists_intersect = set(list_1) & set(list_2)
+        for l1_idx in range(0, len(list_of_tuples)):
+            for l2_idx in range(l1_idx+1, len(list_of_tuples)):
+                tup_1 = list_of_tuples[l1_idx]
+                tup_2 = list_of_tuples[l2_idx]
+                tups_intersect = set(tup_1) & set(tup_2)
 
-                if lists_intersect:
-                    lists_union = list(set(list_1) | set(list_2))
-                    # new_list_of_lists.append(lists_union)
-                    a_list_of_lists[l1_idx] = []
-                    a_list_of_lists[l2_idx] = lists_union
+                if tups_intersect:
+                    union = tuple(set(tup_1) | set(tup_2))
+                    list_of_tuples[l1_idx] = []
+                    list_of_tuples[l2_idx] = union
 
-        new_list_of_lists = [
-            elem for elem in a_list_of_lists
+        new_list_of_tuples = [
+            elem for elem in list_of_tuples
             if elem != []
         ]
 
-        if new_list_of_lists == a_list_of_lists:
-            return new_list_of_lists
+        if new_list_of_tuples == list_of_tuples:
+            return new_list_of_tuples
         else:
-            return self._sort_list(new_list_of_lists)
+            return self._sort_list(new_list_of_tuples)
 
-    def _calculate_mean_posterior_probs(self, probs) -> list:
+    def _calculate_mean_posterior_probs(
+        self,
+        merged_situations: List,
+        posteriors: List,
+    ) -> List:
         '''Iterates through array of lists, calculates mean
         posterior probabilities'''
         mean_posterior_probs = []
-        for arr in probs:
-            total = sum(arr)
+
+        for sit in self.situations:
+            if sit not in list(chain(*merged_situations)):
+                merged_situations.append((sit,))
+        for stage in merged_situations:
+            for sit in stage:
+                sit_idx = self.situations.index(sit)
+                if all(posteriors[sit_idx]) != 0:
+                    stage_probs = posteriors[sit_idx]
+                    break
+                else:
+                    stage_probs = []
+
+            total = sum(stage_probs)
             mean_posterior_probs.append(
-                [round(element/total, 3) for element in arr]
+                [round(elem/total, 3) for elem in stage_probs]
             )
+
         return mean_posterior_probs
 
-    def _execute_AHC_algoritm(self):
-        # prior = self.prior.copy()
-        hyperstage = self.hyperstage.copy()
-        # posterior = self.posterior.copy()
-        prior_list = self.get_prior_as_list().copy()
-        posterior_list = self.get_posterior_as_list().copy()
+    def _independent_hyperstage_generator(
+            self, hyperstage: List[List]) -> List[List[List]]:
+        """Spit out the next hyperstage that can be dealt with
+        independently."""
+        new_hyperstages = [[hyperstage[0]]]
+
+        for sublist in hyperstage[1:]:
+            hs_to_add = [sublist]
+
+            for hs in new_hyperstages.copy():
+                for other_sublist in hs:
+                    if not set(other_sublist).isdisjoint(set(sublist)):
+                        hs_to_add.extend(hs)
+                        new_hyperstages.remove(hs)
+
+            new_hyperstages.append(hs_to_add)
+
+        return new_hyperstages
+
+    def _execute_AHC(self, hyperstage=None) -> Tuple[List, float, List]:
+        """finds all subsets and scores them"""
+        if hyperstage is None:
+            hyperstage = deepcopy(self.hyperstage)
+
+        priors = deepcopy(self.prior_list)
+        posteriors = deepcopy(self.posterior_list)
+
         loglikelihood = self._calculate_initial_loglikelihood(
-            prior_list, posterior_list
+            priors, posteriors
         )
-        posterior_probs = self.get_posterior_as_list().copy()
-        situ = self.situations.copy()
+
         merged_situation_list = []
-        bayesfactor_score = 1
 
-        logger.info(" ----- Starting main loop of AHC algorithm -----")
-        logger.info("Prior is length %d" % len(prior_list))
-        while bayesfactor_score > 0:
-            local = {}
+        while True:
+            hyperstage_combinations = [
+                item for sub_hyper in hyperstage
+                for item in combinations(sub_hyper, 2)
+            ]
 
-            for sit_1 in range(len(prior_list)):
-                if all(items == 0 for items in posterior_list[sit_1]) is False:
-                    model1 = [prior_list[sit_1], posterior_list[sit_1]]
-                    for sit_2 in range(sit_1+1, len(prior_list)):
-                        is_subset = self._check_issubset(
-                            [situ[sit_1], situ[sit_2]],
-                            hyperstage
-                        )
+            newscores_list = [self._calculate_bayes_factor(
+                priors[self.situations.index(sub_hyper[0])],
+                posteriors[self.situations.index(sub_hyper[0])],
+                priors[self.situations.index(sub_hyper[1])],
+                posteriors[self.situations.index(sub_hyper[1])],
+            ) for sub_hyper in hyperstage_combinations]
 
-                        any_non_zero = all(
-                            items == 0 for items in posterior_list[sit_2]
-                        )
+            local_score = max(newscores_list)
 
-                        if is_subset and not any_non_zero:
-                            model2 = [prior_list[sit_2], posterior_list[sit_2]]
-                            local[(sit_1, sit_2)] = \
-                                self._calculate_bayes_factor(
-                                    *model1, *model2
-                                )
+            if local_score > 0:
+                local_merged = hyperstage_combinations[
+                    newscores_list.index(local_score)
+                ]
+                merge_situ_1, merge_situ_2 = local_merged
+                merge_situ_1_idx = self.situations.index(merge_situ_1)
+                merge_situ_2_idx = self.situations.index(merge_situ_2)
+                merged_situation_list.append(local_merged)
 
-            max_key = max(local, key=local.get)
-            bayesfactor_score = local[max_key]
-
-            if local != {} and bayesfactor_score > 0:
-                merged_situation_list.append(list(max_key))
-
-                prior_list[max_key[0]] = list(
+                priors[merge_situ_1_idx] = list(
                     map(
                         add,
-                        prior_list[max_key[0]],
-                        prior_list[max_key[1]]
+                        priors[merge_situ_1_idx],
+                        priors[merge_situ_2_idx]
                     )
                 )
-                posterior_list[max_key[0]] = list(
+                posteriors[merge_situ_1_idx] = list(
                     map(
                         add,
-                        posterior_list[max_key[0]],
-                        posterior_list[max_key[1]]
+                        posteriors[merge_situ_1_idx],
+                        posteriors[merge_situ_2_idx]
                     )
                 )
+                priors[merge_situ_2_idx] = (
+                    [0] * len(priors[merge_situ_1_idx]))
+                posteriors[merge_situ_2_idx] = (
+                    [0] * len(posteriors[merge_situ_1_idx]))
 
-                prior_list[max_key[1]] = \
-                    [0] * len(prior_list[max_key[0]])
-                posterior_list[max_key[1]] = \
-                    [0] * len(prior_list[max_key[0]])
+                loglikelihood += local_score
+            else:
+                break
+        merged_situation_list = self._sort_list(merged_situation_list)
+        mean_posterior_probs = (
+            self._calculate_mean_posterior_probs(
+                merged_situation_list,
+                posteriors
+            )
+        )
+        return mean_posterior_probs, loglikelihood, merged_situation_list
 
-                posterior_probs[max_key[0]] = posterior_list[max_key[0]]
-                posterior_probs[max_key[1]] = posterior_list[max_key[0]]
-
-                loglikelihood += bayesfactor_score
-
-            logger.debug('--Current AHC score: %d' % bayesfactor_score)
-
-        return posterior_probs, loglikelihood, merged_situation_list
-
-    def _mark_nodes_with_stage_number(self, merged_situation_indexes) -> list:
+    def _mark_nodes_with_stage_number(self, merged_situations):
         """AHC algorithm creates a list of indexes to the situations list.
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
-        list_of_merged_situations = self._sort_list(merged_situation_indexes)
-        for index, stage in enumerate(list_of_merged_situations):
-            for node_number in stage:
-                node_name = 's' + str(node_number)
-                self.nodes[node_name]['stage'] = index
+        for index, stage in enumerate(merged_situations):
+            if len(stage) > 1:
+                for node in stage:
+                    self.nodes[node]['stage'] = index
 
-        return list_of_merged_situations
-
-    def _generate_colours_for_situations(self, merged_situations):
+    def _generate_colours_for_situations(self, merged_situations, colour_list):
         """Colours each stage of the tree with an individual colour"""
         number_of_stages = len(merged_situations)
-        stage_colours = Util.generate_colours(number_of_stages)
+        if colour_list is None:
+            stage_colours = Util.generate_colours(number_of_stages)
+        else:
+            stage_colours = colour_list
+            if len(colour_list) < number_of_stages:
+                logger.warning(
+                    "The number of colours is less than the number" +
+                    "of stages. Colours will be recycled."
+                )
         self._stage_colours = stage_colours
-
+        iter_colour = cycle(stage_colours)
         for node in self.nodes:
             try:
                 stage = self.nodes[node]['stage']
-                self.nodes[node]['colour'] = stage_colours[stage]
+                self.nodes[node]['colour'] = next(iter_colour)
             except KeyError:
                 self.nodes[node]['colour'] = 'lightgrey'
 
     def calculate_AHC_transitions(self, prior=None,
-                                  alpha=None, hyperstage=None):
+                                  alpha=None, hyperstage=None,
+                                  colour_list=None):
         '''Bayesian Agglommerative Hierarchical Clustering algorithm
         implementation. It returns a list of lists of the situations which
         have been merged together, the likelihood of the final model and
-        the mean posterior conditional probabilities of the stages.'''
+        the mean posterior conditional probabilities of the stages.
+
+        User can specify a list of colours to be used for stages. Otherwise,
+        colours evenly spaced around the colour spectrum are used.'''
         logger.info("\n\n --- Starting AHC Algorithm ---")
 
         self.__store_params(prior, alpha, hyperstage)
 
-        posterior_probs, loglikelihood, \
-            merged_situation_indexes = self._execute_AHC_algoritm()
+        mean_posterior_probs, loglikelihood, merged_situations = (
+            self._execute_AHC())
 
-        mean_posterior_probs = \
-            self._calculate_mean_posterior_probs(posterior_probs)
+        self._mark_nodes_with_stage_number(merged_situations)
 
-        merged_situations = \
-            self._mark_nodes_with_stage_number(merged_situation_indexes)
-
-        self._generate_colours_for_situations(merged_situations)
+        self._generate_colours_for_situations(merged_situations, colour_list)
 
         self.ahc_output = {
             "Merged Situations": merged_situations,
@@ -487,13 +528,16 @@ class StagedTree(EventTree):
         return self.ahc_output
 
     def create_figure(self, filename):
-        """Draws the event tree for the process described by the dataset,
-        and saves it to <filename>.png"""
+        """Draws the coloured staged tree for the process described by
+        the dataset, and saves it to "<filename>.filetype". Supports
+        any filetype that graphviz supports. e.g: "event_tree.png" or
+        "event_tree.svg" etc.
+        """
         try:
             self.ahc_output
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
-            graph = self._generate_pdp_graph()
+            graph = self.dot_graph
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
 

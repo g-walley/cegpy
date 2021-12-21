@@ -8,7 +8,6 @@ from datetime import datetime
 import pickle
 # from time import sleep
 
-
 def create_path(filename, add_time=False, filetype='png'):
     dt_string = ''
     if add_time:
@@ -52,9 +51,23 @@ logger.info(str(df_path))
 df = pd.read_excel(df_path)
 falls_et = EventTree(dataframe=df)
 falls_st = StagedTree(dataframe=df)
-
+colours = [
+    '#8dd3c7', '#ffffb3','#bebada', '#fb8072', 
+    '#80b1d3', '#fdb462', '#b3de69', '#fccde5'
+]
 et_fig_path = create_path('out/falls_event_tree', True, 'pdf')
 st_fig_path = create_path('out/falls_staged_tree', True, 'pdf')
 falls_et.create_figure(et_fig_path)
-falls_st.calculate_AHC_transitions()
+falls_st.calculate_AHC_transitions(colour_list=colours)
 falls_st.create_figure(st_fig_path)
+
+# get the dot graph 
+falls_st_dot = falls_st.dot_graph
+# modify nodes and edges
+falls_st_dot.get_edge("s1", "s5")[0].set_style("dotted")
+falls_st_dot.get_edge("s1", "s6")[0].set_style("dotted")
+falls_st_dot.get_node("s1")[0].set_shape("square")
+# save as a pdf
+falls_st_dot.write("out/falls_modified_staged_tree.pdf", format="pdf") 
+# or save as a dot
+falls_st_dot.write("out/falls_modified_staged_tree.dot", format="dot") 

@@ -17,12 +17,12 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'pyceg'
-copyright = '2021, Aditi Shenvi, Gareth Walley'
-author = 'Aditi Shenvi, Gareth Walley'
+project = 'cegpy'
+copyright = '2021, Gareth Walley, Aditi Shenvi'
+author = 'Gareth Walley, Aditi Shenvi'
 
 # The full version, including alpha/beta/rc tags
-release = '0.0.1'
+release = 'x.x.x'
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,6 +31,7 @@ release = '0.0.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'sphinx.ext.autodoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.

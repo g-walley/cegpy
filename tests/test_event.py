@@ -1,9 +1,34 @@
-from ..src.cegpy.trees.event import EventTree
-from collections import defaultdict
 import pandas as pd
-# from ceg_util import CegUtil as util
-from pathlib import Path
 import re
+import numpy as np
+import pytest
+from collections import defaultdict
+from pathlib import Path
+from pytest_mock import MockerFixture
+from src.cegpy import EventTree
+
+
+class TestEventTreeAPI():
+    def setup(self):
+        df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.df = pd.read_excel(df_path)
+
+    def test_required_argument_missing_fails(self):
+        pytest.raises(TypeError, EventTree)
+
+    def test_required_argument_wrong_type_fails(self):
+        dataframe = 5
+        pytest.raises(ValueError, EventTree, dataframe=dataframe)
+
+    def test_incorrect_sampling_zero_fails(self):
+        szp = [('edge_1'), ('edge_1', 'edge_2')]
+        pytest.raises(
+            ValueError,
+            EventTree,
+            dataframe=self.df,
+            sampling_zero_paths=szp)
 
 
 class TestEventTree():
@@ -14,6 +39,10 @@ class TestEventTree():
 
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
+        self.reordered_et = EventTree(
+            dataframe=self.df, 
+            var_order=self.df.columns[::-1]
+        )
         self.node_format = re.compile('^s\\d\\d*$')
 
     def test_check_sampling_zero_paths_param(self) -> None:
@@ -33,6 +62,9 @@ class TestEventTree():
         szp = [('Medium',), ('Medium', 'High')]
         self.et.sampling_zeros = szp
         assert self.et.sampling_zeros == szp
+    
+    def test_order_of_columns(self) -> None:
+        assert self.reordered_et.variables == list(self.df.columns[::-1])
 
     def test_create_node_list_from_paths(self) -> None:
         paths = defaultdict(int)
@@ -135,3 +167,129 @@ def check_list_contains_strings(str_list) -> bool:
     assert isinstance(str_list, list)
     for elem in str_list:
         assert isinstance(elem, str)
+
+
+class TestUsecase():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_et = EventTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_et = EventTree(
+            dataframe=self.fall_df
+        )
+
+    def test_fall_cats_per_var(self):
+        expected_fall_cats_per_var = {
+            "HousingAssessment": 4,
+            "Risk": 2,
+            "Treatment": 3,
+            "Fall": 2,
+        }
+        actual_fall_cats_per_var = self.fall_et.categories_per_variable
+        assert expected_fall_cats_per_var == actual_fall_cats_per_var
+
+
+class TestChangingDataFrame():
+    def setup(self):
+        # stratified dataset
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_et = EventTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_et = EventTree(
+            dataframe=self.fall_df,
+            sampling_zero_path=self.fall_s_z_paths
+        )
+
+    def test_add_empty_column(self) -> None:
+        # adding empty column
+        med_empty_column_df = self.med_df
+        med_empty_column_df["extra"] = ""
+        med_empty_column_et = EventTree(
+            dataframe=med_empty_column_df
+        )
+        assert med_empty_column_et.adj == self.med_et.adj
+
+        fall_empty_column_df = self.fall_df
+        fall_empty_column_df["extra"] = ""
+        fall_empty_column_et = EventTree(
+            dataframe=fall_empty_column_df
+        )
+        assert fall_empty_column_et.adj == self.fall_et.adj
+
+    def test_add_NA_column(self) -> None:
+        # adding NA column
+        med_add_NA_df = self.med_df
+        med_add_NA_df["extra"] = np.nan
+        med_add_NA_et = EventTree(
+            dataframe=med_add_NA_df
+        )
+        assert med_add_NA_et.adj == self.med_et.adj
+
+        fall_add_NA_df = self.fall_df
+        fall_add_NA_df["extra"] = np.nan
+        fall_add_NA_et = EventTree(
+            dataframe=fall_add_NA_df
+        )
+        assert fall_add_NA_et.adj == self.fall_et.adj
+
+    def test_add_same_column(self) -> None:
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = "same for all"
+        med_add_same_et = EventTree(
+            dataframe=med_add_same_df
+        )
+        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
+
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = "same for all"
+        fall_add_same_et = EventTree(
+            dataframe=fall_add_same_df
+        )
+        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
+
+    def test_add_same_column_int(self, mocker: MockerFixture) -> None:
+        mocker.patch('pydotplus.Dot.write')
+        # adding column with no more information
+        med_add_same_df = self.med_df
+        med_add_same_df["extra"] = 1
+        med_add_same_et = EventTree(
+            dataframe=med_add_same_df
+        )
+        med_add_same_et.create_figure("et_fig_path.pdf")
+        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
+
+        fall_add_same_df = self.fall_df
+        fall_add_same_df["extra"] = 1
+        fall_add_same_et = EventTree(
+            dataframe=fall_add_same_df
+        )
+        fall_add_same_et.create_figure("et_fig_path.pdf")
+        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)

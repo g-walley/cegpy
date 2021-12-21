@@ -40,7 +40,7 @@ class TestEventTree():
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
         self.reordered_et = EventTree(
-            dataframe=self.df, 
+            dataframe=self.df,
             var_order=self.df.columns[::-1]
         )
         self.node_format = re.compile('^s\\d\\d*$')
@@ -62,7 +62,7 @@ class TestEventTree():
         szp = [('Medium',), ('Medium', 'High')]
         self.et.sampling_zeros = szp
         assert self.et.sampling_zeros == szp
-    
+
     def test_order_of_columns(self) -> None:
         assert self.reordered_et.variables == list(self.df.columns[::-1])
 
@@ -117,6 +117,19 @@ class TestEventTree():
             for node in edge:
                 assert isinstance(node, str)
             assert isinstance(count, int)
+
+    def test_dataframe_with_numeric_values(self) -> None:
+        """Ensures figure can be produced from dataframes with
+        numeric values"""
+        self.df["NewColumn"] = [1] * len(self.df)
+        new_et = EventTree(self.df)
+        try:
+            new_et.create_figure("out/test_dataframe_with_numeric_values.pdf")
+        except Exception as err:
+            raise AssertionError(
+                "Could not create figure with numeric data"
+            ) from err
+        return None
 
 
 class TestIntegration():

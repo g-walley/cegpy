@@ -391,3 +391,16 @@ class TestChangingDataFrame():
             tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
         )
         assert first_set.issubset(second_set)
+
+
+class TestWithDynamicDataset():
+    def setup(self):
+        self.df = pd.read_excel("data/Falls_Dynamic_Data.xlsx")
+
+    def test_single_floret_stages(self):
+        """Single floret stages are marked as same stage"""
+        df = self.df[["Residence", "Risk", "Treatment", "Fall", "Outcome"]]
+        st = StagedTree(df)
+        ahc_out = st.calculate_AHC_transitions()
+        ms = [set(merged_sits) for merged_sits in ahc_out["Merged Situations"]]
+        assert {"s9", "s13", "s14"} in ms

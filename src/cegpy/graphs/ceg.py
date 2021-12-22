@@ -738,6 +738,14 @@ class Evidence:
         self._certain_nodes = set()
         self._uncertain_nodes = []
 
+    def __repr__(self) -> str:
+        return (
+            f"Evidence(certain_edges={str(self.certain_edges)}, "
+            f"certain_nodes={str(self.certain_nodes)}, "
+            f"uncertain_edges={str(self.uncertain_edges)}, "
+            f"uncertain_nodes={str(self.uncertain_nodes)})"
+        )
+
     @property
     def certain_edges(self) -> List[Tuple[str]]:
         return self._certain_edges

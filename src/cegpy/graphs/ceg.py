@@ -1,3 +1,4 @@
+from typing import List, Set, Tuple
 import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
@@ -454,7 +455,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self.remove_node(node)
 
 
-class Evidence:
+class _Evidence:
     CERTAIN = True
     UNCERTAIN = False
 
@@ -726,3 +727,102 @@ class Evidence:
         self.__propagate_reduced_graph_probabilities(subgraph)
 
         return subgraph
+
+
+class Evidence:
+    def __init__(self, graph: ChainEventGraph):
+        self._graph = graph
+
+        self._certain_edges = []
+        self._uncertain_edges = []
+        self._certain_vertices = set()
+        self._uncertain_vertices = set()
+
+    @property
+    def certain_edges(self) -> List[Tuple[str]]:
+        return self._certain_edges
+
+    @property
+    def uncertain_edges(self) -> List[Tuple[str]]:
+        return self._uncertain_edges
+
+    @property
+    def certain_vertices(self) -> Set[str]:
+        return self._certain_vertices
+
+    @property
+    def reduced_graph(self):
+        return self._create_reduced_graph()
+
+    def add_certain_edge(self, u: str, v: str, label: str):
+        """Specify an edge that has been observed."""
+        edge = (u, v, label)
+        if edge not in self._graph.edges:
+            raise ValueError(
+                f"This edge {edge}, does not exist"
+                f" in the Chain Event Graph."
+            )
+        self._certain_edges.append(edge)
+
+    def add_certain_edge_list(self, edges: List[Tuple[str]]):
+        """Specify a list of edges that have all been observed.
+        E.g. edges = [
+            ("s0","s1", "foo"),
+            ("s1","s5", "bar"), ...]"""
+        for edge in edges:
+            self.add_certain_edge(*edge)
+
+    def remove_certain_edge(self, u: str, v: str, label: str):
+        """Specify an edge to remove from the certain edges."""
+        try:
+            edge = (u, v, label)
+            self._certain_edges.remove(edge)
+        except ValueError as err:
+            raise ValueError(
+                f"Edge {(u, v, label)} not found in the certain "
+                f"edge list."
+            ) from err
+
+    def remove_certain_edge_list(self, edges: List[Tuple[str]]):
+        """Specify a list of edges that in the certain edge list
+        to remove.
+        E.g. edges = [
+        ("s0","s1", "foo"),
+        ("s1","s5", "bar"), ...]"""
+        for edge in edges:
+            self.remove_certain_edge(*edge)
+
+    def add_uncertain_edge_set(self, edge_set: Set[tuple[str]]):
+        """Specify a set of edges where one of the edges has
+        occured, but you are uncertain of which one it is."""
+        for edge in edge_set:
+            if edge not in self._graph.edges:
+                raise ValueError(
+                    f"The edge {edge}, does not exist"
+                    f" in the Chain Event Graph."
+                )
+
+        self._uncertain_edges.append(edge_set)
+
+    def add_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
+        """Specify a list of sets of edges where one of the edges has
+        occured, but you are uncertain of which one it is."""
+        for edge_set in edge_sets:
+            self.add_uncertain_edge_set(edge_set)
+
+    def remove_uncertain_edge_set(self, edge_set: Set[tuple[str]]):
+        """Specify a set of edges to remove from the uncertain edges."""
+        try:
+            self._uncertain_edges.remove(edge_set)
+        except ValueError as err:
+            raise ValueError(
+                f"{edge_set} not found in the uncertain edge list."
+            ) from err
+
+    def remove_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
+        """Specify a list of sets of edges to remove from the evidence list."""
+        for edge_set in edge_sets:
+            self.remove_uncertain_edge_set(edge_set)
+
+
+    # Deal with uncertain edges that are in the same path

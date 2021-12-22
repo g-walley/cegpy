@@ -297,7 +297,7 @@ class TestEvidence(object):
         assert certain_nodes == self.evidence.certain_nodes
 
         pytest.raises(
-            KeyError,
+            ValueError,
             self.evidence.remove_certain_node,
             node
         )
@@ -320,7 +320,7 @@ class TestEvidence(object):
         ]
         for node_set in uncertain_node_sets:
             self.evidence.add_uncertain_node_set(node_set)
-        assert uncertain_node_sets == self.evidence.uncertain_node_sets
+        assert uncertain_node_sets == self.evidence.uncertain_nodes
 
         pytest.raises(
             ValueError,
@@ -329,10 +329,10 @@ class TestEvidence(object):
         )
         node_set = uncertain_node_sets.pop()
         self.evidence.remove_uncertain_node_set(node_set)
-        assert uncertain_node_sets == self.evidence.uncertain_node_sets
+        assert uncertain_node_sets == self.evidence.uncertain_nodes
 
         pytest.raises(
-            KeyError,
+            ValueError,
             self.evidence.remove_uncertain_node_set,
             node_set
         )

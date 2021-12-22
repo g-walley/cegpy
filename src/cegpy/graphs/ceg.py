@@ -736,7 +736,7 @@ class Evidence:
         self._certain_edges = []
         self._uncertain_edges = []
         self._certain_nodes = set()
-        self._uncertain_node_sets = []
+        self._uncertain_nodes = []
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
@@ -751,8 +751,8 @@ class Evidence:
         return self._certain_nodes
 
     @property
-    def uncertain_node_sets(self) -> List[Set[str]]:
-        return self._uncertain_node_sets
+    def uncertain_nodes(self) -> List[Set[str]]:
+        return self._uncertain_nodes
 
     @property
     def reduced_graph(self):
@@ -773,11 +773,11 @@ class Evidence:
         try:
             edge = (u, v, label)
             self._certain_edges.remove(edge)
-        except ValueError as err:
+        except ValueError:
             raise ValueError(
                 f"Edge {(u, v, label)} not found in the certain "
                 f"edge list."
-            ) from err
+            )
 
     def add_certain_edge_list(self, edges: List[Tuple[str]]):
         """Specify a list of edges that have all been observed.
@@ -812,10 +812,10 @@ class Evidence:
         """Specify a set of edges to remove from the uncertain edges."""
         try:
             self._uncertain_edges.remove(edge_set)
-        except ValueError as err:
+        except ValueError:
             raise ValueError(
                 f"{edge_set} not found in the uncertain edge list."
-            ) from err
+            )
 
     def add_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
         """Specify a list of sets of edges where one of the edges has
@@ -840,10 +840,10 @@ class Evidence:
         """Specify a node to be removed from the certain nodes list."""
         try:
             self._certain_nodes.remove(node)
-        except KeyError as err:
-            raise KeyError(
+        except KeyError:
+            raise ValueError(
                 f"Node {node} not found in the set of certain nodes."
-            ) from err
+            )
 
     def add_certain_node_set(self, nodes: Set[str]):
         """Specify a set of nodes that have been observed."""
@@ -859,12 +859,24 @@ class Evidence:
     def add_uncertain_node_set(self, node_set: Set[str]):
         """Specify a set of nodes where one of the nodes has
         occured, but you are uncertain of which one it is."""
-        raise NotImplementedError
+        for node in node_set:
+            if node not in self._graph.nodes:
+                raise ValueError(
+                    f"The node {node}, does not exist"
+                    f" in the Chain Event Graph."
+                )
+
+        self._uncertain_nodes.append(node_set)
 
     def remove_uncertain_node_set(self, node_set: Set[str]):
         """Specify a set of nodes to be removed from the uncertain
         nodes set list."""
-        raise NotImplementedError
+        try:
+            self._uncertain_nodes.remove(node_set)
+        except KeyError:
+            raise ValueError(
+                f"{node_set} not found in the uncertain node list."
+            )
 
     def add_uncertain_node_set_list(self, node_sets: List[Set[str]]):
         """Specify a list of sets of nodes where in each set, one of

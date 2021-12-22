@@ -352,22 +352,3 @@ class TestEvidence(object):
         for node_set in node_sets_to_remove:
             uncertain_node_sets.remove(node_set)
         assert uncertain_node_sets == self.evidence.uncertain_nodes
-
-    def test_add_vertex_add_and_remove(self):
-        uncertain_vertices = {'s1', 's2', 's3', 's45'}
-        for vertex in uncertain_vertices:
-            self.evidence.add_node(vertex, certain=False)
-        assert uncertain_vertices == self.evidence.uncertain_vertices
-
-        self.evidence.remove_node('s2', certain=False)
-        uncertain_vertices.remove('s2')
-        assert uncertain_vertices == self.evidence.uncertain_vertices
-
-        certain_vertices = {'s1', 's2', 's3', 's45'}
-        for vertex in certain_vertices:
-            self.evidence.add_node(vertex, certain=True)
-        assert certain_vertices == self.evidence.certain_nodes
-
-        self.evidence.remove_node('s2', certain=True)
-        certain_vertices.remove('s2')
-        assert certain_vertices == self.evidence.certain_nodes

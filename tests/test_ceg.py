@@ -191,30 +191,75 @@ class TestEvidence(object):
         self.evidence = Evidence(H)
         print(self.evidence)
 
-    def test_edge_add_and_remove(self):
+    def test_add_and_remove_certain_edge(self):
         certain_edges = [
-            ('s1', 's2', 'Experienced'),
-            ('s1', 's2', 'Other'),
-            ('s1', 's2', 'Novice'),
+            ('w0', 'w1', 'a'),
+            ('w1', 'w2', 'c'),
         ]
         for edge in certain_edges:
-            self.evidence.add_edge(edge[0], edge[1], edge[2], certain=True)
+            self.evidence.add_certain_edge(*edge)
         assert certain_edges == self.evidence.certain_edges
-        self.evidence.remove_edge('s1', 's2', 'Other', certain=True)
-        certain_edges.remove(('s1', 's2', 'Other'))
+        self.evidence.remove_certain_edge(*certain_edges[1])
+        certain_edges.remove(certain_edges[1])
         assert certain_edges == self.evidence.certain_edges
 
-        uncertain_edges = [
-            ('s1', 's2', 'Experienced'),
-            ('s1', 's2', 'Other'),
-            ('s1', 's2', 'Novice'),
+    def test_add_and_remove_certain_edge_list(self):
+        certain_edges = [
+            ('w0', 'w1', 'a'),
+            ('w1', 'w2', 'c'),
+            ('w2', 'w4', 'e'),
         ]
-        for edge in uncertain_edges:
-            self.evidence.add_edge(edge[0], edge[1], edge[2], certain=False)
-        assert uncertain_edges == self.evidence.uncertain_edges
-        self.evidence.remove_edge('s1', 's2', 'Other', certain=False)
-        uncertain_edges.remove(('s1', 's2', 'Other'))
-        assert uncertain_edges == self.evidence.uncertain_edges
+        self.evidence.add_certain_edge_list(certain_edges)
+        assert certain_edges == self.evidence.certain_edges
+
+        self.evidence.remove_certain_edge_list(certain_edges[1:])
+        for edge in certain_edges[1:]:
+            certain_edges.remove(edge)
+        assert certain_edges == self.evidence.certain_edges
+
+    def test_add_and_remove_uncertain_edge_set(self):
+        uncertain_edge_sets = [
+            {
+                ('w0', 'w1', 'a'),
+                ('w0', 'w1', 'b'),
+                ('w0', 'w3', 's'),
+            },
+            {
+                ('w0', 'w5', 'j'),
+                ('w0', 'w7', 'k'),
+            },
+        ]
+        for edge_set in uncertain_edge_sets:
+            self.evidence.add_uncertain_edge_set(edge_set)
+        assert uncertain_edge_sets == self.evidence.uncertain_edges
+
+        self.evidence.remove_uncertain_edge_set(uncertain_edge_sets[0])
+        uncertain_edge_sets.remove(uncertain_edge_sets[0])
+        assert uncertain_edge_sets == self.evidence.uncertain_edges
+
+    def test_add_and_remove_uncertain_edge_set_list(self):
+        uncertain_edge_sets = [
+            {
+                ('w0', 'w1', 'a'),
+                ('w0', 'w1', 'b'),
+                ('w0', 'w3', 's'),
+            },
+            {
+                ('w0', 'w5', 'j'),
+                ('w0', 'w7', 'k'),
+            },
+            {
+                ('w5', 'w6', 'm'),
+                ('w5', 'w7', 'n'),
+            }
+        ]
+        self.evidence.add_uncertain_edge_set_list(uncertain_edge_sets)
+        assert uncertain_edge_sets == self.evidence.uncertain_edges
+
+        self.evidence.remove_uncertain_edge_set_list(uncertain_edge_sets[1:])
+        for edge_set in uncertain_edge_sets[1:]:
+            uncertain_edge_sets.remove(edge_set)
+        assert uncertain_edge_sets == self.evidence.uncertain_edges
 
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}

@@ -285,6 +285,12 @@ class TestEvidence(object):
             self.evidence.add_certain_node(node)
         assert certain_nodes == self.evidence.certain_nodes
 
+        pytest.raises(
+            ValueError,
+            self.evidence.add_certain_node,
+            "w150",
+        )
+
         node = certain_nodes.pop()
         self.evidence.remove_certain_node(node)
         assert certain_nodes == self.evidence.certain_nodes

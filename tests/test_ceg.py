@@ -1,5 +1,6 @@
 import networkx as nx
 from networkx.classes.function import nodes
+from networkx.readwrite.gml import unescape
 import pandas as pd
 from src.cegpy import StagedTree, Evidence, ChainEventGraph
 from pathlib import Path
@@ -337,9 +338,20 @@ class TestEvidence(object):
             node_set
         )
 
-
     def test_add_and_remove_uncertain_nodes_set_list(self):
-        pass
+        uncertain_node_sets = [
+            {"w0", "w1", "w3"},
+            {"w4", "w5"},
+            {"w7", "w8"},
+        ]
+        self.evidence.add_uncertain_node_set_list(uncertain_node_sets)
+        assert uncertain_node_sets == self.evidence.uncertain_nodes
+
+        node_sets_to_remove = uncertain_node_sets[1:]
+        self.evidence.remove_uncertain_node_set_list(node_sets_to_remove)
+        for node_set in node_sets_to_remove:
+            uncertain_node_sets.remove(node_set)
+        assert uncertain_node_sets == self.evidence.uncertain_nodes
 
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}

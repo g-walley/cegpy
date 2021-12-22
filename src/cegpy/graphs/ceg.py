@@ -736,7 +736,7 @@ class Evidence:
         self._certain_edges = []
         self._uncertain_edges = []
         self._certain_nodes = set()
-        self._uncertain_nodes = []
+        self._uncertain_node_sets = []
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
@@ -751,8 +751,8 @@ class Evidence:
         return self._certain_nodes
 
     @property
-    def uncertain_nodes(self) -> Set[str]:
-        return self._uncertain_nodes
+    def uncertain_node_sets(self) -> List[Set[str]]:
+        return self._uncertain_node_sets
 
     @property
     def reduced_graph(self):
@@ -871,7 +871,7 @@ class Evidence:
         the nodes has occured, but you are uncertain of which one it is."""
         raise NotImplementedError
 
-    def remove_uncertain_node_set_list(self, nodes: List[str]):
+    def remove_uncertain_node_set_list(self, nodes: List[Set[str]]):
         """Specify a list of sets nodes to remove from the list of uncertain
         sets of nodes."""
         raise NotImplementedError

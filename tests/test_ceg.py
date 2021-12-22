@@ -313,7 +313,30 @@ class TestEvidence(object):
         assert certain_nodes == self.evidence.certain_nodes
 
     def test_add_and_remove_uncertain_nodes_set(self):
-        pass
+        uncertain_node_sets = [
+            {"w0", "w1", "w3"},
+            {"w4", "w5"},
+            {"w7", "w8"},
+        ]
+        for node_set in uncertain_node_sets:
+            self.evidence.add_uncertain_node_set(node_set)
+        assert uncertain_node_sets == self.evidence.uncertain_node_sets
+
+        pytest.raises(
+            ValueError,
+            self.evidence.add_uncertain_node_set,
+            {"w6", "w150"},
+        )
+        node_set = uncertain_node_sets.pop()
+        self.evidence.remove_uncertain_node_set(node_set)
+        assert uncertain_node_sets == self.evidence.uncertain_node_sets
+
+        pytest.raises(
+            KeyError,
+            self.evidence.remove_uncertain_node_set,
+            node_set
+        )
+
 
     def test_add_and_remove_uncertain_nodes_set_list(self):
         pass

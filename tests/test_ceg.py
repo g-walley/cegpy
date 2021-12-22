@@ -1,4 +1,5 @@
 import networkx as nx
+from networkx.classes.function import nodes
 import pandas as pd
 from src.cegpy import StagedTree, Evidence, ChainEventGraph
 from pathlib import Path
@@ -301,8 +302,15 @@ class TestEvidence(object):
             node
         )
 
-    def test_add_and_remove_certain_nodes_list(self):
-        pass
+    def test_add_and_remove_certain_nodes_set(self):
+        certain_nodes = {"w0", "w1", "w3"}
+        self.evidence.add_certain_node_set(certain_nodes)
+        assert certain_nodes == self.evidence.certain_nodes
+
+        nodes_to_remove = {"w0", "w1"}
+        self.evidence.remove_certain_node_set(nodes_to_remove)
+        certain_nodes.difference_update(nodes_to_remove)
+        assert certain_nodes == self.evidence.certain_nodes
 
     def test_add_and_remove_uncertain_nodes_set(self):
         pass

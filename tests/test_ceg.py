@@ -2,6 +2,7 @@ import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, Evidence, ChainEventGraph
 from pathlib import Path
+import pytest
 
 
 class TestUnitCEG(object):
@@ -199,9 +200,17 @@ class TestEvidence(object):
         for edge in certain_edges:
             self.evidence.add_certain_edge(*edge)
         assert certain_edges == self.evidence.certain_edges
-        self.evidence.remove_certain_edge(*certain_edges[1])
-        certain_edges.remove(certain_edges[1])
+
+        edge_to_remove = certain_edges[1]
+        self.evidence.remove_certain_edge(*edge_to_remove)
+        certain_edges.remove(edge_to_remove)
         assert certain_edges == self.evidence.certain_edges
+
+        pytest.raises(
+            ValueError,
+            self.evidence.remove_certain_edge,
+            *edge_to_remove,
+        )
 
     def test_add_and_remove_certain_edge_list(self):
         certain_edges = [
@@ -233,9 +242,16 @@ class TestEvidence(object):
             self.evidence.add_uncertain_edge_set(edge_set)
         assert uncertain_edge_sets == self.evidence.uncertain_edges
 
-        self.evidence.remove_uncertain_edge_set(uncertain_edge_sets[0])
-        uncertain_edge_sets.remove(uncertain_edge_sets[0])
+        edge_set_to_remove = uncertain_edge_sets[0].copy()
+        self.evidence.remove_uncertain_edge_set(edge_set_to_remove)
+        uncertain_edge_sets.remove(edge_set_to_remove)
         assert uncertain_edge_sets == self.evidence.uncertain_edges
+
+        pytest.raises(
+            ValueError,
+            self.evidence.remove_uncertain_edge_set,
+            edge_set_to_remove,
+        )
 
     def test_add_and_remove_uncertain_edge_set_list(self):
         uncertain_edge_sets = [

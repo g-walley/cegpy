@@ -830,11 +830,20 @@ class Evidence:
 
     def add_certain_node(self, node: str):
         """Specify a node that has been observed."""
-        raise NotImplementedError
+        if node not in self._graph.nodes:
+            raise ValueError(
+                f"The node {node}, does not exist in the Chain Event Graph."
+            )
+        self._certain_nodes.add(node)
 
     def remove_certain_node(self, node: str):
         """Specify a node to be removed from the certain nodes list."""
-        raise NotImplementedError
+        try:
+            self._certain_nodes.remove(node)
+        except KeyError as err:
+            raise KeyError(
+                f"Node {node} not found in the set of certain nodes."
+            ) from err
 
     def add_certain_node_list(self, nodes: List[str]):
         """Specify a list of nodes that have been observed."""

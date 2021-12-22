@@ -746,6 +746,41 @@ class Evidence:
             f"uncertain_nodes={str(self.uncertain_nodes)})"
         )
 
+    def __str__(self) -> str:
+        """Returns human readable version of the evidence you've provided."""
+        def evidence_str(base_str, edges, nodes):
+            if edges == []:
+                base_str += '   Edges = []\n'
+            else:
+                base_str += '   Edges = [\n'
+                for edge in edges:
+                    base_str += '     %s,\n' % (str(edge))
+                base_str += '   ]\n'
+
+            if nodes == set():
+                base_str += '   Nodes = {}\n'
+            else:
+                base_str += '   Nodes = {\n'
+                for node in nodes:
+                    base_str += "     '%s',\n" % (str(node))
+                base_str += '   }\n\n'
+            return base_str
+
+        base_str = 'The evidence you have given is as follows:\n'
+        base_str += ' Evidence you are certain of:\n'
+        base_str = evidence_str(
+            base_str,
+            self.certain_edges,
+            self.certain_nodes
+        )
+        base_str += ' Evidence you are uncertain of:\n'
+        base_str = evidence_str(
+            base_str,
+            self.uncertain_edges,
+            self.uncertain_nodes
+        )
+        return base_str
+
     @property
     def certain_edges(self) -> List[Tuple[str]]:
         return self._certain_edges

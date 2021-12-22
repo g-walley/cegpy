@@ -735,8 +735,8 @@ class Evidence:
 
         self._certain_edges = []
         self._uncertain_edges = []
-        self._certain_vertices = set()
-        self._uncertain_vertices = set()
+        self._certain_nodes = set()
+        self._uncertain_nodes = set()
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
@@ -747,8 +747,12 @@ class Evidence:
         return self._uncertain_edges
 
     @property
-    def certain_vertices(self) -> Set[str]:
-        return self._certain_vertices
+    def certain_nodes(self) -> Set[str]:
+        return self._certain_nodes
+
+    @property
+    def uncertain_nodes(self) -> Set[str]:
+        return self._uncertain_nodes
 
     @property
     def reduced_graph(self):
@@ -764,14 +768,6 @@ class Evidence:
             )
         self._certain_edges.append(edge)
 
-    def add_certain_edge_list(self, edges: List[Tuple[str]]):
-        """Specify a list of edges that have all been observed.
-        E.g. edges = [
-            ("s0","s1", "foo"),
-            ("s1","s5", "bar"), ...]"""
-        for edge in edges:
-            self.add_certain_edge(*edge)
-
     def remove_certain_edge(self, u: str, v: str, label: str):
         """Specify an edge to remove from the certain edges."""
         try:
@@ -782,6 +778,14 @@ class Evidence:
                 f"Edge {(u, v, label)} not found in the certain "
                 f"edge list."
             ) from err
+
+    def add_certain_edge_list(self, edges: List[Tuple[str]]):
+        """Specify a list of edges that have all been observed.
+        E.g. edges = [
+            ("s0","s1", "foo"),
+            ("s1","s5", "bar"), ...]"""
+        for edge in edges:
+            self.add_certain_edge(*edge)
 
     def remove_certain_edge_list(self, edges: List[Tuple[str]]):
         """Specify a list of edges that in the certain edge list
@@ -804,12 +808,6 @@ class Evidence:
 
         self._uncertain_edges.append(edge_set)
 
-    def add_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
-        """Specify a list of sets of edges where one of the edges has
-        occured, but you are uncertain of which one it is."""
-        for edge_set in edge_sets:
-            self.add_uncertain_edge_set(edge_set)
-
     def remove_uncertain_edge_set(self, edge_set: Set[tuple[str]]):
         """Specify a set of edges to remove from the uncertain edges."""
         try:
@@ -819,10 +817,54 @@ class Evidence:
                 f"{edge_set} not found in the uncertain edge list."
             ) from err
 
+    def add_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
+        """Specify a list of sets of edges where one of the edges has
+        occured, but you are uncertain of which one it is."""
+        for edge_set in edge_sets:
+            self.add_uncertain_edge_set(edge_set)
+
     def remove_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
         """Specify a list of sets of edges to remove from the evidence list."""
         for edge_set in edge_sets:
             self.remove_uncertain_edge_set(edge_set)
+
+    def add_certain_node(self, node: str):
+        """Specify a node that has been observed."""
+        raise NotImplementedError
+
+    def remove_certain_node(self, node: str):
+        """Specify a node to be removed from the certain nodes list."""
+        raise NotImplementedError
+
+    def add_certain_node_list(self, nodes: List[str]):
+        """Specify a list of nodes that have been observed."""
+        raise NotImplementedError
+
+    def remove_certain_node_list(self, nodes: List[str]):
+        """Specify a list of nodes to remove from the list of nodes that have
+        been observed."""
+        raise NotImplementedError
+
+    def add_uncertain_node_set(self, node_set: Set[str]):
+        """Specify a set of nodes where one of the nodes has
+        occured, but you are uncertain of which one it is."""
+        raise NotImplementedError
+
+    def remove_uncertain_node_set(self, node_set: Set[str]):
+        """Specify a set of nodes to be removed from the uncertain
+        nodes set list."""
+        raise NotImplementedError
+
+    def add_uncertain_node_set_list(self, node_sets: List[Set[str]]):
+        """Specify a list of sets of nodes where in each set, one of
+        the nodes has occured, but you are uncertain of which one it is."""
+        raise NotImplementedError
+
+    def remove_uncertain_node_set_list(self, nodes: List[str]):
+        """Specify a list of sets nodes to remove from the list of uncertain
+        sets of nodes."""
+        raise NotImplementedError
+
 
 
     # Deal with uncertain edges that are in the same path

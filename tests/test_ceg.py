@@ -127,7 +127,7 @@ class TestUnitCEG(object):
         }
         for vertex in certain_vertices:
             self.ceg.evidence.add_node(vertex, Evidence.CERTAIN)
-            assert vertex in self.ceg.evidence.certain_vertices
+            assert vertex in self.ceg.evidence.certain_nodes
 
         uncertain_edges = [
             ('w2', 'w5', 'Experienced'),
@@ -277,6 +277,23 @@ class TestEvidence(object):
             uncertain_edge_sets.remove(edge_set)
         assert uncertain_edge_sets == self.evidence.uncertain_edges
 
+    def test_add_and_remove_certain_nodes(self):
+        # nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
+        #          'w5', 'w6', 'w7', 'w8', 'w&infin;']
+        certain_nodes = {"w0", "w1", "w3"}
+        for node in certain_nodes:
+            self.evidence.add_certain_node(node)
+        assert certain_nodes == self.evidence.certain_nodes
+
+    def test_add_and_remove_certain_nodes_list(self):
+        pass
+
+    def test_add_and_remove_uncertain_nodes_set(self):
+        pass
+
+    def test_add_and_remove_uncertain_nodes_set_list(self):
+        pass
+
     def test_add_vertex_add_and_remove(self):
         uncertain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in uncertain_vertices:
@@ -290,8 +307,8 @@ class TestEvidence(object):
         certain_vertices = {'s1', 's2', 's3', 's45'}
         for vertex in certain_vertices:
             self.evidence.add_node(vertex, certain=True)
-        assert certain_vertices == self.evidence.certain_vertices
+        assert certain_vertices == self.evidence.certain_nodes
 
         self.evidence.remove_node('s2', certain=True)
         certain_vertices.remove('s2')
-        assert certain_vertices == self.evidence.certain_vertices
+        assert certain_vertices == self.evidence.certain_nodes

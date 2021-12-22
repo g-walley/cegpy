@@ -285,6 +285,16 @@ class TestEvidence(object):
             self.evidence.add_certain_node(node)
         assert certain_nodes == self.evidence.certain_nodes
 
+        node = certain_nodes.pop()
+        self.evidence.remove_certain_node(node)
+        assert certain_nodes == self.evidence.certain_nodes
+
+        pytest.raises(
+            KeyError,
+            self.evidence.remove_certain_node,
+            node
+        )
+
     def test_add_and_remove_certain_nodes_list(self):
         pass
 

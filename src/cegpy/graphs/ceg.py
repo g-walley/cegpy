@@ -736,7 +736,7 @@ class Evidence:
         self._certain_edges = []
         self._uncertain_edges = []
         self._certain_nodes = set()
-        self._uncertain_nodes = set()
+        self._uncertain_nodes = []
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
@@ -845,14 +845,16 @@ class Evidence:
                 f"Node {node} not found in the set of certain nodes."
             ) from err
 
-    def add_certain_node_list(self, nodes: List[str]):
-        """Specify a list of nodes that have been observed."""
-        raise NotImplementedError
+    def add_certain_node_set(self, nodes: Set[str]):
+        """Specify a set of nodes that have been observed."""
+        for node in nodes:
+            self.add_certain_node(node)
 
-    def remove_certain_node_list(self, nodes: List[str]):
+    def remove_certain_node_set(self, nodes: Set[str]):
         """Specify a list of nodes to remove from the list of nodes that have
         been observed."""
-        raise NotImplementedError
+        for node in nodes:
+            self.remove_certain_node(node)
 
     def add_uncertain_node_set(self, node_set: Set[str]):
         """Specify a set of nodes where one of the nodes has

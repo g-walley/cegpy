@@ -881,12 +881,14 @@ class Evidence:
     def add_uncertain_node_set_list(self, node_sets: List[Set[str]]):
         """Specify a list of sets of nodes where in each set, one of
         the nodes has occured, but you are uncertain of which one it is."""
-        raise NotImplementedError
+        for node_set in node_sets:
+            self.add_uncertain_node_set(node_set)
 
-    def remove_uncertain_node_set_list(self, nodes: List[Set[str]]):
+    def remove_uncertain_node_set_list(self, node_sets: List[Set[str]]):
         """Specify a list of sets nodes to remove from the list of uncertain
         sets of nodes."""
-        raise NotImplementedError
+        for node_set in node_sets:
+            self.remove_uncertain_node_set(node_set)
 
 
 

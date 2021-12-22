@@ -455,280 +455,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self.remove_node(node)
 
 
-class _Evidence:
-    CERTAIN = True
-    UNCERTAIN = False
-
-    def __init__(self, graph):
-        self.__graph = graph
-
-        self.certain_edges = []
-        self.uncertain_edges = []
-        self.certain_vertices = set()
-        self.uncertain_vertices = set()
-
-    @property
-    def reduced_graph(self):
-        return self.__create_reduced_graph()
-
-    @property
-    def path_list(self):
-        return self._path_list
-
-    @path_list.setter
-    def path_list(self, value):
-        self._path_list = value
-
-    @property
-    def edges(self):
-        return list(self._edges)
-
-    @edges.setter
-    def edges(self, value):
-        self._edges = value
-
-    @property
-    def vertices(self):
-        return list(self._vertices)
-
-    @vertices.setter
-    def vertices(self, value):
-        self._vertices = value
-
-    def add_edge(self, u, v, label, certain):
-        edge = (u, v, label)
-        if certain:
-            self.certain_edges.append(edge)
-        else:
-            self.uncertain_edges.append(edge)
-
-    def add_edges_from(self, edges, certain):
-        for (u, v, k) in edges:
-            self.add_edge(u, v, k, certain)
-
-    def remove_edge(self, u, v, label, certain):
-        if certain:
-            self.certain_edges.remove((u, v, label))
-        else:
-            self.uncertain_edges.remove((u, v, label))
-
-    def remove_edges_from(self, edges, certain):
-        for (u, v, k) in edges:
-            self.remove_edge(u, v, k, certain)
-
-    def add_node(self, node, certain):
-        if certain:
-            self.certain_vertices.add(node)
-        else:
-            self.uncertain_vertices.add(node)
-
-    def add_nodes_from(self, nodes, certain):
-        for node in nodes:
-            self.add_node(node, certain)
-
-    def remove_node(self, node, certain):
-        if certain:
-            self.certain_vertices.remove(node)
-        else:
-            self.uncertain_vertices.remove(node)
-
-    def remove_nodes_from(self, nodes, certain):
-        for node in nodes:
-            self.remove_node(node, certain)
-
-    def __repr__(self) -> str:
-        repr = "Evidence(CertainEdges={}, CertainVertices={}," +\
-            " UncertainEdges={}, UncertainVertices={})"
-        return repr.format(
-            str(self.certain_edges),
-            str(self.certain_vertices),
-            str(self.uncertain_edges),
-            str(self.uncertain_vertices)
-        )
-
-    def __str__(self) -> str:
-        """Returns human readable version of the evidence you've provided."""
-        def evidence_str(base_str, edges, vertices):
-            if edges == []:
-                base_str += '   Edges = []\n'
-            else:
-                base_str += '   Edges = [\n'
-                for edge in edges:
-                    base_str += '     %s,\n' % (str(edge))
-                base_str += '   ]\n'
-
-            if vertices == set():
-                base_str += '   Vertices = {}\n'
-            else:
-                base_str += '   Vertices = {\n'
-                for vertex in vertices:
-                    base_str += "     '%s',\n" % (str(vertex))
-                base_str += '   }\n\n'
-            return base_str
-
-        base_str = 'The evidence you have given is as follows:\n'
-        base_str += ' Evidence you are certain of:\n'
-        base_str = evidence_str(
-            base_str,
-            self.certain_edges,
-            self.certain_vertices
-        )
-        base_str += ' Evidence you are uncertain of:\n'
-        base_str = evidence_str(
-            base_str,
-            self.uncertain_edges,
-            self.uncertain_vertices
-        )
-        return base_str
-
-    def __update_path_list(self):
-        def remove_paths(paths_list, paths_to_remove):
-            for path in paths_to_remove:
-                paths_list.remove(path)
-
-        # Certain Evidence
-        certain_path_list = self.__graph.path_list.copy()
-        # Uncertain Evidence
-        uncertain_path_list = self.__graph.path_list.copy()
-
-        if self.certain_edges or self.certain_vertices:
-            # Apply certain Edges
-            paths_to_remove = []
-            for edge in self.certain_edges:
-                for path in certain_path_list:
-                    if edge not in path:
-                        paths_to_remove.append(path)
-
-            remove_paths(certain_path_list, paths_to_remove)
-
-            # Apply certain vertices
-            paths_to_remove = []
-            for vertex in self.certain_vertices:
-                for path in certain_path_list:
-                    vertex_in_path = False
-                    for (u, v, _) in path:
-                        if vertex == u or vertex == v:
-                            vertex_in_path = True
-                            break
-
-                    if not vertex_in_path:
-                        paths_to_remove.append(path)
-
-            remove_paths(certain_path_list, paths_to_remove)
-
-        if self.uncertain_edges or self.uncertain_vertices:
-            # Apply uncertain Edges
-            paths_to_include = []
-            for edge in self.uncertain_edges:
-                for path in uncertain_path_list:
-                    if edge in path:
-                        paths_to_include.append(path)
-
-            # Apply uncertain Vertices
-            for vertex in self.uncertain_vertices:
-                for path in uncertain_path_list:
-                    vertex_in_path = False
-                    for (u, v, _) in path:
-                        if vertex == u or vertex == v:
-                            vertex_in_path = True
-                            break
-
-                    if vertex_in_path:
-                        paths_to_include.append(path)
-
-            uncertain_path_list = paths_to_include
-
-        # Take paths that are found in both certain and uncertain lists
-        if not self.uncertain_edges and not self.uncertain_vertices:
-            self.path_list = certain_path_list
-        elif not self.certain_edges and not self.certain_vertices:
-            self.path_list = uncertain_path_list
-        else:
-            new_path_list = []
-            for path in certain_path_list:
-                if path in uncertain_path_list:
-                    new_path_list.append(path)
-            self.path_list = new_path_list
-
-    def __update_edges_and_vertices(self):
-        edges = set()
-        vertices = set()
-
-        for path in self.path_list:
-            for (u, v, k) in path:
-                edges.add((u, v, k))
-                vertices.add(u)
-                vertices.add(v)
-
-        self.edges = edges
-        self.vertices = vertices
-
-    def __filter_edge(self, u, v, k) -> bool:
-        if (u, v, k) in self.edges:
-            return True
-        else:
-            return False
-
-    def __filter_node(self, n) -> bool:
-        if n in self.vertices:
-            return True
-        else:
-            return False
-
-    def __propagate_reduced_graph_probabilities(self, graph) -> None:
-        sink = graph.sink_node
-        root = graph.root_node
-        graph.nodes[sink]['emphasis'] = 1
-        node_set = set([sink])
-
-        while node_set != {root}:
-            try:
-                v_node = node_set.pop()
-            except KeyError:
-                break
-
-            for u_node, edges in graph.pred[v_node].items():
-                for edge_label, data in edges.items():
-                    edge = (u_node, v_node, edge_label)
-                    emph = graph.nodes[v_node]['emphasis']
-                    prob = data['probability']
-                    graph.edges[edge]['potential'] = \
-                        prob * emph
-                successors = graph.succ[u_node]
-
-                try:
-                    emphasis = 0
-                    for _, edges in successors.items():
-                        for edge_label, data in edges.items():
-                            emphasis += data['potential']
-
-                    graph.nodes[u_node]['emphasis'] = emphasis
-                    node_set.add(u_node)
-                except KeyError:
-                    pass
-
-        for (u, v, k) in list(graph.edges):
-            edge_potential = graph.edges[(u, v, k)]['potential']
-            pred_node_emphasis = graph.nodes[u]['emphasis']
-            probability = edge_potential / pred_node_emphasis
-            graph.edges[(u, v, k)]['probability'] = probability
-
-    def __create_reduced_graph(self) -> ChainEventGraph:
-        self.__update_path_list()
-        self.__update_edges_and_vertices()
-        subgraph = ChainEventGraph(
-            nx.subgraph_view(
-                G=self.__graph,
-                filter_node=self.__filter_node,
-                filter_edge=self.__filter_edge
-            )
-        ).copy()
-
-        self.__propagate_reduced_graph_probabilities(subgraph)
-
-        return subgraph
-
-
 class Evidence:
     def __init__(self, graph: ChainEventGraph):
         self._graph = graph
@@ -737,6 +463,8 @@ class Evidence:
         self._uncertain_edges = []
         self._certain_nodes = set()
         self._uncertain_nodes = []
+
+        self._path_list = []
 
     def __repr__(self) -> str:
         return (
@@ -796,6 +524,10 @@ class Evidence:
     @property
     def uncertain_nodes(self) -> List[Set[str]]:
         return self._uncertain_nodes
+
+    @property
+    def paths(self):
+        return self._path_list
 
     @property
     def reduced_graph(self):
@@ -933,6 +665,159 @@ class Evidence:
         for node_set in node_sets:
             self.remove_uncertain_node_set(node_set)
 
+    @staticmethod
+    def _remove_paths(paths: List, to_remove: List):
+        for path in to_remove:
+            paths.remove(path)
 
+    def _apply_certain_edges(self, paths):
+        to_remove = []
+        for edge in self.certain_edges:
+            for path in paths:
+                if edge not in path:
+                    to_remove.append(path)
 
+        self._remove_paths(paths, to_remove)
+
+    def _apply_certain_nodes(self, paths):
+        to_remove = []
+        for node in self.certain_nodes:
+            for path in paths:
+                for (u, v, _) in path:
+                    if node == u or node == v:
+                        break
+                else:
+                    to_remove.append(path)
+
+        self._remove_paths(paths, to_remove)
+
+    def _apply_uncertain_edges(self, paths):
+        to_remove = []
+        for edge_set in self.uncertain_edges:
+            for path in paths:
+                edge_found = False
+                for edge in path:
+                    if edge in edge_set:
+                        if edge_found:
+                            to_remove.append(path)
+                            break
+                        edge_found = True
+                else:
+                    if not edge_found:
+                        to_remove.append(path)
+
+        self._remove_paths(paths, to_remove)
+
+    def _apply_uncertain_nodes(self, paths):
+        to_remove = []
+        for node_set in self.uncertain_nodes:
+            for path in paths:
+                node_found = False
+                for (u, v, _) in path:
+                    if (u in node_set) or (v in node_set):
+                        if node_found:
+                            to_remove.append(path)
+                            break
+                        node_found = True
+                else:
+                    if not node_found:
+                        to_remove.append(path)
+
+    def _update_path_list(self):
+        path_list = deepcopy(self._graph.path_list)
+
+        if self.certain_edges:
+            self._apply_certain_edges(path_list)
+
+        if self.certain_nodes:
+            self._apply_certain_nodes(path_list)
+
+        if self.uncertain_edges:
+            self._apply_uncertain_edges(path_list)
+
+        if self.uncertain_nodes:
+            self._apply_uncertain_nodes(path_list)
+
+        self._path_list = path_list
+
+    def _update_edges_and_vertices(self):
+        edges = set()
+        vertices = set()
+
+        for path in self.paths:
+            for (u, v, k) in path:
+                edges.add((u, v, k))
+                vertices.add(u)
+                vertices.add(v)
+
+        self.edges = edges
+        self.vertices = vertices
+
+    def _filter_edge(self, u, v, k) -> bool:
+        if (u, v, k) in self.edges:
+            return True
+        else:
+            return False
+
+    def _filter_node(self, n) -> bool:
+        if n in self.vertices:
+            return True
+        else:
+            return False
+
+    def _propagate_reduced_graph_probabilities(
+        self,
+        graph: ChainEventGraph
+    ) -> None:
+        sink = graph.sink_node
+        root = graph.root_node
+        graph.nodes[sink]['emphasis'] = 1
+        node_set = set([sink])
+
+        while node_set != {root}:
+            try:
+                v_node = node_set.pop()
+            except KeyError:
+                break
+
+            for u_node, edges in graph.pred[v_node].items():
+                for edge_label, data in edges.items():
+                    edge = (u_node, v_node, edge_label)
+                    emph = graph.nodes[v_node]['emphasis']
+                    prob = data['probability']
+                    graph.edges[edge]['potential'] = \
+                        prob * emph
+                successors = graph.succ[u_node]
+
+                try:
+                    emphasis = 0
+                    for _, edges in successors.items():
+                        for edge_label, data in edges.items():
+                            emphasis += data['potential']
+
+                    graph.nodes[u_node]['emphasis'] = emphasis
+                    node_set.add(u_node)
+                except KeyError:
+                    pass
+
+        for (u, v, k) in list(graph.edges):
+            edge_potential = graph.edges[(u, v, k)]['potential']
+            pred_node_emphasis = graph.nodes[u]['emphasis']
+            probability = edge_potential / pred_node_emphasis
+            graph.edges[(u, v, k)]['probability'] = probability
+
+    def _create_reduced_graph(self) -> ChainEventGraph:
+        self._update_path_list()
+        self._update_edges_and_vertices()
+        subgraph = ChainEventGraph(
+            nx.subgraph_view(
+                G=self._graph,
+                filter_node=self._filter_node,
+                filter_edge=self._filter_edge
+            )
+        ).copy()
+
+        self._propagate_reduced_graph_probabilities(subgraph)
+
+        return subgraph
     # Deal with uncertain edges that are in the same path

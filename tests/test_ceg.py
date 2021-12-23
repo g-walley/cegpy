@@ -1,6 +1,4 @@
 import networkx as nx
-from networkx.classes.function import nodes
-from networkx.readwrite.gml import unescape
 import pandas as pd
 from src.cegpy import StagedTree, Evidence, ChainEventGraph
 from pathlib import Path
@@ -117,34 +115,34 @@ class TestUnitCEG(object):
 
     def test_adding_evidence(self) -> None:
         certain_edges = [
-            ('w1', 'w4', 'Experienced'),
-            ('w4', 'w10', 'Hard'),
+            ('s1', 's4', 'Inexperienced'),
+            ('s4', 's12', 'Hard'),
         ]
         for (u, v, k) in certain_edges:
-            self.ceg.evidence.add_edge(u, v, k, Evidence.CERTAIN)
+            self.ceg.evidence.add_certain_edge(u, v, k)
             assert (u, v, k) in self.ceg.evidence.certain_edges
 
         certain_vertices = {
-            'w4', 'w10'
+            's4', 's10'
         }
-        for vertex in certain_vertices:
-            self.ceg.evidence.add_node(vertex, Evidence.CERTAIN)
-            assert vertex in self.ceg.evidence.certain_nodes
+        for node_set in certain_vertices:
+            self.ceg.evidence.add_certain_node(node_set)
+            assert node_set in self.ceg.evidence.certain_nodes
 
         uncertain_edges = [
-            ('w2', 'w5', 'Experienced'),
-            ('w2', 'w6', 'Novice')
+            {
+                ('s7', 's17', 'Easy'),
+                ('s14', 's31', 'Blast')
+            }
         ]
-        for (u, v, k) in uncertain_edges:
-            self.ceg.evidence.add_edge(u, v, k, Evidence.UNCERTAIN)
-            assert (u, v, k) in self.ceg.evidence.uncertain_edges
+        for edge_set in uncertain_edges:
+            self.ceg.evidence.add_uncertain_edge_set(edge_set)
+        assert uncertain_edges == self.ceg.evidence.uncertain_edges
 
-        uncertain_vertices = {
-            'w2', 'w13'
-        }
-        for vertex in uncertain_vertices:
-            self.ceg.evidence.add_node(vertex, Evidence.UNCERTAIN)
-            assert vertex in self.ceg.evidence.uncertain_vertices
+        uncertain_nodes = [{'s2', 's13'}]
+        for node_set in uncertain_nodes:
+            self.ceg.evidence.add_uncertain_node_set(node_set)
+        assert uncertain_nodes == self.ceg.evidence.uncertain_nodes
 
     def test_propagation(self) -> None:
         self.ceg.generate()

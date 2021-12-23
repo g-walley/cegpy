@@ -1,8 +1,7 @@
 import networkx as nx
 import pandas as pd
-from src.cegpy import StagedTree, Evidence, ChainEventGraph
+from src.cegpy import StagedTree, ChainEventGraph
 from pathlib import Path
-import pytest
 
 
 class TestUnitCEG(object):
@@ -24,14 +23,14 @@ class TestUnitCEG(object):
         prefix = self.ceg.node_prefix
         largest = 20
         node_names = [
-            self.ceg._ChainEventGraph__get_next_node_name()
+            self.ceg._get_next_node_name()
             for _ in range(0, largest)
         ]
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
 
     def test_trim_leaves_from_graph(self) -> None:
-        self.ceg._ChainEventGraph__trim_leaves_from_graph()
+        self.ceg._trim_leaves_from_graph()
         for leaf in self.st.leaves:
             try:
                 self.ceg.nodes[leaf]
@@ -78,8 +77,8 @@ class TestUnitCEG(object):
             sink_node: 0
         }
         nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
-        self.ceg._ChainEventGraph__trim_leaves_from_graph()
-        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        self.ceg._trim_leaves_from_graph()
+        self.ceg._update_distances_of_nodes_to_sink_node()
         check_distances()
 
         # Add another edge to the dictionary, to show that the path is max,
@@ -87,7 +86,7 @@ class TestUnitCEG(object):
         self.ceg.add_edge('s3', self.ceg.sink_node)
         self.ceg.add_edge('s1', self.ceg.sink_node)
         self.ceg.add_edge('s2', 's10')
-        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        self.ceg._update_distances_of_nodes_to_sink_node()
         check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
@@ -101,10 +100,10 @@ class TestUnitCEG(object):
             3: ['s1', 's2']
         }
         nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
-        self.ceg._ChainEventGraph__trim_leaves_from_graph()
-        self.ceg._ChainEventGraph__update_distances_of_nodes_to_sink_node()
+        self.ceg._trim_leaves_from_graph()
+        self.ceg._update_distances_of_nodes_to_sink_node()
         nodes_gen = self.ceg.\
-            _ChainEventGraph__gen_nodes_with_increasing_distance(
+            _gen_nodes_with_increasing_distance(
                 start=0
             )
 
@@ -112,241 +111,3 @@ class TestUnitCEG(object):
             expected_node_list = expected_nodes[nodes]
             actual_node_list = next(nodes_gen)
             assert actual_node_list.sort() == expected_node_list.sort()
-
-    def test_adding_evidence(self) -> None:
-        certain_edges = [
-            ('s1', 's4', 'Inexperienced'),
-            ('s4', 's12', 'Hard'),
-        ]
-        for (u, v, k) in certain_edges:
-            self.ceg.evidence.add_certain_edge(u, v, k)
-            assert (u, v, k) in self.ceg.evidence.certain_edges
-
-        certain_vertices = {
-            's4', 's10'
-        }
-        for node_set in certain_vertices:
-            self.ceg.evidence.add_certain_node(node_set)
-            assert node_set in self.ceg.evidence.certain_nodes
-
-        uncertain_edges = [
-            {
-                ('s7', 's17', 'Easy'),
-                ('s14', 's31', 'Blast')
-            }
-        ]
-        for edge_set in uncertain_edges:
-            self.ceg.evidence.add_uncertain_edge_set(edge_set)
-        assert uncertain_edges == self.ceg.evidence.uncertain_edges
-
-        uncertain_nodes = [{'s2', 's13'}]
-        for node_set in uncertain_nodes:
-            self.ceg.evidence.add_uncertain_node_set(node_set)
-        assert uncertain_nodes == self.ceg.evidence.uncertain_nodes
-
-    def test_propagation(self) -> None:
-        self.ceg.generate()
-        uncertain_edges = {
-            ('w2', 'w5', 'Experienced'),
-            ('w2', 'w6', 'Novice')
-        }
-        certain_nodes = {
-            'w12'
-        }
-        self.ceg.evidence.add_uncertain_edge_set(uncertain_edges)
-        self.ceg.evidence.add_certain_node_set(certain_nodes)
-        self.ceg.reduced
-
-        self.ceg.clear_evidence()
-
-
-class TestEvidence(object):
-    def setup(self):
-        G = nx.MultiDiGraph()
-        nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
-                 'w5', 'w6', 'w7', 'w8', 'w&infin;']
-        edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w1', 'b'),
-            ('w1', 'w2', 'c'),
-            ('w1', 'w3', 'd'),
-            ('w2', 'w4', 'e'),
-            ('w2', 'w4', 'f'),
-            ('w3', 'w4', 'g'),
-            ('w3', 'w8', 'h'),
-            ('w4', 'w8', 'i'),
-            ('w0', 'w5', 'j'),
-            ('w0', 'w7', 'k'),
-            ('w0', 'w6', 'l'),
-            ('w5', 'w6', 'm'),
-            ('w5', 'w7', 'n'),
-            ('w6', 'w7', 'o'),
-            ('w7', 'w8', 'p'),
-            ('w8', 'w&infin;', 'q'),
-            ('w4', 'w&infin;', 'r'),
-            ('w0', 'w3', 's')
-        ]
-        G.add_nodes_from(nodes)
-        G.add_edges_from(edges)
-        H = ChainEventGraph(G)
-        self.evidence = Evidence(H)
-        print(self.evidence)
-
-    def test_add_and_remove_certain_edge(self):
-        certain_edges = [
-            ('w0', 'w1', 'a'),
-            ('w1', 'w2', 'c'),
-        ]
-        for edge in certain_edges:
-            self.evidence.add_certain_edge(*edge)
-        assert certain_edges == self.evidence.certain_edges
-
-        edge_to_remove = certain_edges[1]
-        self.evidence.remove_certain_edge(*edge_to_remove)
-        certain_edges.remove(edge_to_remove)
-        assert certain_edges == self.evidence.certain_edges
-
-        pytest.raises(
-            ValueError,
-            self.evidence.remove_certain_edge,
-            *edge_to_remove,
-        )
-
-    def test_add_and_remove_certain_edge_list(self):
-        certain_edges = [
-            ('w0', 'w1', 'a'),
-            ('w1', 'w2', 'c'),
-            ('w2', 'w4', 'e'),
-        ]
-        self.evidence.add_certain_edge_list(certain_edges)
-        assert certain_edges == self.evidence.certain_edges
-
-        self.evidence.remove_certain_edge_list(certain_edges[1:])
-        for edge in certain_edges[1:]:
-            certain_edges.remove(edge)
-        assert certain_edges == self.evidence.certain_edges
-
-    def test_add_and_remove_uncertain_edge_set(self):
-        uncertain_edge_sets = [
-            {
-                ('w0', 'w1', 'a'),
-                ('w0', 'w1', 'b'),
-                ('w0', 'w3', 's'),
-            },
-            {
-                ('w0', 'w5', 'j'),
-                ('w0', 'w7', 'k'),
-            },
-        ]
-        for edge_set in uncertain_edge_sets:
-            self.evidence.add_uncertain_edge_set(edge_set)
-        assert uncertain_edge_sets == self.evidence.uncertain_edges
-
-        edge_set_to_remove = uncertain_edge_sets[0].copy()
-        self.evidence.remove_uncertain_edge_set(edge_set_to_remove)
-        uncertain_edge_sets.remove(edge_set_to_remove)
-        assert uncertain_edge_sets == self.evidence.uncertain_edges
-
-        pytest.raises(
-            ValueError,
-            self.evidence.remove_uncertain_edge_set,
-            edge_set_to_remove,
-        )
-
-    def test_add_and_remove_uncertain_edge_set_list(self):
-        uncertain_edge_sets = [
-            {
-                ('w0', 'w1', 'a'),
-                ('w0', 'w1', 'b'),
-                ('w0', 'w3', 's'),
-            },
-            {
-                ('w0', 'w5', 'j'),
-                ('w0', 'w7', 'k'),
-            },
-            {
-                ('w5', 'w6', 'm'),
-                ('w5', 'w7', 'n'),
-            }
-        ]
-        self.evidence.add_uncertain_edge_set_list(uncertain_edge_sets)
-        assert uncertain_edge_sets == self.evidence.uncertain_edges
-
-        self.evidence.remove_uncertain_edge_set_list(uncertain_edge_sets[1:])
-        for edge_set in uncertain_edge_sets[1:]:
-            uncertain_edge_sets.remove(edge_set)
-        assert uncertain_edge_sets == self.evidence.uncertain_edges
-
-    def test_add_and_remove_certain_nodes(self):
-        # nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
-        #          'w5', 'w6', 'w7', 'w8', 'w&infin;']
-        certain_nodes = {"w0", "w1", "w3"}
-        for node in certain_nodes:
-            self.evidence.add_certain_node(node)
-        assert certain_nodes == self.evidence.certain_nodes
-
-        pytest.raises(
-            ValueError,
-            self.evidence.add_certain_node,
-            "w150",
-        )
-
-        node = certain_nodes.pop()
-        self.evidence.remove_certain_node(node)
-        assert certain_nodes == self.evidence.certain_nodes
-
-        pytest.raises(
-            ValueError,
-            self.evidence.remove_certain_node,
-            node
-        )
-
-    def test_add_and_remove_certain_nodes_set(self):
-        certain_nodes = {"w0", "w1", "w3"}
-        self.evidence.add_certain_node_set(certain_nodes)
-        assert certain_nodes == self.evidence.certain_nodes
-
-        nodes_to_remove = {"w0", "w1"}
-        self.evidence.remove_certain_node_set(nodes_to_remove)
-        certain_nodes.difference_update(nodes_to_remove)
-        assert certain_nodes == self.evidence.certain_nodes
-
-    def test_add_and_remove_uncertain_nodes_set(self):
-        uncertain_node_sets = [
-            {"w0", "w1", "w3"},
-            {"w4", "w5"},
-            {"w7", "w8"},
-        ]
-        for node_set in uncertain_node_sets:
-            self.evidence.add_uncertain_node_set(node_set)
-        assert uncertain_node_sets == self.evidence.uncertain_nodes
-
-        pytest.raises(
-            ValueError,
-            self.evidence.add_uncertain_node_set,
-            {"w6", "w150"},
-        )
-        node_set = uncertain_node_sets.pop()
-        self.evidence.remove_uncertain_node_set(node_set)
-        assert uncertain_node_sets == self.evidence.uncertain_nodes
-
-        pytest.raises(
-            ValueError,
-            self.evidence.remove_uncertain_node_set,
-            node_set
-        )
-
-    def test_add_and_remove_uncertain_nodes_set_list(self):
-        uncertain_node_sets = [
-            {"w0", "w1", "w3"},
-            {"w4", "w5"},
-            {"w7", "w8"},
-        ]
-        self.evidence.add_uncertain_node_set_list(uncertain_node_sets)
-        assert uncertain_node_sets == self.evidence.uncertain_nodes
-
-        node_sets_to_remove = uncertain_node_sets[1:]
-        self.evidence.remove_uncertain_node_set_list(node_sets_to_remove)
-        for node_set in node_sets_to_remove:
-            uncertain_node_sets.remove(node_set)
-        assert uncertain_node_sets == self.evidence.uncertain_nodes

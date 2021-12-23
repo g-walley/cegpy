@@ -146,15 +146,15 @@ class TestUnitCEG(object):
 
     def test_propagation(self) -> None:
         self.ceg.generate()
-        uncertain_edges = [
+        uncertain_edges = {
             ('w2', 'w5', 'Experienced'),
             ('w2', 'w6', 'Novice')
-        ]
+        }
         certain_nodes = {
             'w12'
         }
-        self.ceg.evidence.add_edges_from(uncertain_edges, Evidence.UNCERTAIN)
-        self.ceg.evidence.add_nodes_from(certain_nodes, Evidence.CERTAIN)
+        self.ceg.evidence.add_uncertain_edge_set(uncertain_edges)
+        self.ceg.evidence.add_certain_node_set(certain_nodes)
         self.ceg.reduced
 
         self.ceg.clear_evidence()

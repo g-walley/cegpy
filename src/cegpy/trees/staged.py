@@ -506,15 +506,15 @@ class StagedTree(EventTree):
 
     def _generate_colours_for_situations(self, merged_situations, colour_list):
         """Colours each stage of the tree with an individual colour"""
-        number_of_stages = len(merged_situations)
+        num_colours = len([m for m in merged_situations if len(m) > 1])
         if colour_list is None:
-            stage_colours = Util.generate_colours(number_of_stages)
+            stage_colours = Util.generate_colours(num_colours)
         else:
             stage_colours = colour_list
-            if len(colour_list) < number_of_stages:
+            if len(colour_list) < num_colours:
                 raise IndexError(
                     f"The number of colours provided ({len(colour_list)}) is "
-                    f"less than the number of stages ({number_of_stages}). "
+                    f"less than the number of distinct colours required ({num_colours})."
                 )
         self._stage_colours = stage_colours
         for node in self.nodes:

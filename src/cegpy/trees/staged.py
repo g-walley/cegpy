@@ -23,6 +23,7 @@ class StagedTree(EventTree):
             hyperstage=None,
             sampling_zero_paths=None,
             incoming_graph_data=None,
+            var_order=None,
             **attr) -> None:
 
         # Call event tree init to generate event tree
@@ -30,6 +31,7 @@ class StagedTree(EventTree):
             dataframe,
             sampling_zero_paths,
             incoming_graph_data,
+            var_order,
             **attr
         )
 

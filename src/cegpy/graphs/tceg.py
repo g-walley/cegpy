@@ -204,7 +204,7 @@ class TransporterChainEventGraph:
         nodes set list."""
         try:
             self._uncertain_nodes.remove(node_set)
-        except KeyError:
+        except ValueError:
             raise ValueError(
                 f"{node_set} not found in the uncertain node list."
             )

@@ -470,3 +470,60 @@ class TestTransporterCEGTwo(object):
         assert tceg_out.edges['w5', 'w6', 'o']['probability'] == (
             pytest.approx(0.30, abs=0.01)
         )
+
+    def test_propagation_two(self):
+        uncertain_nodes = [
+            {"w1", "w2"},
+            {"w5", "w6"},
+        ]
+
+        self.tceg.add_uncertain_node_set_list(uncertain_nodes)
+        tceg_out = self.tceg.reduced
+        tceg_out.create_figure("out/prop_two_test_propagation_two.pdf")
+
+        assert tceg_out.edges['w0', 'w1', 'a']['probability'] == (
+            pytest.approx(0.14, abs=0.01)
+        )
+        assert tceg_out.edges['w0', 'w2', 'b']['probability'] == (
+            pytest.approx(0.86, abs=0.01)
+        )
+        assert tceg_out.edges['w1', 'w4', 'd']['probability'] == (
+            pytest.approx(0.35, abs=0.01)
+        )
+        assert tceg_out.edges['w1', 'w4', 'e']['probability'] == (
+            pytest.approx(0.65, abs=0.01)
+        )
+        assert tceg_out.edges['w2', 'w4', 'f']['probability'] == (
+            pytest.approx(0.06, abs=0.01)
+        )
+        assert tceg_out.edges['w2', 'w5', 'g']['probability'] == (
+            pytest.approx(0.55, abs=0.01)
+        )
+        assert tceg_out.edges['w2', 'w6', 'h']['probability'] == (
+            pytest.approx(0.24, abs=0.01)
+        )
+        assert tceg_out.edges['w3', 'w6', 'i']['probability'] == (
+            pytest.approx(1.0, abs=0.01)
+        )
+        assert tceg_out.edges['w4', 'w5', 'k']['probability'] == (
+            pytest.approx(1.0, abs=0.01)
+        )
+        assert tceg_out.edges['w5', 'w&infin;', 'l']['probability'] == (
+            pytest.approx(1.0, abs=0.01)
+        )
+        assert tceg_out.edges['w6', 'w&infin;', 'm']['probability'] == (
+            pytest.approx(1.0, abs=0.01)
+        )
+        assert tceg_out.edges['w2', 'w3', 'n']['probability'] == (
+            pytest.approx(0.16, abs=0.01)
+        )
+
+    def test_propagation_three(self):
+        uncertain_edges = {
+            ("w4", "w5", "k"),
+            ("w5", "w&infin;", "l"),
+        }
+
+        self.tceg.add_uncertain_edge_set(uncertain_edges)
+        tceg_out = self.tceg.reduced
+        tceg_out.create_figure("out/prop_two_test_propagation_three.pdf")

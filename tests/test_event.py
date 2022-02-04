@@ -6,6 +6,7 @@ from collections import defaultdict
 from pathlib import Path
 from pytest_mock import MockerFixture
 from src.cegpy import EventTree
+from pydotplus.graphviz import InvocationException
 
 
 class TestEventTreeAPI():
@@ -125,6 +126,8 @@ class TestEventTree():
         new_et = EventTree(self.df)
         try:
             new_et.create_figure("out/test_dataframe_with_numeric_values.pdf")
+        except InvocationException:
+            pass
         except Exception as err:
             raise AssertionError(
                 "Could not create figure with numeric data"

@@ -9,9 +9,9 @@ from src.cegpy.graphs import (
 class TestTransporterCEG(object):
     def setup(self):
         G = nx.MultiDiGraph()
-        nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
+        self.init_nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
                  'w5', 'w6', 'w7', 'w8', 'w&infin;']
-        edges = [
+        self.init_edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w1', 'b'),
             ('w1', 'w2', 'c'),
@@ -32,8 +32,8 @@ class TestTransporterCEG(object):
             ('w4', 'w&infin;', 'r'),
             ('w0', 'w3', 's')
         ]
-        G.add_nodes_from(nodes)
-        G.add_edges_from(edges)
+        G.add_nodes_from(self.init_nodes)
+        G.add_edges_from(self.init_edges)
         H = ChainEventGraph(G)
         H._update_path_list()
         self.tceg = TransporterChainEventGraph(H)
@@ -250,18 +250,19 @@ class TestTransporterCEG(object):
         assert self.tceg.uncertain_edges == []
         assert self.tceg.uncertain_nodes == []
 
-    def _test_propagation(self) -> None:
-
-        self.tceg._ceg.generate()
+    def test_propagation(self) -> None:
+        self.tceg._ceg.create_figure("out/test_propation_pre.pdf")
         uncertain_edges = {
-            ('w2', 'w5', 'Experienced'),
-            ('w2', 'w6', 'Novice')
+            ('w3', 'w4', 'g'),
+            ('w3', 'w8', 'h'),
         }
         certain_nodes = {
-            'w12'
+            'w1'
         }
-        self.ceg.evidence.add_uncertain_edge_set(uncertain_edges)
-        self.ceg.evidence.add_certain_node_set(certain_nodes)
-        self.ceg.reduced
+        self.tceg.add_uncertain_edge_set(uncertain_edges)
+        self.tceg.add_certain_node_set(certain_nodes)
+        for (u, v, k) in self.init_edges:
+            self.tceg._ceg.edges[u, v, k]['probability'] = 1
+        tceg_out = self.tceg.reduced
 
-        self.ceg.clear_evidence()
+        tceg_out.create_figure("out/test_propagation_after.pdf")

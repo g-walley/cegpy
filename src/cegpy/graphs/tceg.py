@@ -230,7 +230,7 @@ class TransporterChainEventGraph:
         to_remove = []
         for edge in self.certain_edges:
             for path in paths:
-                if edge not in path:
+                if (edge not in path) and (path not in to_remove):
                     to_remove.append(path)
 
         self._remove_paths(paths, to_remove)

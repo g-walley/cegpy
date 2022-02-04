@@ -35,6 +35,7 @@ class TestTransporterCEG(object):
         G.add_nodes_from(nodes)
         G.add_edges_from(edges)
         H = ChainEventGraph(G)
+        H._update_path_list()
         self.tceg = TransporterChainEventGraph(H)
 
     def test_repr(self):
@@ -44,6 +45,20 @@ class TestTransporterCEG(object):
         assert "certain_nodes=" in rep
         assert "uncertain_edges=" in rep
         assert "uncertain_nodes=" in rep
+
+    def test_update_path_list(self):
+        pre_path_list = self.tceg.paths
+
+        certain_edges = [
+            ('w0', 'w1', 'a'),
+            ('w1', 'w2', 'c'),
+        ]
+        for edge in certain_edges:
+            self.tceg.add_certain_edge(*edge)
+
+        self.tceg._update_path_list()
+        after_path_list = self.tceg.paths
+        assert pre_path_list != after_path_list
 
     def test_add_and_remove_certain_edge(self):
         certain_edges = [

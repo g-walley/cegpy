@@ -2,7 +2,7 @@ from src.cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
-from pytest_mock import MockerFixture
+from pydotplus.graphviz import InvocationException
 # import xlsxwriter
 import numpy as np
 
@@ -316,8 +316,7 @@ class TestChangingDataFrame():
         fall_add_NA_st.calculate_AHC_transitions()
         assert fall_add_NA_st.ahc_output == self.fall_st.ahc_output
 
-    def test_add_same_column_med(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_med(self) -> None:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = "same for all"
@@ -325,7 +324,11 @@ class TestChangingDataFrame():
             dataframe=med_add_same_df
         )
         med_add_same_st.calculate_AHC_transitions()
-        med_add_same_st.create_figure("out/test_add_same_column_med_fig.pdf")
+        try:
+            med_add_same_st.create_figure(
+                "out/test_add_same_column_med_fig.pdf")
+        except InvocationException:
+            pass
 
         first_set = set(
             tuple(x) for x in self.med_st.ahc_output['Merged Situations']
@@ -335,15 +338,18 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_fall(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_fall(self) -> None:
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = "same for all"
         fall_add_same_st = StagedTree(
             dataframe=fall_add_same_df
         )
         fall_add_same_st.calculate_AHC_transitions()
-        fall_add_same_st.create_figure("out/test_add_same_column_fall_fig.pdf")
+        try:
+            fall_add_same_st.create_figure(
+                "out/test_add_same_column_fall_fig.pdf")
+        except InvocationException:
+            pass
 
         first_set = set(
             tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
@@ -353,8 +359,7 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_int_med(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_int_med(self) -> None:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1
@@ -362,8 +367,11 @@ class TestChangingDataFrame():
             dataframe=med_add_same_df
         )
         med_add_same_st.calculate_AHC_transitions()
-        med_add_same_st.create_figure(
-            "out/test_add_same_column_int_med_fig.pdf")
+        try:
+            med_add_same_st.create_figure(
+                "out/test_add_same_column_int_med_fig.pdf")
+        except InvocationException:
+            pass
 
         first_set = set(
             tuple(x) for x in self.med_st.ahc_output['Merged Situations']
@@ -373,16 +381,18 @@ class TestChangingDataFrame():
         )
         assert first_set.issubset(second_set)
 
-    def test_add_same_column_int_fall(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_int_fall(self) -> None:
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = 1
         fall_add_same_st = StagedTree(
             dataframe=fall_add_same_df
         )
         fall_add_same_st.calculate_AHC_transitions()
-        fall_add_same_st.create_figure(
-            "out/test_add_same_column_int_fall_fig.pdf")
+        try:
+            fall_add_same_st.create_figure(
+                "out/test_add_same_column_int_fall_fig.pdf")
+        except InvocationException:
+            pass
 
         first_set = set(
             tuple(x) for x in self.fall_st.ahc_output['Merged Situations']

@@ -4,7 +4,6 @@ import numpy as np
 import pytest
 from collections import defaultdict
 from pathlib import Path
-from pytest_mock import MockerFixture
 from src.cegpy import EventTree
 from pydotplus.graphviz import InvocationException
 
@@ -291,15 +290,17 @@ class TestChangingDataFrame():
         )
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
-    def test_add_same_column_int(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_int(self) -> None:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1
         med_add_same_et = EventTree(
             dataframe=med_add_same_df
         )
-        med_add_same_et.create_figure("et_fig_path.pdf")
+        try:
+            med_add_same_et.create_figure("et_fig_path.pdf")
+        except InvocationException:
+            pass
         assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
 
         fall_add_same_df = self.fall_df
@@ -307,5 +308,8 @@ class TestChangingDataFrame():
         fall_add_same_et = EventTree(
             dataframe=fall_add_same_df
         )
-        fall_add_same_et.create_figure("et_fig_path.pdf")
+        try:
+            fall_add_same_et.create_figure("et_fig_path.pdf")
+        except InvocationException:
+            pass
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)

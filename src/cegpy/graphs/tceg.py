@@ -243,7 +243,8 @@ class TransporterChainEventGraph:
                     if node == u or node == v:
                         break
                 else:
-                    to_remove.append(path)
+                    if path not in to_remove:
+                        to_remove.append(path)
 
         self._remove_paths(paths, to_remove)
 
@@ -255,11 +256,12 @@ class TransporterChainEventGraph:
                 for edge in path:
                     if edge in edge_set:
                         if edge_found:
-                            to_remove.append(path)
+                            if path not in to_remove:
+                                to_remove.append(path)
                             break
                         edge_found = True
                 else:
-                    if not edge_found:
+                    if not edge_found and path not in to_remove:
                         to_remove.append(path)
 
         self._remove_paths(paths, to_remove)
@@ -272,11 +274,12 @@ class TransporterChainEventGraph:
                 for (u, v, _) in path:
                     if (u in node_set):
                         if node_found:
-                            to_remove.append(path)
+                            if path not in to_remove:
+                                to_remove.append(path)
                             break
                         node_found = True
                 else:
-                    if not node_found:
+                    if not node_found and path not in to_remove:
                         to_remove.append(path)
 
         self._remove_paths(paths, to_remove)

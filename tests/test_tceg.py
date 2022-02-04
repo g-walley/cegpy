@@ -286,4 +286,22 @@ class TestTransporterCEG(object):
         tceg_out.create_figure("out/test_propagation_after.pdf")
 
     def test_propagation_two(self) -> None:
-        return None
+        uncertain_edges = {
+            ('w2', 'w4', 'e'),
+            ('w3', 'w4', 'g'),
+            ('w3', 'w8', 'h'),
+        }
+        self.tceg.add_uncertain_edge_set(uncertain_edges)
+        self.tceg.add_certain_node("w1")
+        tceg_out = self.tceg.reduced
+        assert tceg_out.edges['w0', 'w1', 'a']['probability'] == 0.5
+        assert tceg_out.edges['w0', 'w1', 'b']['probability'] == 0.5
+        assert tceg_out.edges['w1', 'w2', 'c']['probability'] == 0.88
+        assert tceg_out.edges['w1', 'w3', 'd']['probability'] == 0.12
+        assert tceg_out.edges['w2', 'w4', 'e']['probability'] == 1.0
+        assert tceg_out.edges['w3', 'w4', 'g']['probability'] == 0.5
+        assert tceg_out.edges['w3', 'w8', 'h']['probability'] == 0.5
+        assert tceg_out.edges['w4', 'w8', 'i']['probability'] == 0.9
+        assert tceg_out.edges['w8', 'w&infin;', 'q']['probability'] == 1.0
+        assert tceg_out.edges['w4', 'w&infin;', 'r']['probability'] == 0.1
+        tceg_out.create_figure("out/test_propagation_two.pdf")

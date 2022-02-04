@@ -58,6 +58,8 @@ class TestTransporterCEG(object):
         self.tceg._ceg.edges['w4', 'w&infin;', 'r']['probability'] = 0.1
         self.tceg._ceg.edges['w0', 'w3', 's']['probability'] = 0.1
 
+        self.tceg._ceg.create_figure("out/test_propation_pre.pdf")
+
     def test_repr(self):
         rep = repr(self.tceg)
 
@@ -271,7 +273,6 @@ class TestTransporterCEG(object):
         assert self.tceg.uncertain_nodes == []
 
     def test_propagation(self) -> None:
-        self.tceg._ceg.create_figure("out/test_propation_pre.pdf")
         uncertain_edges = {
             ('w3', 'w4', 'g'),
             ('w3', 'w8', 'h'),
@@ -388,6 +389,38 @@ class TestTransporterCEG(object):
         assert tceg_out.edges['w8', 'w&infin;', 'q']['probability'] == 1.0
         assert tceg_out.edges['w4', 'w&infin;', 'r']['probability'] == 0.1
         tceg_out.create_figure("out/test_propagation_four.pdf")
+
+    def test_str_out(self):
+        uncertain_edges = {
+            ("w7", "w8", "p"),
+            ("w3", "w8", "h"),
+        }
+        self.tceg.add_uncertain_edge_set(uncertain_edges)
+        certain_edges = [
+            ('w0', 'w5', 'j'),
+            ('w5', 'w7', 'n'),
+        ]
+        self.tceg.add_certain_edge_list(certain_edges)
+        uncertain_nodes = [
+            {"w5", "w6"},
+            {"w3", "w4"},
+        ]
+        self.tceg.add_uncertain_node_set_list(uncertain_nodes)
+        certain_nodes = {"w1", "w2"}
+        self.tceg.add_certain_node_set(certain_nodes)
+
+        str_rep = self.tceg.__str__()
+        for edge in uncertain_edges:
+            assert str(edge) in str_rep
+
+        for edge in certain_edges:
+            assert str(edge) in str_rep
+
+        for node_set in uncertain_nodes:
+            assert str(node_set) in str_rep
+
+        for node in certain_nodes:
+            assert str(node) in str_rep
 
 
 class TestTransporterCEGTwo(object):

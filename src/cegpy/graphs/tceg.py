@@ -339,7 +339,9 @@ class TransporterChainEventGraph:
             try:
                 v_node = node_set.pop()
             except KeyError:
-                break
+                raise KeyError(
+                    "Graph has more than one root..."
+                    "Propagation cannot continue.")
 
             for u_node, edges in graph.pred[v_node].items():
                 for edge_label, data in edges.items():

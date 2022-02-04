@@ -38,6 +38,26 @@ class TestTransporterCEG(object):
         H._update_path_list()
         self.tceg = TransporterChainEventGraph(H)
 
+        self.tceg._ceg.edges['w0', 'w1', 'a']['probability'] = 0.3
+        self.tceg._ceg.edges['w0', 'w1', 'b']['probability'] = 0.3
+        self.tceg._ceg.edges['w1', 'w2', 'c']['probability'] = 0.88
+        self.tceg._ceg.edges['w1', 'w3', 'd']['probability'] = 0.12
+        self.tceg._ceg.edges['w2', 'w4', 'e']['probability'] = 0.95
+        self.tceg._ceg.edges['w2', 'w4', 'f']['probability'] = 0.05
+        self.tceg._ceg.edges['w3', 'w4', 'g']['probability'] = 0.5
+        self.tceg._ceg.edges['w3', 'w8', 'h']['probability'] = 0.5
+        self.tceg._ceg.edges['w4', 'w8', 'i']['probability'] = 0.9
+        self.tceg._ceg.edges['w0', 'w5', 'j']['probability'] = 0.2
+        self.tceg._ceg.edges['w0', 'w7', 'k']['probability'] = 0.05
+        self.tceg._ceg.edges['w0', 'w6', 'l']['probability'] = 0.05
+        self.tceg._ceg.edges['w5', 'w6', 'm']['probability'] = 0.6
+        self.tceg._ceg.edges['w5', 'w7', 'n']['probability'] = 0.4
+        self.tceg._ceg.edges['w6', 'w7', 'o']['probability'] = 1
+        self.tceg._ceg.edges['w7', 'w8', 'p']['probability'] = 1
+        self.tceg._ceg.edges['w8', 'w&infin;', 'q']['probability'] = 1
+        self.tceg._ceg.edges['w4', 'w&infin;', 'r']['probability'] = 0.1
+        self.tceg._ceg.edges['w0', 'w3', 's']['probability'] = 0.1
+
     def test_repr(self):
         rep = repr(self.tceg)
 
@@ -261,8 +281,9 @@ class TestTransporterCEG(object):
         }
         self.tceg.add_uncertain_edge_set(uncertain_edges)
         self.tceg.add_certain_node_set(certain_nodes)
-        for (u, v, k) in self.init_edges:
-            self.tceg._ceg.edges[u, v, k]['probability'] = 1
         tceg_out = self.tceg.reduced
 
         tceg_out.create_figure("out/test_propagation_after.pdf")
+
+    def test_propagation_two(self) -> None:
+        return None

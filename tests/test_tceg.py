@@ -396,16 +396,29 @@ class TestTransporterCEG(object):
             ("w3", "w8", "h"),
         }
         self.tceg.add_uncertain_edge_set(uncertain_edges)
+
+        str_rep = self.tceg.__str__()
+        for edge in uncertain_edges:
+            assert str(edge) in str_rep
+
         certain_edges = [
             ('w0', 'w5', 'j'),
             ('w5', 'w7', 'n'),
         ]
         self.tceg.add_certain_edge_list(certain_edges)
+        str_rep = self.tceg.__str__()
+        for edge in certain_edges:
+            assert str(edge) in str_rep
+
         uncertain_nodes = [
             {"w5", "w6"},
             {"w3", "w4"},
         ]
         self.tceg.add_uncertain_node_set_list(uncertain_nodes)
+        str_rep = self.tceg.__str__()
+        for node_set in uncertain_nodes:
+            assert str(node_set) in str_rep
+
         certain_nodes = {"w1", "w2"}
         self.tceg.add_certain_node_set(certain_nodes)
 

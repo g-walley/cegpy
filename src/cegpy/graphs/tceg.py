@@ -270,7 +270,7 @@ class TransporterChainEventGraph:
             for path in paths:
                 node_found = False
                 for (u, v, _) in path:
-                    if (u in node_set) or (v in node_set):
+                    if (u in node_set):
                         if node_found:
                             to_remove.append(path)
                             break
@@ -278,6 +278,8 @@ class TransporterChainEventGraph:
                 else:
                     if not node_found:
                         to_remove.append(path)
+
+        self._remove_paths(paths, to_remove)
 
     def _update_path_list(self):
         path_list = deepcopy(self._ceg.path_list)

@@ -1,6 +1,7 @@
 import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, ChainEventGraph
+from src.cegpy.graphs.ceg import _CEGHelpers
 from pathlib import Path
 
 
@@ -111,3 +112,44 @@ class TestUnitCEG(object):
             expected_node_list = expected_nodes[nodes]
             actual_node_list = next(nodes_gen)
             assert actual_node_list.sort() == expected_node_list.sort()
+
+
+class TestCEGHelpers(object):
+    def setup(self):
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            'w0', 's1', 's2', 's3', 's4',
+        ]
+        self.init_edges = [
+            ('w0', 's1', 'a'),
+            ('w0', 's2', 'b'),
+            ('s1', 's3', 'c'),
+            ('s1', 's4', 'd'),
+            ('s2', 's3', 'c'),
+            ('s2', 's4', 'd'),
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+
+    def test_merge_edges(self):
+        edge_1 = dict(
+            zip(
+                ['count', 'prior', 'posterior'],
+                [250, 0.5, 250],
+            )
+        )
+        edge_2 = dict(
+            zip(
+                ['count', 'prior', 'posterior'],
+                [550, 25, 0.4],
+            )
+        )
+
+        new_edge_dict = _CEGHelpers._merge_edges(edge_1=edge_1, edge_2=edge_2)
+
+        assert edge_1['count'] + edge_2['count'] == new_edge_dict['count']
+        assert edge_1['prior'] + edge_2['prior'] == new_edge_dict['prior']
+        assert (
+            edge_1['posterior'] +
+            edge_2['posterior'] == new_edge_dict['posterior']
+        )

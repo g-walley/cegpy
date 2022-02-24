@@ -72,137 +72,6 @@ class ChainEventGraph(nx.MultiDiGraph):
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
         '''
-        def check_vertices_can_be_merged(v1, v2) -> bool:
-            has_same_successor_nodes = \
-                set(self.adj[v1].keys()) == set(self.adj[v2].keys())
-
-            if has_same_successor_nodes:
-                has_same_outgoing_edges = True
-                v1_adj = self.succ[v1]
-                for succ_node in list(v1_adj.keys()):
-                    v1_edges = self.succ[v1][succ_node]
-                    v2_edges = self.succ[v2][succ_node]
-
-                    if v1_edges is None or v2_edges is None:
-                        has_same_outgoing_edges &= False
-                        break
-
-                    v2_edge_labels = \
-                        [label for label in v2_edges.keys()]
-
-                    for label in v1_edges.keys():
-                        if label not in v2_edge_labels:
-                            has_same_outgoing_edges &= False
-                            break
-                        else:
-                            has_same_outgoing_edges &= True
-            else:
-                has_same_outgoing_edges = False
-
-            try:
-                in_same_stage = \
-                    self.nodes[v1]['stage'] == self.nodes[v2]['stage']
-            except KeyError:
-                in_same_stage = False
-
-            return in_same_stage and \
-                has_same_successor_nodes and has_same_outgoing_edges
-
-        def merge_nodes(nodes_to_merge):
-            """nodes to merge should be a set of 2 element tuples"""
-            temp_1 = 'temp_1'
-            temp_2 = 'temp_2'
-            while nodes_to_merge != set():
-                nodes = nodes_to_merge.pop()
-                new_node = nodes[0]
-                # Copy nodes to temp nodes
-                node_map = {
-                    nodes[0]: temp_1,
-                    nodes[1]: temp_2
-                }
-                nx.relabel_nodes(self, node_map, copy=False)
-                ebunch_to_remove = []  # List of edges to remove
-                self.add_node(new_node)
-                for succ, t1_edge_dict in self.succ[temp_1].items():
-                    edge_labels = list(t1_edge_dict.keys())
-                    while edge_labels != []:
-                        new_edge_data = {}
-                        label = edge_labels.pop(0)
-                        t1_edge = t1_edge_dict[label]
-                        t2_edge = self.succ[temp_2][succ][label]
-                        new_edge_data['count'] = \
-                            t1_edge['count'] + t2_edge['count']
-                        new_edge_data['prior'] = \
-                            t1_edge['prior'] + t2_edge['prior']
-                        new_edge_data['posterior'] = \
-                            t1_edge['posterior'] + t2_edge['posterior']
-                        try:
-
-                            new_edge_data['probability'] = \
-                                t1_edge['probability']
-                            self.add_edge(
-                                u_for_edge=new_node,
-                                v_for_edge=succ,
-                                key=label,
-                                count=new_edge_data['count'],
-                                prior=new_edge_data['prior'],
-                                posterior=new_edge_data['posterior'],
-                                probability=new_edge_data['probability']
-                            )
-                        except KeyError:
-                            self.add_edge(
-                                u_for_edge=new_node,
-                                v_for_edge=succ,
-                                key=label,
-                                count=new_edge_data['count'],
-                                prior=new_edge_data['prior'],
-                                posterior=new_edge_data['posterior']
-                            )
-                        ebunch_to_remove.append((temp_1, succ, label))
-                        ebunch_to_remove.append((temp_2, succ, label))
-
-                self.remove_edges_from(ebunch_to_remove)
-                nx.relabel_nodes(
-                    G=self,
-                    mapping={temp_1: new_node, temp_2: new_node},
-                    copy=False
-                )
-
-                # Some nodes have been removed, we need to update the
-                # mergeable list to point to new nodes if required
-                temp_list = list(nodes_to_merge)
-                for pair in temp_list:
-                    if nodes[1] in pair:
-                        new_pair = (
-                            # the other node of the pair
-                            pair[pair.index(nodes[1]) - 1],
-                            # the new node it will be merged to
-                            new_node
-                        )
-                        nodes_to_merge.remove(pair)
-                        if new_pair[0] != new_pair[1]:
-                            nodes_to_merge.add(new_pair)
-                pass
-
-        def relabel_nodes(base_nodes, renamed_nodes=[]):
-            next_level = []
-            # first, relabel the successors of this node
-            for node in base_nodes:
-                node_mapping = {}
-                for succ in self.succ[node].keys():
-                    if succ != self.sink_node and succ not in renamed_nodes:
-                        node_mapping[succ] = self._get_next_node_name()
-                        next_level.append(node_mapping[succ])
-                        renamed_nodes.append(node_mapping[succ])
-
-                if node_mapping != {}:
-                    nx.relabel_nodes(
-                        self,
-                        node_mapping,
-                        copy=False
-                    )
-            if next_level != []:
-                relabel_nodes(next_level, renamed_nodes)
 
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
@@ -221,19 +90,153 @@ class ChainEventGraph(nx.MultiDiGraph):
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
                 for node_2 in next_set_of_nodes:
-                    mergeable = check_vertices_can_be_merged(node_1, node_2)
+                    mergeable = self._check_vertices_can_be_merged(
+                        node_1, node_2
+                    )
                     if mergeable:
                         nodes_to_merge.add((node_1, node_2))
 
-            merge_nodes(nodes_to_merge)
+            self._merge_nodes(nodes_to_merge)
 
             try:
                 next_set_of_nodes = next(src_node_gen)
             except StopIteration:
                 next_set_of_nodes = []
 
-        relabel_nodes([self.root_node])
+        self._relabel_nodes([self.root_node])
         self._update_path_list()
+
+    def _relabel_nodes(self, base_nodes, renamed_nodes=[]):
+        next_level = []
+        # first, relabel the successors of this node
+        for node in base_nodes:
+            node_mapping = {}
+            for succ in self.succ[node].keys():
+                if succ != self.sink_node and succ not in renamed_nodes:
+                    node_mapping[succ] = self._get_next_node_name()
+                    next_level.append(node_mapping[succ])
+                    renamed_nodes.append(node_mapping[succ])
+
+            if node_mapping != {}:
+                nx.relabel_nodes(
+                    self,
+                    node_mapping,
+                    copy=False
+                )
+        if next_level != []:
+            self._relabel_nodes(next_level, renamed_nodes)
+
+    def _merge_nodes(self, nodes_to_merge):
+        """nodes to merge should be a set of 2 element tuples"""
+        temp_1 = 'temp_1'
+        temp_2 = 'temp_2'
+        while nodes_to_merge != set():
+            nodes = nodes_to_merge.pop()
+            new_node = nodes[0]
+            # Copy nodes to temp nodes
+            node_map = {
+                nodes[0]: temp_1,
+                nodes[1]: temp_2
+            }
+            nx.relabel_nodes(self, node_map, copy=False)
+            ebunch_to_remove = []  # List of edges to remove
+            self.add_node(new_node)
+            for succ, t1_edge_dict in self.succ[temp_1].items():
+                edge_labels = list(t1_edge_dict.keys())
+                while edge_labels != []:
+                    new_edge_data = {}
+                    label = edge_labels.pop(0)
+                    t1_edge = t1_edge_dict[label]
+                    t2_edge = self.succ[temp_2][succ][label]
+                    new_edge_data['count'] = \
+                        t1_edge['count'] + t2_edge['count']
+                    new_edge_data['prior'] = \
+                        t1_edge['prior'] + t2_edge['prior']
+                    new_edge_data['posterior'] = \
+                        t1_edge['posterior'] + t2_edge['posterior']
+                    try:
+
+                        new_edge_data['probability'] = \
+                            t1_edge['probability']
+                        self.add_edge(
+                            u_for_edge=new_node,
+                            v_for_edge=succ,
+                            key=label,
+                            count=new_edge_data['count'],
+                            prior=new_edge_data['prior'],
+                            posterior=new_edge_data['posterior'],
+                            probability=new_edge_data['probability']
+                        )
+                    except KeyError:
+                        self.add_edge(
+                            u_for_edge=new_node,
+                            v_for_edge=succ,
+                            key=label,
+                            count=new_edge_data['count'],
+                            prior=new_edge_data['prior'],
+                            posterior=new_edge_data['posterior']
+                        )
+                    ebunch_to_remove.append((temp_1, succ, label))
+                    ebunch_to_remove.append((temp_2, succ, label))
+
+            self.remove_edges_from(ebunch_to_remove)
+            nx.relabel_nodes(
+                G=self,
+                mapping={temp_1: new_node, temp_2: new_node},
+                copy=False
+            )
+
+            # Some nodes have been removed, we need to update the
+            # mergeable list to point to new nodes if required
+            temp_list = list(nodes_to_merge)
+            for pair in temp_list:
+                if nodes[1] in pair:
+                    new_pair = (
+                        # the other node of the pair
+                        pair[pair.index(nodes[1]) - 1],
+                        # the new node it will be merged to
+                        new_node
+                    )
+                    nodes_to_merge.remove(pair)
+                    if new_pair[0] != new_pair[1]:
+                        nodes_to_merge.add(new_pair)
+            pass
+
+    def _check_vertices_can_be_merged(self, v1, v2) -> bool:
+        has_same_successor_nodes = \
+            set(self.adj[v1].keys()) == set(self.adj[v2].keys())
+
+        if has_same_successor_nodes:
+            has_same_outgoing_edges = True
+            v1_adj = self.succ[v1]
+            for succ_node in list(v1_adj.keys()):
+                v1_edges = self.succ[v1][succ_node]
+                v2_edges = self.succ[v2][succ_node]
+
+                if v1_edges is None or v2_edges is None:
+                    has_same_outgoing_edges &= False
+                    break
+
+                v2_edge_labels = \
+                    [label for label in v2_edges.keys()]
+
+                for label in v1_edges.keys():
+                    if label not in v2_edge_labels:
+                        has_same_outgoing_edges &= False
+                        break
+                    else:
+                        has_same_outgoing_edges &= True
+        else:
+            has_same_outgoing_edges = False
+
+        try:
+            in_same_stage = \
+                self.nodes[v1]['stage'] == self.nodes[v2]['stage']
+        except KeyError:
+            in_same_stage = False
+
+        return in_same_stage and \
+            has_same_successor_nodes and has_same_outgoing_edges
 
     @property
     def dot_graph(self):

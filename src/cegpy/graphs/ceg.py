@@ -4,6 +4,7 @@ from copy import deepcopy
 import itertools as it
 
 from ..utilities.util import Util
+from ..trees.staged import StagedTree
 from IPython.display import Image
 from IPython import get_ipython
 import logging
@@ -18,18 +19,11 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    def __init__(self, staged_tree=None, **attr):
+    def __init__(self, staged_tree: StagedTree = None, **attr):
+        self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
         self.sink_suffix = '&infin;'
         self.node_prefix = 'w'
-
-        if staged_tree is not None:
-            try:
-                self.ahc_output = deepcopy(staged_tree.ahc_output)
-            except AttributeError:
-                self.ahc_output = {}
-        else:
-            logger.info("Class called with no incoming graph.")
 
     @property
     def node_prefix(self):

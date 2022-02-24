@@ -1,3 +1,4 @@
+from typing import Dict
 import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
@@ -144,20 +145,19 @@ class ChainEventGraph(nx.MultiDiGraph):
             for succ, t1_edge_dict in self.succ[temp_1].items():
                 edge_labels = list(t1_edge_dict.keys())
                 while edge_labels != []:
-                    new_edge_data = {}
                     label = edge_labels.pop(0)
                     t1_edge = t1_edge_dict[label]
                     t2_edge = self.succ[temp_2][succ][label]
-                    new_edge_data['count'] = \
-                        t1_edge['count'] + t2_edge['count']
-                    new_edge_data['prior'] = \
-                        t1_edge['prior'] + t2_edge['prior']
-                    new_edge_data['posterior'] = \
-                        t1_edge['posterior'] + t2_edge['posterior']
-                    try:
 
-                        new_edge_data['probability'] = \
+                    new_edge_data = _CEGHelpers._merge_edges(
+                        edge_1=t1_edge,
+                        edge_2=t2_edge,
+                    )
+
+                    try:
+                        new_edge_data['probability'] = (
                             t1_edge['probability']
+                        )
                         self.add_edge(
                             u_for_edge=new_node,
                             v_for_edge=succ,
@@ -421,3 +421,16 @@ class ChainEventGraph(nx.MultiDiGraph):
                             probability=prob
                         )
                 self.remove_node(node)
+
+
+class _CEGHelpers(object):
+    """Helper functions for CEG class"""
+    def _merge_edges(
+        edge_1: Dict,
+        edge_2: Dict,
+    ) -> Dict:
+        """Merges the counts priors and posteriors of two edges."""
+        new_edge_data = {}
+        for key in edge_1:
+            new_edge_data[key] = edge_1[key] + edge_2[key]
+        return new_edge_data

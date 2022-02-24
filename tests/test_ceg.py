@@ -145,7 +145,7 @@ class TestCEGHelpers(object):
             )
         )
 
-        new_edge_dict = _CEGHelpers._merge_edges(edge_1=edge_1, edge_2=edge_2)
+        new_edge_dict = _CEGHelpers._merge_edge_data(edge_1=edge_1, edge_2=edge_2)
 
         assert edge_1['count'] + edge_2['count'] == new_edge_dict['count']
         assert edge_1['prior'] + edge_2['prior'] == new_edge_dict['prior']

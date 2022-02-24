@@ -149,7 +149,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                     t1_edge = t1_edge_dict[label]
                     t2_edge = self.succ[temp_2][succ][label]
 
-                    new_edge_data = _CEGHelpers._merge_edges(
+                    new_edge_data = _CEGHelpers._merge_edge_data(
                         edge_1=t1_edge,
                         edge_2=t2_edge,
                     )
@@ -425,7 +425,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
 class _CEGHelpers(object):
     """Helper functions for CEG class"""
-    def _merge_edges(
+    def _merge_edge_data(
         edge_1: Dict,
         edge_2: Dict,
     ) -> Dict:

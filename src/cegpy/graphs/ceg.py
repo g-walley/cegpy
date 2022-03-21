@@ -44,7 +44,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     @property
     def root_node(self) -> str:
         """Root node name as a string."""
-        return f"{self.node_prefix}"
+        return f"{self.node_prefix}0"
 
     @property
     def stages(self) -> Mapping[str, List[str]]:

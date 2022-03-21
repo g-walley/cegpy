@@ -3,7 +3,7 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Dict, List, Mapping
+from typing import Any, Dict, List, Mapping
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -416,8 +416,8 @@ class ChainEventGraph(nx.MultiDiGraph):
 
 
 def _merge_edge_data(
-    edge_1: Dict,
-    edge_2: Dict,
+    edge_1: Dict[str, Any],
+    edge_2: Dict[str, Any],
 ) -> Dict:
     """Merges the counts priors and posteriors of two edges."""
     new_edge_data = {}

@@ -1,4 +1,6 @@
-from typing import Dict
+"""Chain Event Graph"""
+
+from typing import Dict, List, Mapping
 import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
@@ -27,42 +29,30 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.node_prefix = 'w'
 
     @property
-    def node_prefix(self):
-        return self._node_prefix
-
-    @node_prefix.setter
-    def node_prefix(self, value):
-        self._node_prefix = str(value)
-
-    @property
-    def sink_suffix(self):
-        return self._sink_suffix
-
-    @sink_suffix.setter
-    def sink_suffix(self, value):
-        self._sink_suffix = str(value)
-
-    @property
-    def sink_node(self):
+    def sink_node(self) -> str:
+        """Sink node name as a string."""
         return "%s%s" % (self.node_prefix, self.sink_suffix)
 
     @property
-    def root_node(self):
-        return ("%s0" % self.node_prefix)
+    def root_node(self) -> str:
+        """Root node name as a string."""
+        return "%s0" % self.node_prefix
 
     @property
-    def path_list(self):
+    def path_list(self) -> List:
+        """List of paths through the graph."""
         return self._path_list
 
     @property
-    def stages(self):
-        self.__stages = {}
+    def stages(self) -> Mapping[str, List[str]]:
+        """Mapping of stages to constituent nodes."""
+        self.__stages: Mapping[str, List[str]] = {}
         node_stages = dict(self.nodes(data='stage', default=None))
-        for k, v in node_stages.items():
+        for node, stage in node_stages.items():
             try:
-                self.__stages[v].append(k)
+                self.__stages[stage].append(node)
             except KeyError:
-                self.__stages[v] = [k]
+                self.__stages[stage] = [node]
 
         return self.__stages
 

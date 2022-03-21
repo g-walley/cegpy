@@ -1,16 +1,16 @@
 """Chain Event Graph"""
 
+from copy import deepcopy
+import itertools as it
+import logging
 from typing import Dict, List, Mapping
 import pydotplus as pdp
 import networkx as nx
-from copy import deepcopy
-import itertools as it
+from IPython.display import Image
+from IPython import get_ipython
 
 from ..utilities.util import Util
 from ..trees.staged import StagedTree
-from IPython.display import Image
-from IPython import get_ipython
-import logging
 
 logger = logging.getLogger('cegpy.chain_event_graph')
 

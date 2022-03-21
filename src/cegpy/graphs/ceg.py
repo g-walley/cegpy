@@ -293,38 +293,38 @@ class ChainEventGraph(nx.MultiDiGraph):
             stage_edges = {}
             if stage is not None:
 
-                for (u, _, k, c) in edge_counts:
-                    if u in stage_nodes:
-                        count_total += c
+                for (src, _, label, count) in edge_counts:
+                    if src in stage_nodes:
+                        count_total += count
                         try:
-                            stage_edges[k] += c
+                            stage_edges[label] += count
                         except KeyError:
-                            stage_edges[k] = c
+                            stage_edges[label] = count
 
                 for node in stage_nodes:
                     self.nodes[node][count_total_lbl] = count_total
 
-                for (u, v, k, _) in edge_counts:
-                    if u in stage_nodes:
-                        self.edges[u, v, k]['probability'] =\
-                            stage_edges[k] / count_total
+                for (src, v, label, _) in edge_counts:
+                    if src in stage_nodes:
+                        self.edges[src, v, label]['probability'] =\
+                            stage_edges[label] / count_total
             else:
                 for node in stage_nodes:
                     count_total = 0
                     stage_edges = {}
-                    for (u, _, k, c) in edge_counts:
-                        if u == node:
-                            count_total += c
+                    for (src, _, label, count) in edge_counts:
+                        if src == node:
+                            count_total += count
                             try:
-                                stage_edges[k] += c
+                                stage_edges[label] += count
                             except KeyError:
-                                stage_edges[k] = c
+                                stage_edges[label] = count
 
                     self.nodes[node][count_total_lbl] = count_total
-                    for (u, v, k, _) in edge_counts:
-                        if u == node:
-                            self.edges[u, v, k]['probability'] =\
-                                stage_edges[k] / count_total
+                    for (src, v, label, _) in edge_counts:
+                        if src == node:
+                            self.edges[src, v, label]['probability'] =\
+                                stage_edges[label] / count_total
 
     def _update_path_list(self) -> None:
         path_generator = nx.all_simple_edge_paths(

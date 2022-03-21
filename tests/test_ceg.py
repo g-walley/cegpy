@@ -115,7 +115,7 @@ class TestUnitCEG(object):
             assert actual_node_list.sort() == expected_node_list.sort()
 
 
-class TestCEGHelpers(object):
+class TestCEGHelpersTestCases:
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
@@ -161,6 +161,7 @@ class TestCEGHelpers(object):
 
     def test_merge_edges_data_missing(self):
         """Edges are merged even when some data is missing in one edge."""
+        assert False, "Test not implemented."
 
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""
@@ -169,4 +170,4 @@ class TestCEGHelpers(object):
         prog = re.compile(node_pattern)
         for node in self.ceg.nodes:
             result = prog.match(node)
-            assert result is not None
+            assert result is not None, "Node does not match expected format."

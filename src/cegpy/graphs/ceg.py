@@ -389,26 +389,25 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.add_node(self.sink_node, colour='lightgrey')
         outgoing_edges = deepcopy(self.succ).items()
         # Check to see if any nodes have no outgoing edges.
-        for node, outgoing_edges in outgoing_edges:
-            if outgoing_edges == {} and node != self.sink_node:
-                incoming_edges = deepcopy(self.pred[node]).items()
+        for node, out_edges in outgoing_edges:
+            if not out_edges and node != self.sink_node:
+                all_inc_edges: Mapping[str, Dict[str, Dict]] = (
+                    dict(deepcopy(self.pred[node]))
+                )
                 # When node is identified as a leaf check the
                 # predessesor nodes that have edges that enter this node.
-                for pred_node, edges in incoming_edges:
-                    for edge_label, edge in edges.items():
+                for pred_node, inc_edges_to_node in all_inc_edges.items():
+                    for edge_label, edge_data in inc_edges_to_node.items():
                         # Create new edge that points to the sink node,
                         # with all the same data as the edge we will delete.
-                        try:
-                            prob = edge['probability']
-                        except KeyError:
-                            prob = 1
+                        prob = edge_data.get("probability", 1)
                         self.add_edge(
                             pred_node,
                             self.sink_node,
                             key=edge_label,
-                            count=edge['count'],
-                            prior=edge['prior'],
-                            posterior=edge['posterior'],
+                            count=edge_data['count'],
+                            prior=edge_data['prior'],
+                            posterior=edge_data['posterior'],
                             probability=prob
                         )
                 self.remove_node(node)

@@ -371,12 +371,12 @@ class ChainEventGraph(nx.MultiDiGraph):
     def _gen_nodes_with_increasing_distance(self, start=0) -> list:
         max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
         distance_dict = {}
-        for key, value in max_dists.items():
-            distance_dict.setdefault(value, []).append(key)
+        for node, distance in max_dists.items():
+            distance_dict.setdefault(distance, []).append(node)
 
-        for dist in range(len(distance_dict)):
+        for node_idx, dist in enumerate(distance_dict):
             if dist >= start:
-                yield distance_dict[dist]
+                yield distance_dict[node_idx]
 
     def _get_next_node_name(self):
         try:

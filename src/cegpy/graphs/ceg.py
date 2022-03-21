@@ -3,7 +3,7 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Any, Dict, List, Mapping
+from typing import Any, Dict, List, Mapping, Optional
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -267,7 +267,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
         return graph
 
-    def create_figure(self, filename):
+    def create_figure(self, filename) -> Optional[Image]:
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that
@@ -277,10 +277,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         graph = self.dot_graph
         graph.write(str(filename), format=filetype)
 
-        if get_ipython() is None:
-            return None
-        else:
+        if get_ipython() is not None:
+            # pylint: disable=no-member
             return Image(graph.create_png())
+
+        return None
 
     def _update_probabilities(self):
         count_total_lbl = 'count_total'

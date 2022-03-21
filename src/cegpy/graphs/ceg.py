@@ -25,18 +25,18 @@ class ChainEventGraph(nx.MultiDiGraph):
     def __init__(self, staged_tree: StagedTree = None, **attr):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
-        self.sink_suffix = '&infin;'
-        self.node_prefix = 'w'
+        self.sink_suffix = "&infin;"
+        self.node_prefix = "w"
 
     @property
     def sink_node(self) -> str:
         """Sink node name as a string."""
-        return "%s%s" % (self.node_prefix, self.sink_suffix)
+        return f"{self.node_prefix}{self.sink_suffix}"
 
     @property
     def root_node(self) -> str:
         """Root node name as a string."""
-        return "%s0" % self.node_prefix
+        return f"{self.node_prefix}"
 
     @property
     def path_list(self) -> List:
@@ -57,12 +57,12 @@ class ChainEventGraph(nx.MultiDiGraph):
         return self.__stages
 
     def generate(self):
-        '''
+        """
         This function takes the output of the AHC algorithm and identifies
         the positions i.e. the vertices of the CEG and the edges of the CEG
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
-        '''
+        """
 
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")

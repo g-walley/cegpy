@@ -304,10 +304,11 @@ class ChainEventGraph(nx.MultiDiGraph):
                 for node in stage_nodes:
                     self.nodes[node][count_total_lbl] = count_total
 
-                for (src, v, label, _) in edge_counts:
+                for (src, dst, label, _) in edge_counts:
                     if src in stage_nodes:
-                        self.edges[src, v, label]['probability'] =\
+                        self.edges[src, dst, label]['probability'] = (
                             stage_edges[label] / count_total
+                        )
             else:
                 for node in stage_nodes:
                     count_total = 0
@@ -321,10 +322,11 @@ class ChainEventGraph(nx.MultiDiGraph):
                                 stage_edges[label] = count
 
                     self.nodes[node][count_total_lbl] = count_total
-                    for (src, v, label, _) in edge_counts:
+                    for (src, dst, label, _) in edge_counts:
                         if src == node:
-                            self.edges[src, v, label]['probability'] =\
+                            self.edges[src, dst, label]['probability'] = (
                                 stage_edges[label] / count_total
+                            )
 
     def _update_path_list(self) -> None:
         path_generator = nx.all_simple_edge_paths(

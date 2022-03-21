@@ -382,8 +382,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 yield distance_dict[node_idx]
 
     def _get_next_node_name(self):
-        num = str(next(self._node_num_iterator))
-        return str(self.node_prefix) + num
+        return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
     def _trim_leaves_from_graph(self):
         # Create new CEG sink node
@@ -418,8 +417,8 @@ class ChainEventGraph(nx.MultiDiGraph):
 def _merge_edge_data(
     edge_1: Dict[str, Any],
     edge_2: Dict[str, Any],
-) -> Dict:
-    """Merges the counts priors and posteriors of two edges."""
+) -> Dict[str, Any]:
+    """Merges the counts, priors, and posteriors of two edges."""
     new_edge_data = {}
     for key in edge_1:
         new_edge_data[key] = edge_1[key] + edge_2[key]

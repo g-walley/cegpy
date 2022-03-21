@@ -192,7 +192,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                     nodes_to_merge.remove(pair)
                     if new_pair[0] != new_pair[1]:
                         nodes_to_merge.add(new_pair)
-            pass
 
     def _check_vertices_can_be_merged(self, v1, v2) -> bool:
         has_same_successor_nodes = \

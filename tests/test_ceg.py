@@ -1,7 +1,8 @@
+import re
 import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, ChainEventGraph
-from src.cegpy.graphs.ceg import _merge_edge_data
+from src.cegpy.graphs.ceg import _merge_edge_data, _relabel_nodes
 from pathlib import Path
 
 
@@ -118,7 +119,7 @@ class TestCEGHelpers(object):
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            'w0', 's1', 's2', 's3', 's4',
+            'w0', 's1', 's2', 's3', 's4', 'w&infin;'
         ]
         self.init_edges = [
             ('w0', 's1', 'a'),
@@ -127,11 +128,15 @@ class TestCEGHelpers(object):
             ('s1', 's4', 'd'),
             ('s2', 's3', 'c'),
             ('s2', 's4', 'd'),
+            ('s3', 'w&infin;', 'e'),
+            ('s4', 'w&infin;', 'f'),
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
+        self.ceg = ChainEventGraph(self.graph)
 
     def test_merge_edges(self):
+        """Edges are merged"""
         edge_1 = dict(
             zip(
                 ['count', 'prior', 'posterior'],
@@ -153,3 +158,15 @@ class TestCEGHelpers(object):
             edge_1['posterior'] +
             edge_2['posterior'] == new_edge_dict['posterior']
         )
+
+    def test_merge_edges_data_missing(self):
+        """Edges are merged even when some data is missing in one edge."""
+
+    def test_relabel_nodes(self):
+        """Relabel nodes successfully renames all the nodes."""
+        _relabel_nodes(self.ceg)
+        node_pattern = r"^w([0-9]+)|w(&infin;)$"
+        prog = re.compile(node_pattern)
+        for node in self.ceg.nodes:
+            result = prog.match(node)
+            assert result is not None

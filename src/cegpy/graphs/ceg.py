@@ -3,7 +3,7 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -29,7 +29,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     _stages: Mapping[str, List[str]]
     _node_num_iterator: it.count
 
-    def __init__(self, staged_tree: StagedTree = None, **attr):
+    def __init__(self, staged_tree: Optional[StagedTree] = None, **attr):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
         self.sink_suffix = "&infin;"
@@ -270,7 +270,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
         return graph
 
-    def create_figure(self, filename) -> Optional[Image]:
+    def create_figure(self, filename) -> Union[Image, None]:
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that

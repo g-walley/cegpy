@@ -110,13 +110,13 @@ class ChainEventGraph(nx.MultiDiGraph):
                     next_level.append(node_mapping[succ])
                     renamed_nodes.append(node_mapping[succ])
 
-            if node_mapping != {}:
+            if node_mapping:
                 nx.relabel_nodes(
                     self,
                     node_mapping,
                     copy=False
                 )
-        if next_level != []:
+        if next_level:
             self._relabel_nodes(next_level, renamed_nodes)
 
     def _merge_nodes(self, nodes_to_merge):
@@ -136,7 +136,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             self.add_node(new_node)
             for succ, t1_edge_dict in self.succ[temp_1].items():
                 edge_labels = list(t1_edge_dict.keys())
-                while edge_labels != []:
+                while edge_labels:
                     label = edge_labels.pop(0)
                     t1_edge = t1_edge_dict[label]
                     t2_edge = self.succ[temp_2][succ][label]

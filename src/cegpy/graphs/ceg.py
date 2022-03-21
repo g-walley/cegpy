@@ -209,8 +209,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                     has_same_outgoing_edges &= False
                     break
 
-                v2_edge_labels = \
-                    [label for label in v2_edges.keys()]
+                v2_edge_labels = list(v2_edges.keys())
 
                 for label in v1_edges.keys():
                     if label not in v2_edge_labels:

@@ -98,28 +98,8 @@ class ChainEventGraph(nx.MultiDiGraph):
             except StopIteration:
                 next_set_of_nodes = []
 
-        self._relabel_nodes([self.root_node])
+        _relabel_nodes(self)
         self._update_path_list()
-
-    def _relabel_nodes(self, base_nodes, renamed_nodes=[]):
-        next_level = []
-        # first, relabel the successors of this node
-        for node in base_nodes:
-            node_mapping = {}
-            for succ in self.succ[node].keys():
-                if succ != self.sink_node and succ not in renamed_nodes:
-                    node_mapping[succ] = self._get_next_node_name()
-                    next_level.append(node_mapping[succ])
-                    renamed_nodes.append(node_mapping[succ])
-
-            if node_mapping:
-                nx.relabel_nodes(
-                    self,
-                    node_mapping,
-                    copy=False
-                )
-        if next_level:
-            self._relabel_nodes(next_level, renamed_nodes)
 
     def _merge_nodes(self, nodes_to_merge):
         """nodes to merge should be a set of 2 element tuples"""

@@ -238,12 +238,12 @@ class ChainEventGraph(nx.MultiDiGraph):
             self.edges(data='probability', default=1, keys=True)
         )
 
-        for (u, v, k, p) in edge_probabilities:
-            full_label = "{}\n{:.2f}".format(k, p)
+        for (src, dst, label, probability) in edge_probabilities:
+            full_label = f"{label}\n{probability:.2f}"
             graph.add_edge(
                 pdp.Edge(
-                    src=u,
-                    dst=v,
+                    src=src,
+                    dst=dst,
                     label=full_label,
                     labelfontcolor='#009933',
                     fontsize='10.0',

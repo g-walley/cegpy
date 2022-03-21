@@ -331,6 +331,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                             )
 
     def _update_path_list(self) -> None:
+        """Updates the path list, should be called after graph is modified."""
         path_generator = nx.all_simple_edge_paths(
             self,
             self.root_node,
@@ -371,6 +372,8 @@ class ChainEventGraph(nx.MultiDiGraph):
                     node_queue.append(pred)
 
     def _gen_nodes_with_increasing_distance(self, start=0) -> list:
+        """Generates nodes that are either the same or further
+        from the sink node than the last node generated."""
         max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
         distance_dict: Mapping[int, Iterable[str]] = {}
         for node, distance in max_dists.items():
@@ -382,9 +385,12 @@ class ChainEventGraph(nx.MultiDiGraph):
                 yield distance_dict[node_idx]
 
     def _get_next_node_name(self):
+        """Generates sequentially increasing node numbers."""
         return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
     def _trim_leaves_from_graph(self):
+        """Trims all the leaves from the graph, and points each incoming
+        edge to the sink node."""
         # Create new CEG sink node
         self.add_node(self.sink_node, colour='lightgrey')
         outgoing_edges = deepcopy(self.succ).items()

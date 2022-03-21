@@ -3,7 +3,7 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Any, Dict, List, Mapping, Optional
+from typing import Any, Dict, Iterable, List, Mapping, Optional
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -370,9 +370,10 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def _gen_nodes_with_increasing_distance(self, start=0) -> list:
         max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
-        distance_dict = {}
+        distance_dict: Mapping[int, Iterable[str]] = {}
         for node, distance in max_dists.items():
-            distance_dict.setdefault(distance, []).append(node)
+            dist_list: List = distance_dict.setdefault(distance, [])
+            dist_list.append(node)
 
         for node_idx, dist in enumerate(distance_dict):
             if dist >= start:

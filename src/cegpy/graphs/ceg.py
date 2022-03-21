@@ -83,7 +83,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
                 for node_2 in next_set_of_nodes:
-                    mergeable = self._check_vertices_can_be_merged(
+                    mergeable = self._check_nodes_can_be_merged(
                         node_1, node_2
                     )
                     if mergeable:
@@ -193,16 +193,17 @@ class ChainEventGraph(nx.MultiDiGraph):
                     if new_pair[0] != new_pair[1]:
                         nodes_to_merge.add(new_pair)
 
-    def _check_vertices_can_be_merged(self, v1, v2) -> bool:
+    def _check_nodes_can_be_merged(self, node_1, node_2) -> bool:
+        """Determine if the two nodes are able to be merged."""
         has_same_successor_nodes = \
-            set(self.adj[v1].keys()) == set(self.adj[v2].keys())
+            set(self.adj[node_1].keys()) == set(self.adj[node_2].keys())
 
         if has_same_successor_nodes:
             has_same_outgoing_edges = True
-            v1_adj = self.succ[v1]
+            v1_adj = self.succ[node_1]
             for succ_node in list(v1_adj.keys()):
-                v1_edges = self.succ[v1][succ_node]
-                v2_edges = self.succ[v2][succ_node]
+                v1_edges = self.succ[node_1][succ_node]
+                v2_edges = self.succ[node_2][succ_node]
 
                 if v1_edges is None or v2_edges is None:
                     has_same_outgoing_edges &= False
@@ -222,7 +223,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         try:
             in_same_stage = \
-                self.nodes[v1]['stage'] == self.nodes[v2]['stage']
+                self.nodes[node_1]['stage'] == self.nodes[node_2]['stage']
         except KeyError:
             in_same_stage = False
 

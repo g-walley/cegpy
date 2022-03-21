@@ -22,11 +22,19 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
+
+    sink_suffix: str
+    node_prefix: str
+    path_list: List
+    _stages: Mapping[str, List[str]]
+
     def __init__(self, staged_tree: StagedTree = None, **attr):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
         self.sink_suffix = "&infin;"
         self.node_prefix = "w"
+        self._stages = {}
+        self._path_list = []
 
     @property
     def sink_node(self) -> str:
@@ -39,22 +47,16 @@ class ChainEventGraph(nx.MultiDiGraph):
         return f"{self.node_prefix}"
 
     @property
-    def path_list(self) -> List:
-        """List of paths through the graph."""
-        return self._path_list
-
-    @property
     def stages(self) -> Mapping[str, List[str]]:
         """Mapping of stages to constituent nodes."""
-        self.__stages: Mapping[str, List[str]] = {}
         node_stages = dict(self.nodes(data='stage', default=None))
         for node, stage in node_stages.items():
             try:
-                self.__stages[stage].append(node)
+                self._stages[stage].append(node)
             except KeyError:
-                self.__stages[stage] = [node]
+                self._stages[stage] = [node]
 
-        return self.__stages
+        return self._stages
 
     def generate(self):
         """

@@ -428,3 +428,22 @@ def _merge_edge_data(
     for key in edge_1:
         new_edge_data[key] = edge_1[key] + edge_2[key]
     return new_edge_data
+
+
+def _relabel_nodes(ceg: ChainEventGraph):
+    nodes_to_rename = list(ceg.succ[ceg.root_node].keys())
+    # first, relabel the successors of this node
+    node_mapping = {}
+    while nodes_to_rename:
+        for node in nodes_to_rename.copy():
+            node_mapping[node] = ceg._get_next_node_name()
+            for succ in ceg.succ[node].keys():
+                if (succ != ceg.sink_node and succ not in nodes_to_rename):
+                    nodes_to_rename.append(succ)
+            nodes_to_rename.remove(node)
+
+    nx.relabel_nodes(
+        ceg,
+        node_mapping,
+        copy=False
+    )

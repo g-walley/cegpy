@@ -27,6 +27,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     node_prefix: str
     path_list: List
     _stages: Mapping[str, List[str]]
+    _node_num_iterator: it.count
 
     def __init__(self, staged_tree: StagedTree = None, **attr):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
@@ -35,6 +36,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.node_prefix = "w"
         self._stages = {}
         self._path_list = []
+        self._node_num_iterator = it.count(1, 1)
 
     @property
     def sink_node(self) -> str:
@@ -380,12 +382,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 yield distance_dict[node_idx]
 
     def _get_next_node_name(self):
-        try:
-            num = str(next(self._num_iter))
-        except AttributeError:
-            self._num_iter = it.count(1, 1)
-            num = str(next(self._num_iter))
-
+        num = str(next(self._node_num_iterator))
         return str(self.node_prefix) + num
 
     def _trim_leaves_from_graph(self):

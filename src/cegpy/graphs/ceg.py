@@ -229,7 +229,8 @@ class ChainEventGraph(nx.MultiDiGraph):
             has_same_successor_nodes and has_same_outgoing_edges
 
     @property
-    def dot_graph(self):
+    def dot_graph(self) -> pdp.Dot:
+        """Dot representation of the CEG."""
         return self._generate_dot_graph()
 
     def _generate_dot_graph(self):

@@ -215,8 +215,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                     if label not in v2_edge_labels:
                         has_same_outgoing_edges &= False
                         break
-                    else:
-                        has_same_outgoing_edges &= True
+                    has_same_outgoing_edges &= True
         else:
             has_same_outgoing_edges = False
 

@@ -33,7 +33,7 @@ class TestUnitCEG(object):
         prefix = self.ceg.node_prefix
         largest = 20
         node_names = [
-            self.ceg._get_next_node_name()
+            self.ceg.next_node_name
             for _ in range(0, largest)
         ]
         assert (prefix + '1') == node_names[0]

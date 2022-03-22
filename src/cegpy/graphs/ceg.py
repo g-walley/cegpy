@@ -70,6 +70,11 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         return self._stages
 
+    @property
+    def next_node_name(self):
+        """Next available node number."""
+        return f"{self.node_prefix}{next(self._node_num_iterator)}"
+
     def generate(self):
         """
         This function takes the output of the AHC algorithm and identifies
@@ -302,10 +307,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self.path_list = path_list
                 break
 
-    def _get_next_node_name(self):
-        """Generates sequentially increasing node numbers."""
-        return f"{self.node_prefix}{next(self._node_num_iterator)}"
-
 
 def _merge_edge_data(
     edge_1: Dict[str, Any],
@@ -331,7 +332,7 @@ def _relabel_nodes(ceg: ChainEventGraph):
     node_mapping = {}
     while nodes_to_rename:
         for node in nodes_to_rename.copy():
-            node_mapping[node] = ceg._get_next_node_name()
+            node_mapping[node] = ceg.next_node_name
             for succ in ceg.succ[node].keys():
                 if (succ != ceg.sink_node and succ not in nodes_to_rename):
                     nodes_to_rename.append(succ)

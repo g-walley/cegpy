@@ -3,7 +3,7 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Union
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -101,11 +101,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         _relabel_nodes(self)
         self._update_path_list()
 
-    def _merge_nodes(self, nodes_to_merge):
+    def _merge_nodes(self, nodes_to_merge: Set):
         """nodes to merge should be a set of 2 element tuples"""
         temp_1 = 'temp_1'
         temp_2 = 'temp_2'
-        while nodes_to_merge != set():
+        while nodes_to_merge:
             nodes = nodes_to_merge.pop()
             new_node = nodes[0]
             # Copy nodes to temp nodes

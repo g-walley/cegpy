@@ -414,6 +414,7 @@ def _merge_edge_data(
 
 
 def _relabel_nodes(ceg: ChainEventGraph):
+    """Relabels nodes whilst maintaining ordering."""
     nodes_to_rename = list(ceg.succ[ceg.root_node].keys())
     # first, relabel the successors of this node
     node_mapping = {}

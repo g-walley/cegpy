@@ -405,8 +405,11 @@ def _merge_edge_data(
 ) -> Dict[str, Any]:
     """Merges the counts, priors, and posteriors of two edges."""
     new_edge_data = {}
-    for key in edge_1:
-        new_edge_data[key] = edge_1[key] + edge_2[key]
+    edge = edge_1 if len(edge_1) > len(edge_2) else edge_2
+    for key in edge:
+        new_edge_data[key] = (
+            edge_1.get(key, 0) + edge_2.get(key, 0)
+        )
     return new_edge_data
 
 

@@ -126,7 +126,13 @@ class ChainEventGraph(nx.MultiDiGraph):
             nx.relabel_nodes(self, node_map, copy=False)
             self.add_node(new_node)
 
-            self.remove_edges_from(ebunch_to_remove)
+            edges_to_remove = _merge_and_add_edges(
+                self,
+                new_node,
+                temp_1,
+                temp_2,
+            )
+            self.remove_edges_from(edges_to_remove)
             nx.relabel_nodes(
                 G=self,
                 mapping={temp_1: new_node, temp_2: new_node},

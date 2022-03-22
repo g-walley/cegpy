@@ -315,9 +315,12 @@ def _merge_edge_data(
     new_edge_data = {}
     edge = edge_1 if len(edge_1) > len(edge_2) else edge_2
     for key in edge:
-        new_edge_data[key] = (
-            edge_1.get(key, 0) + edge_2.get(key, 0)
-        )
+        if key == "probability":
+            new_edge_data[key] = edge_1.get(key, 1)
+        else:
+            new_edge_data[key] = (
+                edge_1.get(key, 0) + edge_2.get(key, 0)
+            )
     return new_edge_data
 
 

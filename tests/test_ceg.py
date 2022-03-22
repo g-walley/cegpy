@@ -64,14 +64,14 @@ class TestCEGHelpersTestCases:
         """Edges are merged"""
         edge_1 = dict(
             zip(
-                ['count', 'prior', 'posterior'],
-                [250, 0.5, 250],
+                ['count', 'prior', 'posterior', 'probability'],
+                [250, 0.5, 250, 0.8],
             )
         )
         edge_2 = dict(
             zip(
-                ['count', 'prior', 'posterior'],
-                [550, 25, 0.4],
+                ['count', 'prior', 'posterior', 'probability'],
+                [550, 25, 0.4, 0.9],
             )
         )
 
@@ -106,9 +106,14 @@ class TestCEGHelpersTestCases:
         ), "Edges do not have the same keys."
 
         for key, value in new_edge.items():
-            assert (
-                value == edge_1.get(key, 0) + edge_2.get(key, 0)
-            ), f"{key} not merged. Merged value: {value}"
+            if key == "probability":
+                assert (
+                    value == edge_1.get(key)
+                ), "Probability shouldn't be summed."
+            else:
+                assert (
+                    value == edge_1.get(key, 0) + edge_2.get(key, 0)
+                ), f"{key} not merged. Merged value: {value}"
 
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""

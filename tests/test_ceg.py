@@ -9,6 +9,7 @@ from src.cegpy.graphs.ceg import (
     _merge_and_add_edges,
     _trim_leaves_from_graph,
     _update_distances_to_sink,
+    _gen_nodes_with_increasing_distance
 )
 from pathlib import Path
 
@@ -37,29 +38,6 @@ class TestUnitCEG(object):
         ]
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
-
-    def test_gen_nodes_with_increasing_distance(self) -> None:
-        expected_nodes = {
-            0: ['w21', 'w22', 'w23', 'w24', 'w25', 'w26', 'w27', 'w28', 'w29',
-                'w30', 'w31', 'w32', 'w33', 'w34', 'w35', 'w36', 'w37', 'w38',
-                'w39', 'w40', 'w41', 'w42', 'w43', 'w44'],
-            1: ['w9', 'w10', 'w11', 'w12', 'w13', 'w14', 'w15', 'w16', 'w17',
-                'w18', 'w19', 'w20'],
-            2: ['w3', 'w4', 'w5', 'w6', 'w7', 'w8'],
-            3: ['w1', 'w2']
-        }
-        nx.relabel_nodes(self.ceg, {'w0': self.ceg.root_node}, copy=False)
-        self.ceg._trim_leaves_from_graph()
-        self.ceg._update_distances_of_nodes_to_sink_node()
-        nodes_gen = self.ceg.\
-            _gen_nodes_with_increasing_distance(
-                start=0
-            )
-
-        for nodes in range(len(expected_nodes)):
-            expected_node_list = expected_nodes[nodes]
-            actual_node_list = next(nodes_gen)
-            assert actual_node_list.sort() == expected_node_list.sort()
 
 
 class TestCEGHelpersTestCases:
@@ -231,7 +209,7 @@ class TestTrimLeavesFromGraph:
                 ), f"Edge still pointing to leaf: {leaf}"
 
 
-class TestUpdateDistanceToSink:
+class TestDistanceToSink:
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
@@ -278,3 +256,22 @@ class TestUpdateDistanceToSink:
         self.ceg.add_edge("w4", self.ceg.sink_node)
         _update_distances_to_sink(self.ceg)
         check_distances()
+
+    def test_gen_nodes_with_increasing_distance(self) -> None:
+        expected_nodes = {
+            0: [self.ceg.sink_node],
+            1: ["w2", "w3", "w5"],
+            2: ["w4"],
+            3: ["w1"],
+            4: [self.ceg.root_node]
+        }
+        for dist, nodes in expected_nodes.items():
+            for node in nodes:
+                self.ceg.nodes[node]["max_dist_to_sink"] = dist
+
+        nodes_gen = _gen_nodes_with_increasing_distance(self.ceg, start=0)
+
+        for nodes in range(len(expected_nodes)):
+            expected_node_list = expected_nodes[nodes]
+            actual_node_list = next(nodes_gen)
+            assert actual_node_list.sort() == expected_node_list.sort()

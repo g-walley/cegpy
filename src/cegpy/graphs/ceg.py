@@ -45,7 +45,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.sink_suffix = "&infin;"
         self.node_prefix = "w"
         self._stages = {}
-        self._path_list = []
+        self.path_list = []
         self._node_num_iterator = it.count(1, 1)
 
     @property
@@ -85,9 +85,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         self._update_probabilities()
         _trim_leaves_from_graph(self)
         _update_distances_to_sink(self)
-        src_node_gen = self._gen_nodes_with_increasing_distance(
-            start=1
-        )
+        src_node_gen = _gen_nodes_with_increasing_distance(self, start=1)
         next_set_of_nodes = next(src_node_gen)
 
         while next_set_of_nodes != [self.root_node]:
@@ -301,21 +299,8 @@ class ChainEventGraph(nx.MultiDiGraph):
             try:
                 path_list.append(next(path_generator))
             except StopIteration:
-                self._path_list = path_list
+                self.path_list = path_list
                 break
-
-    def _gen_nodes_with_increasing_distance(self, start=0) -> list:
-        """Generates nodes that are either the same or further
-        from the sink node than the last node generated."""
-        max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
-        distance_dict: Mapping[int, Iterable[str]] = {}
-        for node, distance in max_dists.items():
-            dist_list: List = distance_dict.setdefault(distance, [])
-            dist_list.append(node)
-
-        for node_idx, dist in enumerate(distance_dict):
-            if dist >= start:
-                yield distance_dict[node_idx]
 
     def _get_next_node_name(self):
         """Generates sequentially increasing node numbers."""
@@ -431,3 +416,17 @@ def _update_distances_to_sink(ceg: ChainEventGraph) -> None:
 
             if pred not in node_queue:
                 node_queue.append(pred)
+
+
+def _gen_nodes_with_increasing_distance(ceg: ChainEventGraph, start=0) -> list:
+    """Generates nodes that are either the same or further
+    from the sink node than the last node generated."""
+    max_dists = nx.get_node_attributes(ceg, 'max_dist_to_sink')
+    distance_dict: Mapping[int, Iterable[str]] = {}
+    for node, distance in max_dists.items():
+        dist_list: List = distance_dict.setdefault(distance, [])
+        dist_list.append(node)
+
+    for node_idx, dist in enumerate(distance_dict):
+        if dist >= start:
+            yield distance_dict[node_idx]

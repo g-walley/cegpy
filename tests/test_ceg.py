@@ -7,6 +7,7 @@ from src.cegpy.graphs.ceg import (
     _merge_edge_data,
     _relabel_nodes,
     _merge_and_add_edges,
+    _trim_leaves_from_graph,
 )
 from pathlib import Path
 
@@ -35,21 +36,6 @@ class TestUnitCEG(object):
         ]
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
-
-    def test_trim_leaves_from_graph(self) -> None:
-        self.ceg._trim_leaves_from_graph()
-        for leaf in self.st.leaves:
-            try:
-                self.ceg.nodes[leaf]
-                leaf_removed = False
-
-            except KeyError:
-                leaf_removed = True
-
-            assert leaf_removed
-
-            for edge_list_key in self.ceg.edges.keys():
-                assert edge_list_key[1] != leaf
 
     def test_update_distances_of_nodes_to_sink(self) -> None:
         def check_distances():
@@ -250,3 +236,40 @@ class TestCEGHelpersTestCases:
         assert (
             len(expected) == len(actual)
         ), "Actual number of edges does not match expected number of edges."
+
+
+class TestTrimLeavesFromGraph:
+    def setup(self):
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            's0', 's1', 's2', 's3', 's4'
+        ]
+        self.init_edges = [
+            ('s0', 's1', 'a'),
+            ('s0', 's2', 'b'),
+            ('s1', 's3', 'c'),
+            ('s1', 's4', 'd'),
+            ('s2', 's3', 'c'),
+            ('s2', 's4', 'd'),
+        ]
+        self.leaves = ["s3", "s4"]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+        self.ceg = ChainEventGraph(self.graph)
+
+    def test_leaves_trimmed_from_graph(self) -> None:
+        """Leaves are trimmed from the graph."""
+        _trim_leaves_from_graph(self.ceg)
+        for leaf in self.leaves:
+            try:
+                self.ceg.nodes[leaf]
+                leaf_removed = False
+            except KeyError:
+                leaf_removed = True
+
+            assert leaf_removed, "Leaf was not removed."
+
+            for edge_list_key in self.ceg.edges.keys():
+                assert (
+                    edge_list_key[1] != leaf
+                ), f"Edge still pointing to leaf: {leaf}"

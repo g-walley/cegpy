@@ -83,8 +83,8 @@ class ChainEventGraph(nx.MultiDiGraph):
         # rename root node:
         nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
         self._update_probabilities()
-        self._trim_leaves_from_graph()
-        self._update_distances_of_nodes_to_sink_node()
+        _trim_leaves_from_graph(self)
+        _update_distances_to_sink(self)
         src_node_gen = self._gen_nodes_with_increasing_distance(
             start=1
         )
@@ -304,32 +304,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self._path_list = path_list
                 break
 
-    def _update_distances_of_nodes_to_sink_node(self) -> None:
-        """
-        Iterates through the graph until it finds the root node.
-        For each node, it determines the maximum number of edges
-        from that node to the sink node.
-        """
-        max_dist = 'max_dist_to_sink'
-        self.nodes[self.sink_node][max_dist] = 0
-        node_queue = [self.sink_node]
-
-        while node_queue != [self.root_node]:
-            node = node_queue.pop(0)
-            for pred in self.predecessors(node):
-                max_dist_to_sink = set()
-                for succ in self.successors(pred):
-                    try:
-                        max_dist_to_sink.add(
-                            self.nodes[succ][max_dist]
-                        )
-                        self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
-                    except KeyError:
-                        break
-
-                if pred not in node_queue:
-                    node_queue.append(pred)
-
     def _gen_nodes_with_increasing_distance(self, start=0) -> list:
         """Generates nodes that are either the same or further
         from the sink node than the last node generated."""
@@ -430,3 +404,30 @@ def _trim_leaves_from_graph(ceg: ChainEventGraph):
         if not out_edges and node != ceg.sink_node:
             mapping = {node: ceg.sink_node}
             nx.relabel_nodes(ceg, mapping, copy=False)
+
+
+def _update_distances_to_sink(ceg: ChainEventGraph) -> None:
+    """
+    Iterates through the graph until it finds the root node.
+    For each node, it determines the maximum number of edges
+    from that node to the sink node.
+    """
+    max_dist = "max_dist_to_sink"
+    ceg.nodes[ceg.sink_node][max_dist] = 0
+    node_queue = [ceg.sink_node]
+
+    while node_queue != [ceg.root_node]:
+        node = node_queue.pop(0)
+        for pred in ceg.predecessors(node):
+            max_dist_to_sink = set()
+            for succ in ceg.successors(pred):
+                try:
+                    max_dist_to_sink.add(
+                        ceg.nodes[succ][max_dist]
+                    )
+                    ceg.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
+                except KeyError:
+                    break
+
+            if pred not in node_queue:
+                node_queue.append(pred)

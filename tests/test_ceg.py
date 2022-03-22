@@ -1,4 +1,5 @@
 import re
+from typing import Dict
 import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, ChainEventGraph
@@ -151,17 +152,37 @@ class TestCEGHelpersTestCases:
         )
 
         new_edge_dict = _merge_edge_data(edge_1=edge_1, edge_2=edge_2)
-
-        assert edge_1['count'] + edge_2['count'] == new_edge_dict['count']
-        assert edge_1['prior'] + edge_2['prior'] == new_edge_dict['prior']
-        assert (
-            edge_1['posterior'] +
-            edge_2['posterior'] == new_edge_dict['posterior']
-        )
+        self.assert_edges_merged(new_edge_dict, edge_1, edge_2)
 
     def test_merge_edges_data_missing(self):
         """Edges are merged even when some data is missing in one edge."""
-        assert False, "Test not implemented."
+        edge_1 = dict(
+            zip(
+                ['count', 'prior'],
+                [250, 0.5],
+            )
+        )
+        edge_2 = dict(
+            zip(
+                ['count', 'prior', 'posterior'],
+                [550, 25, 0.4],
+            )
+        )
+
+        new_edge_dict = _merge_edge_data(edge_1=edge_1, edge_2=edge_2)
+        self.assert_edges_merged(new_edge_dict, edge_1, edge_2)
+
+    def assert_edges_merged(self, new_edge: Dict, edge_1: Dict, edge_2: Dict):
+        """Edges were merged successfully."""
+
+        assert (
+            set(new_edge.keys()) == set(edge_1.keys()).union(set(edge_2.keys()))
+        ), "Edges do not have the same keys."
+
+        for key, value in new_edge.items():
+            assert (
+                value == edge_1.get(key, 0) + edge_2.get(key, 0)
+            ), f"{key} not merged. Merged value: {value}"
 
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""

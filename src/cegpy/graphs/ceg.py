@@ -347,36 +347,6 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Generates sequentially increasing node numbers."""
         return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
-    def _trim_leaves_from_graph(self):
-        """Trims all the leaves from the graph, and points each incoming
-        edge to the sink node."""
-        # Create new CEG sink node
-        self.add_node(self.sink_node, colour='lightgrey')
-        outgoing_edges = deepcopy(self.succ).items()
-        # Check to see if any nodes have no outgoing edges.
-        for node, out_edges in outgoing_edges:
-            if not out_edges and node != self.sink_node:
-                all_inc_edges: Mapping[str, Dict[str, Dict]] = (
-                    dict(deepcopy(self.pred[node]))
-                )
-                # When node is identified as a leaf check the
-                # predessesor nodes that have edges that enter this node.
-                for pred_node, inc_edges_to_node in all_inc_edges.items():
-                    for edge_label, edge_data in inc_edges_to_node.items():
-                        # Create new edge that points to the sink node,
-                        # with all the same data as the edge we will delete.
-                        prob = edge_data.get("probability", 1)
-                        self.add_edge(
-                            pred_node,
-                            self.sink_node,
-                            key=edge_label,
-                            count=edge_data['count'],
-                            prior=edge_data['prior'],
-                            posterior=edge_data['posterior'],
-                            probability=prob
-                        )
-                self.remove_node(node)
-
 
 def _merge_edge_data(
     edge_1: Dict[str, Any],
@@ -447,3 +417,16 @@ def _merge_and_add_edges(
             )
 
     return old_edges_to_remove
+
+
+def _trim_leaves_from_graph(ceg: ChainEventGraph):
+    """Trims all the leaves from the graph, and points each incoming
+    edge to the sink node."""
+    # Create new CEG sink node
+    ceg.add_node(ceg.sink_node, colour='lightgrey')
+    outgoing_edges = deepcopy(ceg.succ).items()
+    # Check to see if any nodes have no outgoing edges.
+    for node, out_edges in outgoing_edges:
+        if not out_edges and node != ceg.sink_node:
+            mapping = {node: ceg.sink_node}
+            nx.relabel_nodes(ceg, mapping, copy=False)

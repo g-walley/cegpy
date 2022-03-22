@@ -364,10 +364,6 @@ def _merge_and_add_edges(
                 edge_1=n1_edge_data,
                 edge_2=n2_edge_data,
             )
-            if "probability" in n1_edge_data:
-                new_edge_data.update(
-                    {'probability': n1_edge_data['probability']}
-                )
             ceg.add_edge(
                 u_for_edge=new_node,
                 v_for_edge=succ,

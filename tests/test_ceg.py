@@ -129,19 +129,23 @@ class TestCEGHelpersTestCases:
         edges_to_add = [
             {
                 "src": "s1", "dst": "s3", "key": "event_1",
-                "counts": 5, "priors": 0.2, "posteriors": 1
+                "counts": 5, "priors": 0.2, "posteriors": 1,
+                "probability": 0.8,
             },
             {
                 "src": "s1", "dst": "s4", "key": "event_2",
-                "counts": 10, "priors": 0.3, "posteriors": 5
+                "counts": 10, "priors": 0.3, "posteriors": 5,
+                "probability": 0.2,
             },
             {
                 "src": "s2", "dst": "s3", "key": "event_1",
-                "counts": 11, "priors": 0.5, "posteriors": 2
+                "counts": 11, "priors": 0.5, "posteriors": 2,
+                "probability": 0.8,
             },
             {
                 "src": "s2", "dst": "s4", "key": "event_2",
-                "counts": 6, "priors": 0.9, "posteriors": 3
+                "counts": 6, "priors": 0.9, "posteriors": 3,
+                "probability": 0.2,
             },
         ]
         for edge in edges_to_add:

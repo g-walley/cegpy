@@ -3,7 +3,17 @@
 from copy import deepcopy
 import itertools as it
 import logging
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Union
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Set,
+    Tuple,
+    Union,
+)
 import pydotplus as pdp
 import networkx as nx
 from IPython.display import Image
@@ -114,44 +124,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 nodes[1]: temp_2
             }
             nx.relabel_nodes(self, node_map, copy=False)
-            ebunch_to_remove = []  # List of edges to remove
             self.add_node(new_node)
-            for succ, t1_edge_dict in self.succ[temp_1].items():
-                edge_labels = list(t1_edge_dict.keys())
-                while edge_labels:
-                    label = edge_labels.pop(0)
-                    t1_edge = t1_edge_dict[label]
-                    t2_edge = self.succ[temp_2][succ][label]
-
-                    new_edge_data = _merge_edge_data(
-                        edge_1=t1_edge,
-                        edge_2=t2_edge,
-                    )
-
-                    try:
-                        new_edge_data['probability'] = (
-                            t1_edge['probability']
-                        )
-                        self.add_edge(
-                            u_for_edge=new_node,
-                            v_for_edge=succ,
-                            key=label,
-                            count=new_edge_data['count'],
-                            prior=new_edge_data['prior'],
-                            posterior=new_edge_data['posterior'],
-                            probability=new_edge_data['probability']
-                        )
-                    except KeyError:
-                        self.add_edge(
-                            u_for_edge=new_node,
-                            v_for_edge=succ,
-                            key=label,
-                            count=new_edge_data['count'],
-                            prior=new_edge_data['prior'],
-                            posterior=new_edge_data['posterior']
-                        )
-                    ebunch_to_remove.append((temp_1, succ, label))
-                    ebunch_to_remove.append((temp_2, succ, label))
 
             self.remove_edges_from(ebunch_to_remove)
             nx.relabel_nodes(
@@ -431,3 +404,40 @@ def _relabel_nodes(ceg: ChainEventGraph):
         node_mapping,
         copy=False
     )
+
+
+def _merge_and_add_edges(
+    ceg: ChainEventGraph,
+    new_node: str,
+    node_1: str,
+    node_2: str,
+) -> List[Tuple]:
+    """Merges outgoing edges of two nodes so that the two nodes can be
+    merged."""
+    old_edges_to_remove = []
+    for succ, t1_edge_dict in ceg.succ[node_1].items():
+        edge_labels = list(t1_edge_dict.keys())
+        while edge_labels:
+            label = edge_labels.pop(0)
+            n1_edge_data = t1_edge_dict[label]
+            n2_edge_data = ceg.succ[node_2][succ][label]
+
+            new_edge_data = _merge_edge_data(
+                edge_1=n1_edge_data,
+                edge_2=n2_edge_data,
+            )
+            if "probability" in n1_edge_data:
+                new_edge_data.update(
+                    {'probability': n1_edge_data['probability']}
+                )
+            ceg.add_edge(
+                u_for_edge=new_node,
+                v_for_edge=succ,
+                key=label,
+                **new_edge_data,
+            )
+            old_edges_to_remove.extend(
+                [(node_1, succ, label), (node_2, succ, label)]
+            )
+
+    return old_edges_to_remove

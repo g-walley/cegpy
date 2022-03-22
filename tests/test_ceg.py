@@ -3,7 +3,11 @@ from typing import Dict
 import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, ChainEventGraph
-from src.cegpy.graphs.ceg import _merge_edge_data, _relabel_nodes
+from src.cegpy.graphs.ceg import (
+    _merge_edge_data,
+    _relabel_nodes,
+    _merge_and_add_edges,
+)
 from pathlib import Path
 
 
@@ -136,7 +140,7 @@ class TestCEGHelpersTestCases:
         self.graph.add_edges_from(self.init_edges)
         self.ceg = ChainEventGraph(self.graph)
 
-    def test_merge_edges(self):
+    def test_merge_edge_data(self):
         """Edges are merged"""
         edge_1 = dict(
             zip(
@@ -154,7 +158,7 @@ class TestCEGHelpersTestCases:
         new_edge_dict = _merge_edge_data(edge_1=edge_1, edge_2=edge_2)
         self.assert_edges_merged(new_edge_dict, edge_1, edge_2)
 
-    def test_merge_edges_data_missing(self):
+    def test_merge_edge_data_with_missing(self):
         """Edges are merged even when some data is missing in one edge."""
         edge_1 = dict(
             zip(
@@ -176,7 +180,9 @@ class TestCEGHelpersTestCases:
         """Edges were merged successfully."""
 
         assert (
-            set(new_edge.keys()) == set(edge_1.keys()).union(set(edge_2.keys()))
+            set(new_edge.keys()) == set(
+                edge_1.keys()
+            ).union(set(edge_2.keys()))
         ), "Edges do not have the same keys."
 
         for key, value in new_edge.items():
@@ -192,3 +198,55 @@ class TestCEGHelpersTestCases:
         for node in self.ceg.nodes:
             result = prog.match(node)
             assert result is not None, "Node does not match expected format."
+
+    def test_merge_outgoing_edges(self):
+        """Outgoing edges are merged."""
+        edges_to_add = [
+            {
+                "src": "s1", "dst": "s3", "key": "event_1",
+                "counts": 5, "priors": 0.2, "posteriors": 1
+            },
+            {
+                "src": "s1", "dst": "s4", "key": "event_2",
+                "counts": 10, "priors": 0.3, "posteriors": 5
+            },
+            {
+                "src": "s2", "dst": "s3", "key": "event_1",
+                "counts": 11, "priors": 0.5, "posteriors": 2
+            },
+            {
+                "src": "s2", "dst": "s4", "key": "event_2",
+                "counts": 6, "priors": 0.9, "posteriors": 3
+            },
+        ]
+        for edge in edges_to_add:
+            self.ceg.add_edge(
+                u_for_edge=edge["src"],
+                v_for_edge=edge["dst"],
+                key=edge["key"],
+                counts=edge["counts"],
+                priors=edge["priors"],
+                posteriors=edge["posteriors"],
+            )
+        self.ceg.remove_edges_from(
+            [
+                ("s1", "s3", "c"),
+                ("s1", "s4", "d"),
+                ("s2", "s3", "c"),
+                ("s2", "s4", "d"),
+            ]
+        )
+
+        expected = [
+            (edge["src"], edge["dst"], edge["key"]) for edge in edges_to_add
+        ]
+        actual = (
+            _merge_and_add_edges(self.ceg, "s99", "s1", "s2")
+        )
+        for edge in expected:
+            assert (
+                edge in actual
+            ), f"Expected {edge} in return value, but it was not found."
+        assert (
+            len(expected) == len(actual)
+        ), "Actual number of edges does not match expected number of edges."

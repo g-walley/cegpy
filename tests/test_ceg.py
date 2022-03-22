@@ -8,6 +8,7 @@ from src.cegpy.graphs.ceg import (
     _relabel_nodes,
     _merge_and_add_edges,
     _trim_leaves_from_graph,
+    _update_distances_to_sink,
 )
 from pathlib import Path
 
@@ -37,62 +38,17 @@ class TestUnitCEG(object):
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
 
-    def test_update_distances_of_nodes_to_sink(self) -> None:
-        def check_distances():
-            actual_node_dists = \
-                nx.get_node_attributes(self.ceg, 'max_dist_to_sink')
-            for node, distance in actual_node_dists.items():
-                assert distance == expected_node_dists[node]
-        root_node = self.node_prefix + '0'
-        sink_node = self.node_prefix + self.sink_suffix
-        expected_node_dists = {
-            root_node: 4,
-            's1': 3,
-            's2': 3,
-            's3': 2,
-            's4': 2,
-            's5': 2,
-            's6': 2,
-            's7': 2,
-            's8': 2,
-            's9': 1,
-            's10': 1,
-            's11': 1,
-            's12': 1,
-            's13': 1,
-            's14': 1,
-            's15': 1,
-            's16': 1,
-            's17': 1,
-            's18': 1,
-            's19': 1,
-            's20': 1,
-            sink_node: 0
-        }
-        nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
-        self.ceg._trim_leaves_from_graph()
-        self.ceg._update_distances_of_nodes_to_sink_node()
-        check_distances()
-
-        # Add another edge to the dictionary, to show that the path is max,
-        # and not min distance to sink
-        self.ceg.add_edge('s3', self.ceg.sink_node)
-        self.ceg.add_edge('s1', self.ceg.sink_node)
-        self.ceg.add_edge('s2', 's10')
-        self.ceg._update_distances_of_nodes_to_sink_node()
-        check_distances()
-
     def test_gen_nodes_with_increasing_distance(self) -> None:
         expected_nodes = {
-            0: ['s21', 's22', 's23', 's24', 's25', 's26', 's27', 's28', 's29',
-                's30', 's31', 's32', 's33', 's34', 's35', 's36', 's37', 's38',
-                's39', 's40', 's41', 's42', 's43', 's44'],
-            1: ['s9', 's10', 's11', 's12', 's13', 's14', 's15', 's16', 's17',
-                's18', 's19', 's20'],
-            2: ['s3', 's4', 's5', 's6', 's7', 's8'],
-            3: ['s1', 's2']
+            0: ['w21', 'w22', 'w23', 'w24', 'w25', 'w26', 'w27', 'w28', 'w29',
+                'w30', 'w31', 'w32', 'w33', 'w34', 'w35', 'w36', 'w37', 'w38',
+                'w39', 'w40', 'w41', 'w42', 'w43', 'w44'],
+            1: ['w9', 'w10', 'w11', 'w12', 'w13', 'w14', 'w15', 'w16', 'w17',
+                'w18', 'w19', 'w20'],
+            2: ['w3', 'w4', 'w5', 'w6', 'w7', 'w8'],
+            3: ['w1', 'w2']
         }
-        nx.relabel_nodes(self.ceg, {'s0': self.ceg.root_node}, copy=False)
+        nx.relabel_nodes(self.ceg, {'w0': self.ceg.root_node}, copy=False)
         self.ceg._trim_leaves_from_graph()
         self.ceg._update_distances_of_nodes_to_sink_node()
         nodes_gen = self.ceg.\
@@ -110,17 +66,17 @@ class TestCEGHelpersTestCases:
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            'w0', 's1', 's2', 's3', 's4', 'w&infin;'
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w&infin;'
         ]
         self.init_edges = [
-            ('w0', 's1', 'a'),
-            ('w0', 's2', 'b'),
-            ('s1', 's3', 'c'),
-            ('s1', 's4', 'd'),
-            ('s2', 's3', 'c'),
-            ('s2', 's4', 'd'),
-            ('s3', 'w&infin;', 'e'),
-            ('s4', 'w&infin;', 'f'),
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'c'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -242,15 +198,15 @@ class TestTrimLeavesFromGraph:
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            's0', 's1', 's2', 's3', 's4'
+            'w0', 'w1', 'w2', 'w3', 'w4'
         ]
         self.init_edges = [
-            ('s0', 's1', 'a'),
-            ('s0', 's2', 'b'),
-            ('s1', 's3', 'c'),
-            ('s1', 's4', 'd'),
-            ('s2', 's3', 'c'),
-            ('s2', 's4', 'd'),
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'c'),
+            ('w2', 'w4', 'd'),
         ]
         self.leaves = ["s3", "s4"]
         self.graph.add_nodes_from(self.init_nodes)
@@ -273,3 +229,52 @@ class TestTrimLeavesFromGraph:
                 assert (
                     edge_list_key[1] != leaf
                 ), f"Edge still pointing to leaf: {leaf}"
+
+
+class TestUpdateDistanceToSink:
+    def setup(self):
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w&infin;'
+        ]
+        self.init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'e'),
+            ('w1', 'w4', 'e'),
+            ('w2', 'w&infin;', 'c'),
+            ('w3', 'w&infin;', 'd'),
+            ('w4', 'w5', 'c'),
+            ('w5', 'w&infin;', 'd'),
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+        self.ceg = ChainEventGraph(self.graph)
+
+    def test_update_distances_to_sink(self) -> None:
+        """Distance to sink is always max length of paths to sink."""
+        def check_distances():
+            actual_node_dists = (
+                nx.get_node_attributes(self.ceg, 'max_dist_to_sink')
+            )
+            for node, distance in actual_node_dists.items():
+                assert distance == expected_node_dists[node]
+
+        expected_node_dists = {
+            "w0": 4,
+            "w1": 3,
+            "w2": 1,
+            "w3": 1,
+            "w4": 2,
+            "w5": 1,
+            "w&infin;": 0
+        }
+        _update_distances_to_sink(self.ceg)
+        check_distances()
+
+        # Add another edge to the dictionary, to show that the path is max,
+        # and not min distance to sink
+        self.ceg.add_edge("w1", self.ceg.sink_node)
+        self.ceg.add_edge("w4", self.ceg.sink_node)
+        _update_distances_to_sink(self.ceg)
+        check_distances()

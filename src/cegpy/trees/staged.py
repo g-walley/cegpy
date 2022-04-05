@@ -423,12 +423,16 @@ class StagedTree(EventTree):
             if self.out_degree[sub_hyper[0]] == 1:
                 merged_situation_list.append(tuple(sub_hyper))
                 indexes = [self.situations.index(situ) for situ in sub_hyper]
-                sub_hyper_priors = list(chain(
-                    *itemgetter(*indexes)(priors)
-                ))
-                sub_hyper_posteriors = list(chain(
-                    *itemgetter(*indexes)(posteriors)
-                ))
+                if len(indexes) == 1:
+                    sub_hyper_priors = itemgetter(*indexes)(priors)
+                    sub_hyper_posteriors = itemgetter(*indexes)(posteriors)
+                else:
+                    sub_hyper_priors = list(chain(
+                        *itemgetter(*indexes)(priors)
+                    ))
+                    sub_hyper_posteriors = list(chain(
+                        *itemgetter(*indexes)(posteriors)
+                    ))
                 for loop_idx, p_index in enumerate(indexes):
                     if loop_idx == 0:
                         priors[p_index] = [sum(sub_hyper_priors)]
@@ -501,10 +505,12 @@ class StagedTree(EventTree):
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
-        for index, stage in enumerate(merged_situations):
+        stage_count = 0
+        for stage in merged_situations:
             if len(stage) > 1:
                 for node in stage:
-                    self.nodes[node]['stage'] = index
+                    self.nodes[node]['stage'] = stage_count
+                stage_count += 1
 
     def _generate_colours_for_situations(self, merged_situations, colour_list):
         """Colours each stage of the tree with an individual colour"""

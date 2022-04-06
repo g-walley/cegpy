@@ -1,4 +1,5 @@
 from collections import defaultdict
+import itertools
 from typing import List
 import numpy as np
 import pydotplus as pdp
@@ -91,10 +92,20 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
-                 incoming_graph_data=None, var_order=None,
-                 struct_missing_label=None, missing_label=None,
-                 complete_case=True, stratified=False, **attr) -> None:
+    _stratified: bool
+
+    def __init__(
+        self,
+        dataframe: pd.DataFrame,
+        sampling_zero_paths=None,
+        incoming_graph_data=None,
+        var_order=None,
+        struct_missing_label=None,
+        missing_label=None,
+        complete_case=True,
+        stratified=False,
+        **attr
+    ) -> None:
 
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError(
@@ -123,6 +134,8 @@ class EventTree(nx.MultiDiGraph):
             raise ValueError(
                 "stratified should be a boolean"
             )
+        self.complete_case = complete_case
+        self.stratified = stratified
 
         # Checking whether tree is stratified before..
         # ... incorporating sampling zero paths
@@ -138,7 +151,7 @@ class EventTree(nx.MultiDiGraph):
             dataframe.replace(
                 struct_missing_label,
                 "",
-                inplace = True,
+                inplace=True,
             )
 
         if missing_label is not None:
@@ -146,16 +159,16 @@ class EventTree(nx.MultiDiGraph):
                 dataframe.replace(
                     missing_label,
                     np.NaN,
-                    inplace = True,
+                    inplace=True,
                 )
                 dataframe.dropna(
-                    inplace = True,
+                    inplace=True,
                 )
             else:
                 dataframe.replace(
                     missing_label,
                     "missing",
-                    inplace = True,
+                    inplace=True,
                 )
 
         # Checking and handling for stratification
@@ -215,6 +228,24 @@ class EventTree(nx.MultiDiGraph):
                     "Should be a list of tuples like so:\n"
                     "[('edge_1',), ('edge_1', 'edge_2'), ...]"
                 )
+
+    @property
+    def stratified(self) -> bool:
+        """Auto-stratification has taken place."""
+        return self._stratified
+
+    @stratified.setter
+    def stratified(self, stratified: bool):
+        if stratified and not self.complete_case:
+            raise ValueError(
+                "Under the current implementation, it is not possible to "
+                "automatically stratify the tree when non-structural "
+                "missing values are not removed (complete_case = False).\n"
+                "Please manually stratify the dataset by passing in the "
+                "additional paths required to do so through the "
+                "'sampling_zero_paths' parameter."
+            )
+        self._stratified = True
 
     @property
     def situations(self) -> list:
@@ -283,8 +314,13 @@ class EventTree(nx.MultiDiGraph):
     def _stratify(self):
         """This function creates a stratified version
         of the input dataframe"""
-    # TAKE CARE to ensure that missing values and empty cells
-    # are not considered as values of a variable.
+        # TAKE CARE to ensure that missing values and empty cells
+        # are not considered as values of a variable.
+        unique_variable_values = [
+            self.dataframe[col].unique()
+            for col in self.dataframe.columns
+        ]
+        all_paths = list(itertools.product(*unique_variable_values))
 
     @property
     def dot_graph(self):

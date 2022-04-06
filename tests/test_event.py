@@ -313,3 +313,21 @@ class TestChangingDataFrame():
         except InvocationException:
             pass
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
+
+
+class TestStratification:
+    """Tests the stratification functionality of the EventTree"""
+
+    def test_value_error_for_not_complete_case(self):
+        """When stratified and not complete_case, ValueError raised"""
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"Please manually stratify the dataset"
+            )
+        ):
+            _ = EventTree(
+                dataframe=pd.DataFrame(),
+                complete_case=False,
+                stratified=True,
+            )

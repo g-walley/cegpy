@@ -140,7 +140,32 @@ class StagedTree(EventTree):
     def ahc_output(self, value):
         self._ahc_output = value
 
-    def __check_prior(self, prior) -> bool:
+    def __check_hyperstages(self, hyperstage) -> None:
+        hyper_situations = chain(*hyperstage)
+        hyper_situations_set = set(hyper_situations)
+        situations_set = set(self.situations)
+        # Check if all sitations are present 
+        missing = situations_set.difference(hyper_situations_set)
+        if missing:
+            error_str = "Sitattion(s) {} are missing from the list of hyperstages"
+            error_str = error_str.format(missing)
+            raise ValueError(error_str)
+        # Check if all situations provided exist
+        extra = hyper_situations_set.difference(situations_set)
+        if extra:
+            error_str = "Sitattion(s) {} are not present in the tree"
+            error_str = error_str.format(extra)
+            raise ValueError(error_str)
+        # Check if all sitautions in a stage have the same number of edges
+        for stage in hyperstage:
+            n_edges = self.out_degree[stage[0]]
+            for node in stage:
+                if self.out_degree[node] != n_edges:
+                    error_str = "\n Situations in the same hyperstage \
+                    \n must have the same number of outgoing edges."
+                    raise ValueError(error_str)
+
+    def __check_prior(self, prior) -> None:
         if len(prior) != len(self.edge_countset):
             error_str = "\n Number of sub-lists in the list of priors \
                 \n must agree with the number of situations."
@@ -181,6 +206,7 @@ class StagedTree(EventTree):
         if hyperstage is None:
             self.hyperstage = self.__create_default_hyperstage()
         else:
+            self.__check_hyperstages(hyperstage)
             self.hyperstage = hyperstage
 
     def __calculate_default_alpha(self) -> int:

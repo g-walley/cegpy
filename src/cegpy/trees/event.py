@@ -72,9 +72,13 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    def __init__(self, dataframe, sampling_zero_paths=None,
+    def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
                  incoming_graph_data=None, var_order=None, **attr) -> None:
         logger.info('Initialising')
+        if not isinstance(dataframe, pd.DataFrame):
+            raise ValueError(
+                "The dataframe parameter must be a pandas.DataFrame"
+            )
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
         self._sampling_zero_paths = None
@@ -84,10 +88,12 @@ class EventTree(nx.MultiDiGraph):
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        if var_order is not None:
-            self.dataframe = dataframe[var_order]
-        else:
-            self.dataframe = dataframe
+        self.dataframe = (
+            dataframe[var_order].astype(str)
+            if var_order is not None
+            else dataframe.astype(str)
+        )
+
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 

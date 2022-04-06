@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 from collections import defaultdict
 from pathlib import Path
-from pytest_mock import MockerFixture
 from src.cegpy import EventTree
+from pydotplus.graphviz import InvocationException
 
 
 class TestEventTreeAPI():
@@ -40,7 +40,7 @@ class TestEventTree():
         self.df = pd.read_excel(df_path)
         self.et = EventTree(dataframe=self.df)
         self.reordered_et = EventTree(
-            dataframe=self.df, 
+            dataframe=self.df,
             var_order=self.df.columns[::-1]
         )
         self.node_format = re.compile('^s\\d\\d*$')
@@ -62,7 +62,7 @@ class TestEventTree():
         szp = [('Medium',), ('Medium', 'High')]
         self.et.sampling_zeros = szp
         assert self.et.sampling_zeros == szp
-    
+
     def test_order_of_columns(self) -> None:
         assert self.reordered_et.variables == list(self.df.columns[::-1])
 
@@ -117,6 +117,21 @@ class TestEventTree():
             for node in edge:
                 assert isinstance(node, str)
             assert isinstance(count, int)
+
+    def test_dataframe_with_numeric_values(self) -> None:
+        """Ensures figure can be produced from dataframes with
+        numeric values"""
+        self.df["NewColumn"] = [1] * len(self.df)
+        new_et = EventTree(self.df)
+        try:
+            new_et.create_figure("out/test_dataframe_with_numeric_values.pdf")
+        except InvocationException:
+            pass
+        except Exception as err:
+            raise AssertionError(
+                "Could not create figure with numeric data"
+            ) from err
+        return None
 
 
 class TestIntegration():
@@ -275,15 +290,17 @@ class TestChangingDataFrame():
         )
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
-    def test_add_same_column_int(self, mocker: MockerFixture) -> None:
-        mocker.patch('pydotplus.Dot.write')
+    def test_add_same_column_int(self) -> None:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1
         med_add_same_et = EventTree(
             dataframe=med_add_same_df
         )
-        med_add_same_et.create_figure("et_fig_path.pdf")
+        try:
+            med_add_same_et.create_figure("et_fig_path.pdf")
+        except InvocationException:
+            pass
         assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
 
         fall_add_same_df = self.fall_df
@@ -291,5 +308,8 @@ class TestChangingDataFrame():
         fall_add_same_et = EventTree(
             dataframe=fall_add_same_df
         )
-        fall_add_same_et.create_figure("et_fig_path.pdf")
+        try:
+            fall_add_same_et.create_figure("et_fig_path.pdf")
+        except InvocationException:
+            pass
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)

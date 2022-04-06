@@ -12,6 +12,7 @@ openpyxl==3.0.7
 networkx==2.6.3
 scipy==1.7.0
 colorutils==0.3.0
+xlsxwriter
 pytest-xdist
 pytest-mock
 pytest-cov

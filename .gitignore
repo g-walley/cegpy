@@ -21,15 +21,14 @@ st_figure.png
 tic-tac-toe.py
 pdp_experiment.py
 gv_playground.gv
-.gitignore
 data/breast-cancer.xlsx
 data/Falls_Data_test.xlsx
 data/medical_dm_modified_test.xlsx
 data/medical_dm_posterior_prior.xlsx
-.gitignore
 data/voting.xlsx
 scripts/docker/run_example_docker.sh
 data/tic-tac-toe.xlsx
 *.pdf
 .tox/
 .coverage
+.coverage.*

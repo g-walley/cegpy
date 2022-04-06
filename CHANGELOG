@@ -7,4 +7,10 @@
 
 -- 0.0.1
 - Event Trees can be generated from compatible datasets
-- Event Tree can be printed to a .png file for human readability 
+- Event Tree can be printed to a .png file for human readability
+
+-- 0.2
+- Var order can now be set at creation of event tree.
+- Stage colours can now be set manually
+- DOT graph has been made accessable for customisation of style.
+- Minor improvements to AHC.

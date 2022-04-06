@@ -127,7 +127,7 @@ class TransporterChainEventGraph:
         for edge in edges:
             self.remove_certain_edge(*edge)
 
-    def add_uncertain_edge_set(self, edge_set: Set[tuple[str]]):
+    def add_uncertain_edge_set(self, edge_set: Set[Tuple[str]]):
         """Specify a set of edges where one of the edges has
         occured, but you are uncertain of which one it is."""
         for edge in edge_set:
@@ -139,7 +139,7 @@ class TransporterChainEventGraph:
 
         self._uncertain_edges.append(edge_set)
 
-    def remove_uncertain_edge_set(self, edge_set: Set[tuple[str]]):
+    def remove_uncertain_edge_set(self, edge_set: Set[Tuple[str]]):
         """Specify a set of edges to remove from the uncertain edges."""
         try:
             self._uncertain_edges.remove(edge_set)
@@ -148,13 +148,13 @@ class TransporterChainEventGraph:
                 f"{edge_set} not found in the uncertain edge list."
             )
 
-    def add_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
+    def add_uncertain_edge_set_list(self, edge_sets: List[Set[Tuple[str]]]):
         """Specify a list of sets of edges where one of the edges has
         occured, but you are uncertain of which one it is."""
         for edge_set in edge_sets:
             self.add_uncertain_edge_set(edge_set)
 
-    def remove_uncertain_edge_set_list(self, edge_sets: List[Set[tuple[str]]]):
+    def remove_uncertain_edge_set_list(self, edge_sets: List[Set[Tuple[str]]]):
         """Specify a list of sets of edges to remove from the evidence list."""
         for edge_set in edge_sets:
             self.remove_uncertain_edge_set(edge_set)

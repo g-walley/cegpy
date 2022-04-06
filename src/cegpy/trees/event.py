@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -72,58 +73,12 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    def __init__(self, dataframe, sampling_zero_paths=None,
+    def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
                  incoming_graph_data=None, var_order=None, **attr) -> None:
-        """Initialize an event tree graph with edges, name, or graph attributes.
-        This class extends the networkx DiGraph class to allow the creation
-        of event trees from data provided in a pandas dataframe.
-
-        Parameters
-        ----------
-        dataframe : Pandas dataframe (required)
-            Dataframe containing variables as column headers, with event
-            name strings in each cell. These event names will be used to
-            create the edges of the event tree. Counts of each event will
-            be extracted and attached to each edge.
-
-        sampling_zero_paths: list of tuples containing paths to sampling
-            zeros.
-            Format is as follows: \
-                [('edge_1',), ('edge_1', 'edge_2'), ...]
-
-        incoming_graph_data : input graph (optional, default: None)
-            Data to initialize graph.  If None (default) an empty
-            graph is created.  The data can be an edge list, or any
-            NetworkX graph object.  If the corresponding optional Python
-            packages are installed the data can also be a NumPy matrix
-            or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
-        
-        var_order : ordered list of variable names. (optional, default order 
-            of variables in the event tree adopted from the order of columns in 
-            the dataframe). 
-
-        attr : keyword arguments, optional (default= no attributes)
-            Attributes to add to graph as key=value pairs.
-
-        See Also
-        --------
-        convert
-
-        Examples
-        --------
-        >>> G = nx.Graph()  # or DiGraph, MultiGraph, MultiDiGraph, etc
-        >>> G = nx.Graph(name="my graph")
-        >>> e = [(1, 2), (2, 3), (3, 4)]  # list of edges
-        >>> G = nx.Graph(e)
-
-        Arbitrary graph attribute pairs (key=value) may be assigned
-
-        >>> G = nx.Graph(e, day="Friday")
-        >>> G.graph
-        {'day': 'Friday'}
-
-        """
-        logger.info('Initialising')
+        if not isinstance(dataframe, pd.DataFrame):
+            raise ValueError(
+                "The dataframe parameter must be a pandas.DataFrame"
+            )
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
         self._sampling_zero_paths = None
@@ -133,10 +88,12 @@ class EventTree(nx.MultiDiGraph):
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        if var_order is not None:
-            self.dataframe = dataframe[var_order]
-        else:
-            self.dataframe = dataframe
+        self.dataframe = (
+            dataframe[var_order].astype(str)
+            if var_order is not None
+            else dataframe.astype(str)
+        )
+
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -149,23 +106,10 @@ class EventTree(nx.MultiDiGraph):
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
-        vars = list(self._dataframe.columns)
+        vars = list(self.dataframe.columns)
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
-
-    @property
-    def dataframe(self):
-        return self._dataframe
-
-    @dataframe.setter
-    def dataframe(self, value: pd.DataFrame):
-        if isinstance(value, pd.DataFrame):
-            self._dataframe = value
-        else:
-            raise ValueError(
-                "Package currently only supports Pandas DataFrame"
-                " objects provided as the dataframe")
 
     @property
     def sampling_zeros(self):
@@ -187,10 +131,11 @@ class EventTree(nx.MultiDiGraph):
             if sz_paths:
                 self._sampling_zero_paths = sz_paths
             else:
-                error_str = "Parameter 'sampling_zero_paths' not in expected format. \
-                             Should be a list of tuples like so:\n \
-                             [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                raise ValueError(error_str)
+                raise ValueError(
+                    "Parameter 'sampling_zero_paths' not in expected format. "
+                    "Should be a list of tuples like so:\n"
+                    "[('edge_1',), ('edge_1', 'edge_2'), ...]"
+                )
 
     @property
     def situations(self) -> list:
@@ -238,7 +183,7 @@ class EventTree(nx.MultiDiGraph):
         nans_filtered = False
 
         for var in self.variables:
-            categories = set(self._dataframe[var].unique().tolist())
+            categories = set(self.dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
             if pd_filtered_categories != categories:
@@ -364,16 +309,18 @@ class EventTree(nx.MultiDiGraph):
         node_list = self.__create_node_list_from_paths(self._sorted_paths)
         self.add_nodes_from(node_list)
 
-    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
+    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> List:
         """Check param 'sampling_zero_paths' is in the correct format"""
+        coerced_sampling_zero_paths = []
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
                 return None
             else:
-                if not Util.check_tuple_contains_strings(tup):
-                    return None
+                coerced_sampling_zero_paths.append(
+                    tuple([str(elem) for elem in tup])
+                )
 
-        return sampling_zero_paths
+        return coerced_sampling_zero_paths
 
     def __create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""

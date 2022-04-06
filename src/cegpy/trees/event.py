@@ -116,6 +116,7 @@ class EventTree(nx.MultiDiGraph):
 
         stratified : If True, the tree is assumed to be stratified, i.e. all
             zero frequency paths are considered to be due to a sampling limitation.
+            This overwrites the sampling_zero_paths argument.
 
         attr : keyword arguments, optional (default= no attributes)
             Attributes to add to graph as key=value pairs.
@@ -141,8 +142,35 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Initialising')
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
+
+        # Checking argument inputs are sensible
+        if not isinstance(struct_missing_label, str):
+            raise ValueError(
+                "struct_missing_label should be a string"
+            )
+
+        if not isinstance(missing_label, str):
+            raise ValueError(
+                "missing_label should be a string"
+            )
+
+        if not isinstance(complete_case, bool):
+            raise ValueError(
+                "complete_case should be a boolean"
+            )
+
+        if not isinstance(stratified, bool):
+            raise ValueError(
+                "stratified should be a boolean"
+            )
+
+        # Checking whether tree is stratified before..
+        # ... incorporating sampling zero paths
         self._sampling_zero_paths = None
-        self.sampling_zeros = sampling_zero_paths
+        if stratified == False:
+            self.sampling_zeros = sampling_zero_paths
+        else:
+            self.sampling_zeros = None
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)

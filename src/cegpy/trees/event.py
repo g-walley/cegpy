@@ -103,25 +103,28 @@ class EventTree(nx.MultiDiGraph):
         var_order=None,
         struct_missing_label=None,
         missing_label=None,
-        complete_case=True,
+        complete_case=False,
         stratified=False,
         **attr
     ) -> None:
-
+        # Checking argument inputs are sensible
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError(
                 "The dataframe parameter must be a pandas.DataFrame"
             )
-        # Initialise Networkx DiGraph class
-        super().__init__(incoming_graph_data, **attr)
 
-        # Checking argument inputs are sensible
-        if not isinstance(struct_missing_label, str):
+        if (
+            struct_missing_label is not None
+            and not isinstance(struct_missing_label, str)
+        ):
             raise ValueError(
                 "struct_missing_label should be a string"
             )
 
-        if not isinstance(missing_label, str):
+        if (
+            missing_label is not None
+            and not isinstance(missing_label, str)
+        ):
             raise ValueError(
                 "missing_label should be a string"
             )
@@ -135,6 +138,10 @@ class EventTree(nx.MultiDiGraph):
             raise ValueError(
                 "stratified should be a boolean"
             )
+
+        # Initialise Networkx DiGraph class
+        super().__init__(incoming_graph_data, **attr)
+
         self.sampling_zeros = sampling_zero_paths
         self.complete_case = complete_case
         self.stratified = stratified
@@ -158,6 +165,7 @@ class EventTree(nx.MultiDiGraph):
                 dataframe.dropna(
                     inplace=True,
                 )
+                dataframe.reset_index(drop=True, inplace=True)
             else:
                 dataframe.replace(
                     missing_label,

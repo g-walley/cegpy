@@ -18,9 +18,6 @@ class StagedTree(EventTree):
     def __init__(
             self,
             dataframe,
-            prior=None,
-            alpha=None,
-            hyperstage=None,
             sampling_zero_paths=None,
             incoming_graph_data=None,
             var_order=None,
@@ -35,7 +32,6 @@ class StagedTree(EventTree):
             **attr
         )
 
-        self.__store_params(prior, alpha, hyperstage)
         self._mean_posterior_probs = []
         self._merged_situations = []
         self._stage_colours = []
@@ -152,6 +148,7 @@ class StagedTree(EventTree):
                 self.alpha = None
                 logging.warning("Params Warning!! When prior is given, " +
                                 "alpha is not required!")
+            self.prior = prior
         else:
             if alpha is None:
                 self.alpha = self.__calculate_default_alpha()

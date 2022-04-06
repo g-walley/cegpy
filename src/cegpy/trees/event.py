@@ -144,12 +144,11 @@ class EventTree(nx.MultiDiGraph):
             if sz_paths:
                 self._sampling_zero_paths = sz_paths
             else:
-                error_str = (
+                raise ValueError(
                     "Parameter 'sampling_zero_paths' not in expected format. "
                     "Should be a list of tuples like so:\n"
                     "[('edge_1',), ('edge_1', 'edge_2'), ...]"
                 )
-                raise ValueError(error_str)
 
     @property
     def situations(self) -> list:

@@ -51,6 +51,24 @@ class EventTree(nx.MultiDiGraph):
         packages are installed the data can also be a NumPy matrix
         or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
 
+    var_order : ordered list of variable names. (optional, default order
+        of variables in the event tree adopted from the order of columns in
+        the dataframe).
+
+    struct_missing_label : observations which are structurally missing, i.e.
+        where a non-missing value is illogical for a subset of the individuals
+        in our sample.
+        E.g: Post operative health status is irrelevant for a dead patient.
+
+    missing_label : all missing values that are not structurally missing.
+
+    complete_case : If True, all entries (rows) with non-structural missing
+        values are removed.
+
+    stratified : If True, the tree is assumed to be stratified, i.e. all
+        zero frequency paths are considered to be due to a sampling limitation.
+        This overwrites the sampling_zero_paths argument.
+
     attr : keyword arguments, optional (default= no attributes)
         Attributes to add to graph as key=value pairs.
 
@@ -74,15 +92,83 @@ class EventTree(nx.MultiDiGraph):
 
     """
     def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
-                 incoming_graph_data=None, var_order=None, **attr) -> None:
+                 incoming_graph_data=None, var_order=None,
+                 struct_missing_label=None, missing_label=None,
+                 complete_case=False, stratified=False, **attr) -> None:
+
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError(
                 "The dataframe parameter must be a pandas.DataFrame"
             )
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
+
+        # Checking argument inputs are sensible
+        if (
+            struct_missing_label is not None
+            and not isinstance(struct_missing_label, str)
+        ):
+            raise ValueError(
+                "struct_missing_label should be a string"
+            )
+
+        if (
+            missing_label is not None
+            and not isinstance(missing_label, str)
+        ):
+            raise ValueError(
+                "missing_label should be a string"
+            )
+
+        if not isinstance(complete_case, bool):
+            raise ValueError(
+                "complete_case should be a boolean"
+            )
+
+        if not isinstance(stratified, bool):
+            raise ValueError(
+                "stratified should be a boolean"
+            )
+
+        # Checking whether tree is stratified before..
+        # ... incorporating sampling zero paths
         self._sampling_zero_paths = None
-        self.sampling_zeros = sampling_zero_paths
+        if stratified is False:
+            self.sampling_zeros = sampling_zero_paths
+        else:
+            self.sampling_zeros = None
+
+        # Dealing with structural and non-structural...
+        # ... missing value labels
+        if struct_missing_label is not None:
+            dataframe.replace(
+                struct_missing_label,
+                "",
+                inplace=True,
+            )
+
+        if missing_label is not None:
+            if complete_case is True:
+                dataframe.replace(
+                    missing_label,
+                    np.NaN,
+                    inplace=True,
+                )
+                dataframe.dropna(
+                    inplace=True,
+                )
+                dataframe.reset_index(drop=True, inplace=True)
+            else:
+                dataframe.replace(
+                    missing_label,
+                    "missing",
+                    inplace=True,
+                )
+
+        # Checking and handling for stratification
+        if stratified is True:
+            self._stratify()
+            # TODO: need to write the stratify function. Placeholder below.
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
@@ -200,6 +286,12 @@ class EventTree(nx.MultiDiGraph):
             display_nan_warning()
 
         return self._catagories_per_variable
+
+    def _stratify(self):
+        """This function creates a stratified version
+        of the input dataframe"""
+    # TAKE CARE to ensure that missing values and empty cells
+    # are not considered as values of a variable.
 
     @property
     def dot_graph(self):

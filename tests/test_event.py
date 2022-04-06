@@ -1,3 +1,4 @@
+import struct
 import pandas as pd
 import re
 import numpy as np
@@ -313,3 +314,134 @@ class TestChangingDataFrame():
         except InvocationException:
             pass
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
+
+class TestMissingLabels():
+    def setup(self):
+        array = [
+            np.array(["1", "N/A", "Recover"]),
+            np.array(["1", "Trt1", "N/A"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+        ]
+
+        self.df = pd.DataFrame(array)
+
+    def test_structural_label_string(self) -> None:
+        with pytest.raises(ValueError):
+            df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label=5
+            )
+
+    def test_structural_label_reduction(self) -> None:
+        df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label="Struct"
+            )
+        expected_df = pd.DataFrame(
+            [
+            np.array(["1", "N/A", "Recover"]),
+            np.array(["1", "Trt1", "N/A"]),
+            np.array(["2", "", "Recover"]),
+            np.array(["2", "", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            ]
+        )
+        assert df_et.dataframe.equals(expected_df) is True
+
+    def test_missing_label_string(self) -> None:
+        with pytest.raises(ValueError):
+            df_et = EventTree(
+                    dataframe=self.df,
+                    missing_label=15
+                )
+
+    def test_missing_label_reduction(self) -> None:
+        df_et = EventTree(
+                dataframe=self.df,
+                missing_label="N/A"
+            )
+        expected_df = pd.DataFrame(
+            [
+            np.array(["1", "missing", "Recover"]),
+            np.array(["1", "Trt1", "missing"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            ]
+        )
+        assert df_et.dataframe.equals(expected_df) is True
+
+    def test_struct_missing_label_reduction(self) -> None:
+        df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label="Struct",
+                missing_label="N/A"
+            )
+        expected_df = pd.DataFrame(
+            [
+            np.array(["1", "missing", "Recover"]),
+            np.array(["1", "Trt1", "missing"]),
+            np.array(["2", "", "Recover"]),
+            np.array(["2", "", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            ]
+        )
+        assert df_et.dataframe.equals(expected_df) is True
+
+    def test_complete_case_bool(self) -> None:
+        with pytest.raises(ValueError):
+            df_et = EventTree(
+                    dataframe=self.df,
+                    complete_case="Yes"
+                )
+
+    def test_complete_case_missing_reduction(self) -> None:
+        df_et = EventTree(
+                dataframe=self.df,
+                missing_label="N/A",
+                complete_case=True
+            )
+        expected_df = pd.DataFrame(
+            [
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            ]
+        )
+        assert df_et.dataframe.equals(expected_df) is True
+
+    def test_complete_case_reduction(self) -> None:
+        df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label="Struct",
+                missing_label="N/A",
+                complete_case=True
+            )
+        expected_df = pd.DataFrame(
+            [
+            np.array(["2", "", "Recover"]),
+            np.array(["2", "", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            ]
+        )
+        assert df_et.dataframe.equals(expected_df) is True

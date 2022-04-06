@@ -94,7 +94,7 @@ class EventTree(nx.MultiDiGraph):
     def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
                  incoming_graph_data=None, var_order=None,
                  struct_missing_label=None, missing_label=None,
-                 complete_case=True, stratified=False, **attr) -> None:
+                 complete_case=False, stratified=False, **attr) -> None:
 
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError(
@@ -104,12 +104,14 @@ class EventTree(nx.MultiDiGraph):
         super().__init__(incoming_graph_data, **attr)
 
         # Checking argument inputs are sensible
-        if not isinstance(struct_missing_label, str):
+        if struct_missing_label is not None and\
+            not isinstance(struct_missing_label, str):
             raise ValueError(
                 "struct_missing_label should be a string"
             )
 
-        if not isinstance(missing_label, str):
+        if missing_label is not None and\
+            not isinstance(missing_label, str):
             raise ValueError(
                 "missing_label should be a string"
             )

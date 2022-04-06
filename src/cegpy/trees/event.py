@@ -106,7 +106,7 @@ class EventTree(nx.MultiDiGraph):
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
-        vars = list(self._dataframe.columns)
+        vars = list(self.dataframe.columns)
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
@@ -183,7 +183,7 @@ class EventTree(nx.MultiDiGraph):
         nans_filtered = False
 
         for var in self.variables:
-            categories = set(self._dataframe[var].unique().tolist())
+            categories = set(self.dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
             if pd_filtered_categories != categories:

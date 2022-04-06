@@ -320,6 +320,14 @@ class TestChangingDataFrame():
 class TestStratification(unittest.TestCase):
     """Tests the stratification functionality of the EventTree"""
 
+    def test_stratified(self) -> None:
+        """stratified has the wrong type."""
+        with pytest.raises(ValueError):
+            _ = EventTree(
+                dataframe=pd.DataFrame(),
+                stratified=5
+            )
+
     def test_value_error_for_not_complete_case(self):
         """When stratified and not complete_case, ValueError raised"""
         with pytest.raises(

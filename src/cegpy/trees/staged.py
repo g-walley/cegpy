@@ -140,6 +140,22 @@ class StagedTree(EventTree):
     def ahc_output(self, value):
         self._ahc_output = value
 
+    def __check_prior(self, prior) -> bool:
+        if len(prior) != len(self.edge_countset):
+            error_str = "\n Number of sub-lists in the list of priors \
+                \n must agree with the number of situations."
+            raise ValueError(error_str)
+
+        for node_idx, node_priors in enumerate(prior):
+            if len(node_priors) != len(self.edge_countset[node_idx]):
+                error_str = "\n The lenght of each sub-lists in the list of priors \
+                    \n must agree with the number of edges emanting from \
+                    \n its corresponding situation."
+                raise ValueError(error_str)
+            for p in node_priors:
+                if p < 0:
+                    raise ValueError("All priors must be non-negative")
+
     def __store_params(self, prior, alpha, hyperstage) -> None:
         """User has passed in AHC params, this function processes them,
         and generates any default AHC params if required."""
@@ -148,6 +164,7 @@ class StagedTree(EventTree):
                 self.alpha = None
                 logging.warning("Params Warning!! When prior is given, " +
                                 "alpha is not required!")
+            self.__check_prior(prior)
             self.prior = prior
         else:
             if alpha is None:

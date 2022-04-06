@@ -104,14 +104,18 @@ class EventTree(nx.MultiDiGraph):
         super().__init__(incoming_graph_data, **attr)
 
         # Checking argument inputs are sensible
-        if struct_missing_label is not None and\
-            not isinstance(struct_missing_label, str):
+        if (
+            struct_missing_label is not None
+            and not isinstance(struct_missing_label, str)
+        ):
             raise ValueError(
                 "struct_missing_label should be a string"
             )
 
-        if missing_label is not None and\
-            not isinstance(missing_label, str):
+        if (
+            missing_label is not None
+            and not isinstance(missing_label, str)
+        ):
             raise ValueError(
                 "missing_label should be a string"
             )
@@ -140,7 +144,7 @@ class EventTree(nx.MultiDiGraph):
             dataframe.replace(
                 struct_missing_label,
                 "",
-                inplace = True,
+                inplace=True,
             )
 
         if missing_label is not None:
@@ -148,16 +152,17 @@ class EventTree(nx.MultiDiGraph):
                 dataframe.replace(
                     missing_label,
                     np.NaN,
-                    inplace = True,
+                    inplace=True,
                 )
                 dataframe.dropna(
-                    inplace = True,
+                    inplace=True,
                 )
+                dataframe.reset_index(drop=True, inplace=True)
             else:
                 dataframe.replace(
                     missing_label,
                     "missing",
-                    inplace = True,
+                    inplace=True,
                 )
 
         # Checking and handling for stratification

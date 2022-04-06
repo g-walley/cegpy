@@ -1,6 +1,6 @@
 from collections import defaultdict
 import itertools
-from typing import List
+from typing import List, Optional, Tuple
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -92,7 +92,8 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    _stratified: bool
+    _stratified: Optional[bool]
+    _sampling_zero_paths: Optional[List[Tuple]] = None
 
     def __init__(
         self,
@@ -134,16 +135,9 @@ class EventTree(nx.MultiDiGraph):
             raise ValueError(
                 "stratified should be a boolean"
             )
+        self.sampling_zeros = sampling_zero_paths
         self.complete_case = complete_case
         self.stratified = stratified
-
-        # Checking whether tree is stratified before..
-        # ... incorporating sampling zero paths
-        self._sampling_zero_paths = None
-        if stratified is False:
-            self.sampling_zeros = sampling_zero_paths
-        else:
-            self.sampling_zeros = None
 
         # Dealing with structural and non-structural...
         # ... missing value labels
@@ -170,11 +164,6 @@ class EventTree(nx.MultiDiGraph):
                     "missing",
                     inplace=True,
                 )
-
-        # Checking and handling for stratification
-        if stratified is True:
-            self._stratify()
-            # TODO: need to write the stratify function. Placeholder below.
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
@@ -246,6 +235,11 @@ class EventTree(nx.MultiDiGraph):
                 "'sampling_zero_paths' parameter."
             )
         self._stratified = True
+        if self.sampling_zeros is not None:
+            logger.warn(
+                "User provided sampling_zero_paths, but these are being "
+                "ignored due to 'stratified' being enabled."
+            )
 
     @property
     def situations(self) -> list:
@@ -311,7 +305,7 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    def _stratify(self):
+    def _stratified_paths(self) -> List[Tuple]:
         """This function creates a stratified version
         of the input dataframe"""
         # TAKE CARE to ensure that missing values and empty cells
@@ -320,7 +314,25 @@ class EventTree(nx.MultiDiGraph):
             self.dataframe[col].unique()
             for col in self.dataframe.columns
         ]
-        all_paths = list(itertools.product(*unique_variable_values))
+        all_possible_paths = list(itertools.product(*unique_variable_values))
+        existing_paths = [
+            tuple(path)
+            for path in self.dataframe.drop_duplicates().values.tolist()
+        ]
+        max_path_length = len(all_possible_paths[0])
+        missing_paths = []
+
+        for col in range(max_path_length, 0, -1):
+            temp_paths = [path[:col] for path in existing_paths]
+            new_missing_paths = [
+                path[:col]
+                for path in all_possible_paths
+                if path[:col] not in temp_paths
+            ]
+            if new_missing_paths:
+                missing_paths = [*new_missing_paths, *missing_paths]
+            else:
+                break
 
     @property
     def dot_graph(self):
@@ -412,9 +424,16 @@ class EventTree(nx.MultiDiGraph):
         assuming they are structural zeroes'''
         unsorted_paths = self.__create_unsorted_paths_dict()
 
-        if self.sampling_zeros is not None:
+        sampling_zeros = (
+            self._stratified_paths()
+            if self.stratified
+            else self.sampling_zeros
+        )
+
+        if sampling_zeros is not None:
             unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zeros, unsorted_paths)
+                sampling_zeros, unsorted_paths
+            )
 
         depth = len(max(list(unsorted_paths.keys()), key=len))
         keys_of_list = list(unsorted_paths.keys())

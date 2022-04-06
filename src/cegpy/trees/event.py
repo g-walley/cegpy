@@ -73,7 +73,9 @@ class EventTree(nx.MultiDiGraph):
 
     """
     def __init__(self, dataframe, sampling_zero_paths=None,
-                 incoming_graph_data=None, var_order=None, **attr) -> None:
+                 incoming_graph_data=None, var_order=None,
+                 struct_missing_label=None, missing_label=None,
+                 complete_case=True, stratified=False, **attr) -> None:
         """Initialize an event tree graph with edges, name, or graph attributes.
         This class extends the networkx DiGraph class to allow the creation
         of event trees from data provided in a pandas dataframe.
@@ -97,10 +99,23 @@ class EventTree(nx.MultiDiGraph):
             NetworkX graph object.  If the corresponding optional Python
             packages are installed the data can also be a NumPy matrix
             or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
-        
-        var_order : ordered list of variable names. (optional, default order 
-            of variables in the event tree adopted from the order of columns in 
-            the dataframe). 
+
+        var_order : ordered list of variable names. (optional, default order
+            of variables in the event tree adopted from the order of columns in
+            the dataframe).
+
+        struct_missing_label : observations which are structurally missing, i.e.
+            where a non-missing value is illogical for a subset of the individuals
+            in our sample.
+            E.g: Post operative health status is irrelevant for a dead patient.
+
+        missing_label : all missing values that are not structurally missing.
+
+        complete_case : If True, all entries (rows) with non-structural missing
+            values are removed.
+
+        stratified : If True, the tree is assumed to be stratified, i.e. all
+            zero frequency paths are considered to be due to a sampling limitation.
 
         attr : keyword arguments, optional (default= no attributes)
             Attributes to add to graph as key=value pairs.

@@ -144,42 +144,46 @@ class StagedTree(EventTree):
         hyper_situations = chain(*hyperstage)
         hyper_situations_set = set(hyper_situations)
         situations_set = set(self.situations)
-        # Check if all sitations are present 
+        # Check if all situations are present
         missing = situations_set.difference(hyper_situations_set)
         if missing:
-            error_str = "Sitattion(s) {} are missing from the list of hyperstages"
-            error_str = error_str.format(missing)
-            raise ValueError(error_str)
+            raise ValueError(
+                f"Situation(s) {missing} are missing from the list of "
+                "hyperstages."
+            )
         # Check if all situations provided exist
         extra = hyper_situations_set.difference(situations_set)
         if extra:
-            error_str = "Sitattion(s) {} are not present in the tree"
-            error_str = error_str.format(extra)
-            raise ValueError(error_str)
+            raise ValueError(
+                f"Situation(s) {extra} are not present in the tree."
+            )
         # Check if all sitautions in a stage have the same number of edges
         for stage in hyperstage:
             n_edges = self.out_degree[stage[0]]
             for node in stage:
                 if self.out_degree[node] != n_edges:
-                    error_str = "\n Situations in the same hyperstage \
-                    \n must have the same number of outgoing edges."
-                    raise ValueError(error_str)
+                    raise ValueError(
+                        "Situations in the same hyperstage "
+                        "must have the same number of outgoing edges."
+                    )
 
     def __check_prior(self, prior) -> None:
         if len(prior) != len(self.edge_countset):
-            error_str = "\n Number of sub-lists in the list of priors \
-                \n must agree with the number of situations."
-            raise ValueError(error_str)
+            raise ValueError(
+                "Number of sub-lists in the list of priors "
+                "must agree with the number of situations."
+            )
 
         for node_idx, node_priors in enumerate(prior):
             if len(node_priors) != len(self.edge_countset[node_idx]):
-                error_str = "\n The lenght of each sub-lists in the list of priors \
-                    \n must agree with the number of edges emanting from \
-                    \n its corresponding situation."
-                raise ValueError(error_str)
+                raise ValueError(
+                    "The length of each sub-list in the list of priors "
+                    "must agree with the number of edges emanating from "
+                    "its corresponding situation."
+                )
             for p in node_priors:
                 if p < 0:
-                    raise ValueError("All priors must be non-negative")
+                    raise ValueError("All priors must be non-negative.")
 
     def __store_params(self, prior, alpha, hyperstage) -> None:
         """User has passed in AHC params, this function processes them,

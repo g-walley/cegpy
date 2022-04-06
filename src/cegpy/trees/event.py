@@ -197,8 +197,11 @@ class EventTree(nx.MultiDiGraph):
                     "missing",
                     inplace = True,
                 )
-        else:
-            pass
+
+        # Checking and handling for stratification
+        if stratified is True:
+            self._stratify()
+            # TODO: need to write the stratify function. Placeholder below.
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
@@ -326,6 +329,12 @@ class EventTree(nx.MultiDiGraph):
             display_nan_warning()
 
         return self._catagories_per_variable
+
+    def _stratify(self):
+        """This function creates a stratified version
+        of the input dataframe"""
+    # TAKE CARE to ensure that missing values and empty cells
+    # are not considered as values of a variable.
 
     def _generate_pdp_graph(self):
         node_list = list(self)

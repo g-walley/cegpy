@@ -1,4 +1,4 @@
-import struct
+import unittest
 import pandas as pd
 import re
 import numpy as np
@@ -6,6 +6,7 @@ import pytest
 from collections import defaultdict
 from pathlib import Path
 from src.cegpy import EventTree
+from src.cegpy.trees.event import _paths_required_for_stratification
 from pydotplus.graphviz import InvocationException
 
 
@@ -315,6 +316,90 @@ class TestChangingDataFrame():
             pass
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
+
+class TestStratification(unittest.TestCase):
+    """Tests the stratification functionality of the EventTree"""
+
+    def test_stratified(self) -> None:
+        """stratified has the wrong type."""
+        with pytest.raises(ValueError):
+            _ = EventTree(
+                dataframe=pd.DataFrame(),
+                stratified=5
+            )
+
+    def test_value_error_for_not_complete_case(self):
+        """When stratified and not complete_case, ValueError raised"""
+        with pytest.raises(
+            ValueError,
+            match=(
+                r"Please manually stratify the dataset"
+            )
+        ):
+            _ = EventTree(
+                dataframe=pd.DataFrame(),
+                complete_case=False,
+                stratified=True,
+            )
+
+    def test_produces_paths_required_for_asym_data(self):
+        """For the asym.csv dataset, expected paths are produced"""
+        expected_paths = [
+            ("0", "1", "0", "1"),
+            ("0", "1", "1", "1"),
+            ("1", "0", "1", "1"),
+        ]
+        data = pd.read_csv("data/Asym.csv").astype(str)
+        actual_paths = _paths_required_for_stratification(data)
+        self.assertEqual(expected_paths, actual_paths)
+
+    def test_event_tree_stratifies(self):
+        """For the asym.csv dataset, all paths are created"""
+        expected_paths = [
+            ("0", "0", "0", "0"),
+            ("0", "0", "0", "1"),
+            ("0", "0", "1", "0"),
+            ("0", "0", "1", "1"),
+            ("0", "1", "0", "0"),
+            ("0", "1", "0", "1"),
+            ("0", "1", "1", "0"),
+            ("0", "1", "1", "1"),
+            ("1", "0", "0", "0"),
+            ("1", "0", "0", "1"),
+            ("1", "0", "1", "0"),
+            ("1", "0", "1", "1"),
+            ("1", "1", "0", "0"),
+            ("1", "1", "0", "1"),
+            ("1", "1", "1", "0"),
+            ("1", "1", "1", "1"),
+        ]
+        data = pd.read_csv("data/Asym.csv")
+        asym_et = EventTree(
+            dataframe=data,
+            stratified=True,
+            complete_case=True
+        )
+        all_paths = list(asym_et._sorted_paths)
+        for path in expected_paths:
+            self.assertIn(path, all_paths)
+
+    def test_warning_raised(self):
+        """Warning raised if sampling zeros are not none."""
+        data = pd.read_csv("data/Asym.csv")
+        with self.assertLogs("cegpy", level="WARN") as log_cm:
+            _ = EventTree(
+                dataframe=data,
+                sampling_zero_paths=[("1", "0", "1", "1")],
+                stratified=True,
+                complete_case=True,
+            )
+        self.assertIn(
+            "WARNING:cegpy.event_tree:User provided sampling_zero_paths, "
+            "but these are being ignored due to 'stratified' being enabled.",
+            log_cm.output
+        )
+
+
 class TestMissingLabels():
     def setup(self):
         array = [
@@ -331,103 +416,111 @@ class TestMissingLabels():
         self.df = pd.DataFrame(array)
 
     def test_structural_label_string(self) -> None:
+        """struct_missing_label has the wrong type."""
         with pytest.raises(ValueError):
-            df_et = EventTree(
+            _ = EventTree(
                 dataframe=self.df,
                 struct_missing_label=5
             )
 
     def test_structural_label_reduction(self) -> None:
+        """struct_missing_label values are reduced to '<empty string>'."""
         df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label="Struct"
             )
         expected_df = pd.DataFrame(
             [
-            np.array(["1", "N/A", "Recover"]),
-            np.array(["1", "Trt1", "N/A"]),
-            np.array(["2", "", "Recover"]),
-            np.array(["2", "", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "N/A", "Recover"]),
+                np.array(["1", "Trt1", "N/A"]),
+                np.array(["2", "", "Recover"]),
+                np.array(["2", "", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_missing_label_string(self) -> None:
+        """missing label not correct type."""
         with pytest.raises(ValueError):
-            df_et = EventTree(
-                    dataframe=self.df,
-                    missing_label=15
-                )
+            _ = EventTree(
+                dataframe=self.df,
+                missing_label=15
+            )
 
     def test_missing_label_reduction(self) -> None:
+        """missing label replaced with 'missing'."""
         df_et = EventTree(
-                dataframe=self.df,
-                missing_label="N/A"
-            )
+            dataframe=self.df,
+            missing_label="N/A"
+        )
         expected_df = pd.DataFrame(
             [
-            np.array(["1", "missing", "Recover"]),
-            np.array(["1", "Trt1", "missing"]),
-            np.array(["2", "Struct", "Recover"]),
-            np.array(["2", "Struct", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "missing", "Recover"]),
+                np.array(["1", "Trt1", "missing"]),
+                np.array(["2", "Struct", "Recover"]),
+                np.array(["2", "Struct", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_struct_missing_label_reduction(self) -> None:
+        """missing_label and struct_missing_label both set."""
         df_et = EventTree(
-                dataframe=self.df,
-                struct_missing_label="Struct",
-                missing_label="N/A"
-            )
+            dataframe=self.df,
+            struct_missing_label="Struct",
+            missing_label="N/A"
+        )
         expected_df = pd.DataFrame(
             [
-            np.array(["1", "missing", "Recover"]),
-            np.array(["1", "Trt1", "missing"]),
-            np.array(["2", "", "Recover"]),
-            np.array(["2", "", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "missing", "Recover"]),
+                np.array(["1", "Trt1", "missing"]),
+                np.array(["2", "", "Recover"]),
+                np.array(["2", "", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_complete_case_bool(self) -> None:
+        """complete case wrong type"""
         with pytest.raises(ValueError):
-            df_et = EventTree(
-                    dataframe=self.df,
-                    complete_case="Yes"
-                )
+            _ = EventTree(
+                dataframe=self.df,
+                complete_case="Yes"
+            )
 
     def test_complete_case_missing_reduction(self) -> None:
+        """complete case missing_label reduces"""
         df_et = EventTree(
-                dataframe=self.df,
-                missing_label="N/A",
-                complete_case=True
-            )
+            dataframe=self.df,
+            missing_label="N/A",
+            complete_case=True
+        )
         expected_df = pd.DataFrame(
             [
-            np.array(["2", "Struct", "Recover"]),
-            np.array(["2", "Struct", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["2", "Struct", "Recover"]),
+                np.array(["2", "Struct", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_complete_case_reduction(self) -> None:
+        """struct_missing_label reduces."""
         df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label="Struct",
@@ -436,12 +529,12 @@ class TestMissingLabels():
             )
         expected_df = pd.DataFrame(
             [
-            np.array(["2", "", "Recover"]),
-            np.array(["2", "", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["2", "", "Recover"]),
+                np.array(["2", "", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True

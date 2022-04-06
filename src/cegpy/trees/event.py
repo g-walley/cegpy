@@ -75,7 +75,6 @@ class EventTree(nx.MultiDiGraph):
     """
     def __init__(self, dataframe: pd.DataFrame, sampling_zero_paths=None,
                  incoming_graph_data=None, var_order=None, **attr) -> None:
-        logger.info('Initialising')
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError(
                 "The dataframe parameter must be a pandas.DataFrame"
@@ -111,19 +110,6 @@ class EventTree(nx.MultiDiGraph):
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
-
-    @property
-    def dataframe(self):
-        return self._dataframe
-
-    @dataframe.setter
-    def dataframe(self, value: pd.DataFrame):
-        if isinstance(value, pd.DataFrame):
-            self._dataframe = value
-        else:
-            raise ValueError(
-                "Package currently only supports Pandas DataFrame"
-                " objects provided as the dataframe")
 
     @property
     def sampling_zeros(self):

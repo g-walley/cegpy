@@ -313,35 +313,6 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    def _stratified_paths(self) -> List[Tuple]:
-        """This function creates a stratified version
-        of the input dataframe"""
-        # TAKE CARE to ensure that missing values and empty cells
-        # are not considered as values of a variable.
-        unique_variable_values = [
-            self.dataframe[col].unique()
-            for col in self.dataframe.columns
-        ]
-        all_possible_paths = list(itertools.product(*unique_variable_values))
-        existing_paths = [
-            tuple(path)
-            for path in self.dataframe.drop_duplicates().values.tolist()
-        ]
-        max_path_length = len(all_possible_paths[0])
-        missing_paths = []
-
-        for col in range(max_path_length, 0, -1):
-            temp_paths = [path[:col] for path in existing_paths]
-            new_missing_paths = [
-                path[:col]
-                for path in all_possible_paths
-                if path[:col] not in temp_paths
-            ]
-            if new_missing_paths:
-                missing_paths = [*new_missing_paths, *missing_paths]
-            else:
-                break
-
     @property
     def dot_graph(self):
         return self._generate_dot_graph()
@@ -433,7 +404,7 @@ class EventTree(nx.MultiDiGraph):
         unsorted_paths = self.__create_unsorted_paths_dict()
 
         sampling_zeros = (
-            self._stratified_paths()
+            _paths_required_for_stratification(self.dataframe)
             if self.stratified
             else self.sampling_zeros
         )
@@ -509,3 +480,34 @@ class EventTree(nx.MultiDiGraph):
                     key=path[-1],
                     count=count
                 )
+
+
+def _paths_required_for_stratification(dataframe: pd.DataFrame) -> List[Tuple]:
+    """produces additional paths required to make the tree stratified."""
+    # TAKE CARE to ensure that missing values and empty cells
+    # are not considered as values of a variable.
+    unique_variable_values = [
+        dataframe[col].unique()
+        for col in dataframe.columns
+    ]
+    all_possible_paths = list(itertools.product(*unique_variable_values))
+    existing_paths = [
+        tuple(path)
+        for path in dataframe.drop_duplicates().values.tolist()
+    ]
+    max_path_length = len(all_possible_paths[0])
+    missing_paths = []
+
+    for col in range(max_path_length, 0, -1):
+        temp_paths = [path[:col] for path in existing_paths]
+        new_missing_paths = [
+            path[:col]
+            for path in all_possible_paths
+            if path[:col] not in temp_paths
+        ]
+        if new_missing_paths:
+            missing_paths = [*new_missing_paths, *missing_paths]
+        else:
+            break
+
+    return missing_paths

@@ -1,3 +1,4 @@
+import unittest
 import pandas as pd
 import re
 import numpy as np
@@ -5,6 +6,7 @@ import pytest
 from collections import defaultdict
 from pathlib import Path
 from src.cegpy import EventTree
+from src.cegpy.trees.event import _paths_required_for_stratification
 from pydotplus.graphviz import InvocationException
 
 
@@ -315,7 +317,7 @@ class TestChangingDataFrame():
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
 
-class TestStratification:
+class TestStratification(unittest.TestCase):
     """Tests the stratification functionality of the EventTree"""
 
     def test_value_error_for_not_complete_case(self):
@@ -331,6 +333,18 @@ class TestStratification:
                 complete_case=False,
                 stratified=True,
             )
+
+    def test_produces_paths_required_for_asym_data(self):
+        """For the asym.csv dataset, expected paths are produced"""
+        expected_paths = [
+            ("0", "1", "0", "1"),
+            ("0", "1", "1", "1"),
+            ("1", "0", "1", "1"),
+        ]
+        data = pd.read_csv("data/Asym.csv").astype(str)
+        actual_paths = _paths_required_for_stratification(data)
+        self.assertEqual(expected_paths, actual_paths)
+
 
 
 class TestMissingLabels():

@@ -1,6 +1,7 @@
+from ast import Str
 from collections import defaultdict
 import itertools
-from typing import List, Optional, Tuple
+from typing import List, Mapping, Optional, Tuple
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -94,6 +95,7 @@ class EventTree(nx.MultiDiGraph):
     """
     _stratified: Optional[bool]
     _sampling_zero_paths: Optional[List[Tuple]] = None
+    _sorted_paths: Mapping[Tuple[Str], int]
 
     def __init__(
         self,
@@ -242,7 +244,7 @@ class EventTree(nx.MultiDiGraph):
                 "additional paths required to do so through the "
                 "'sampling_zero_paths' parameter."
             )
-        self._stratified = True
+        self._stratified = stratified
         if self.sampling_zeros is not None:
             logger.warn(
                 "User provided sampling_zero_paths, but these are being "

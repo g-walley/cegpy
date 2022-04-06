@@ -345,6 +345,35 @@ class TestStratification(unittest.TestCase):
         actual_paths = _paths_required_for_stratification(data)
         self.assertEqual(expected_paths, actual_paths)
 
+    def test_event_tree_stratifies(self):
+        """For the asym.csv dataset, all paths are created"""
+        expected_paths = [
+            ("0", "0", "0", "0"),
+            ("0", "0", "0", "1"),
+            ("0", "0", "1", "0"),
+            ("0", "0", "1", "1"),
+            ("0", "1", "0", "0"),
+            ("0", "1", "0", "1"),
+            ("0", "1", "1", "0"),
+            ("0", "1", "1", "1"),
+            ("1", "0", "0", "0"),
+            ("1", "0", "0", "1"),
+            ("1", "0", "1", "0"),
+            ("1", "0", "1", "1"),
+            ("1", "1", "0", "0"),
+            ("1", "1", "0", "1"),
+            ("1", "1", "1", "0"),
+            ("1", "1", "1", "1"),
+        ]
+        data = pd.read_csv("data/Asym.csv")
+        asym_et = EventTree(
+            dataframe=data,
+            stratified=True,
+            complete_case=True
+        )
+        all_paths = list(asym_et._sorted_paths)
+        for path in expected_paths:
+            self.assertIn(path, all_paths)
 
 
 class TestMissingLabels():

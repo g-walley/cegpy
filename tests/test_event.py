@@ -375,6 +375,22 @@ class TestStratification(unittest.TestCase):
         for path in expected_paths:
             self.assertIn(path, all_paths)
 
+    def test_warning_raised(self):
+        """Warning raised if sampling zeros are not none."""
+        data = pd.read_csv("data/Asym.csv")
+        with self.assertLogs("cegpy", level="WARN") as log_cm:
+            _ = EventTree(
+                dataframe=data,
+                sampling_zero_paths=[("1", "0", "1", "1")],
+                stratified=True,
+                complete_case=True,
+            )
+        self.assertIn(
+            "WARNING:cegpy.event_tree:User provided sampling_zero_paths, "
+            "but these are being ignored due to 'stratified' being enabled.",
+            log_cm.output
+        )
+
 
 class TestMissingLabels():
     def setup(self):

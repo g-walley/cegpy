@@ -167,10 +167,38 @@ class EventTree(nx.MultiDiGraph):
         # Checking whether tree is stratified before..
         # ... incorporating sampling zero paths
         self._sampling_zero_paths = None
-        if stratified == False:
+        if stratified is False:
             self.sampling_zeros = sampling_zero_paths
         else:
             self.sampling_zeros = None
+
+        # Dealing with structural and non-structural...
+        # ... missing value labels
+        if struct_missing_label is not None:
+            dataframe.replace(
+                struct_missing_label,
+                "",
+                inplace = True,
+            )
+
+        if missing_label is not None:
+            if complete_case is True:
+                dataframe.replace(
+                    missing_label,
+                    np.NaN,
+                    inplace = True,
+                )
+                dataframe.dropna(
+                    inplace = True,
+                )
+            else:
+                dataframe.replace(
+                    missing_label,
+                    "missing",
+                    inplace = True,
+                )
+        else:
+            pass
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)

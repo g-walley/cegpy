@@ -1,4 +1,5 @@
 from collections import defaultdict
+from typing import List
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -322,16 +323,18 @@ class EventTree(nx.MultiDiGraph):
         node_list = self.__create_node_list_from_paths(self._sorted_paths)
         self.add_nodes_from(node_list)
 
-    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
+    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> List:
         """Check param 'sampling_zero_paths' is in the correct format"""
+        coerced_sampling_zero_paths = []
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
                 return None
             else:
-                if not Util.check_tuple_contains_strings(tup):
-                    return None
+                coerced_sampling_zero_paths.append(
+                    tuple([str(elem) for elem in tup])
+                )
 
-        return sampling_zero_paths
+        return coerced_sampling_zero_paths
 
     def __create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""

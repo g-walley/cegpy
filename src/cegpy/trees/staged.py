@@ -240,7 +240,7 @@ class StagedTree(EventTree):
         elif isinstance(alpha, int) or isinstance(alpha, str):
             alpha = Fraction.from_float(float(alpha))
         else:
-            logger.warning("Prior generator param alpha is in a strange format.\
+            raise TypeError("Prior generator param alpha is in a strange format.\
                             ..")
 
         sample_size_at_node[self.root] = alpha
@@ -347,11 +347,6 @@ class StagedTree(EventTree):
         sum_pri_contribution = sum(pri_contribution)
         sum_post_contribution = sum(post_contribution)
         return (sum_pri_contribution + sum_post_contribution)
-
-    def _check_issubset(self, item, hyperstage) -> bool:
-        '''function to check if two situations belong to the same set in the
-        hyperstage'''
-        return any(set(item).issubset(element) for element in hyperstage)
 
     def _calculate_bayes_factor(self, prior1, posterior1,
                                 prior2, posterior2) -> float:

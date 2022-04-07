@@ -1,4 +1,5 @@
 import pytest
+import filecmp
 from src.cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
@@ -604,7 +605,7 @@ class TestStagedTrees():
             [338, 1511],
             [716, 1131]
         ]
-        alpha = 3
+        alpha = float(3)
         expected_likelihood = -30134.07
         assert len(med_expected_edge_countset) == 21
         calculate_posterior(
@@ -614,6 +615,38 @@ class TestStagedTrees():
             expected_likelihood
         )
 
+    def test_prior_alpha_conflict(self) -> None:
+        prior = [
+            [frac(3, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+        alpha = 4
+        self.med_st.calculate_AHC_transitions(prior=prior, alpha=alpha)
+        assert (self.med_st.alpha is None)
+
+    def test_alpha_format(self) -> None:
+        with pytest.raises(TypeError):
+            self.med_st.calculate_AHC_transitions(alpha={'5'})
+         
     def test_merged_leaves_med(self) -> None:
         # check that no leaves have been merged
         self.med_st.calculate_AHC_transitions()
@@ -675,6 +708,27 @@ class TestStagedTrees():
         for node in self.med_st.nodes():
             assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
                 self.med_st.nodes[node]['colour']
+
+    def test_new_colours(self) -> None:
+        colours = [
+            '#8dd3c7', '#ffffb3', '#bebada', '#fb8072',
+            '#80b1d3', '#fdb462'
+        ]
+        self.fall_st.calculate_AHC_transitions(colour_list=colours)
+        dot_staged_nodes = self.fall_st.dot_staged_graph.get_nodes()
+        staged_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
+        ]
+        assert (set(colours + ['lightgrey']) == set(staged_node_colours))
+    
+    def test_new_colours_length(self) -> None:
+        colours = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072']
+        with pytest.raises(IndexError):
+            self.fall_st.calculate_AHC_transitions(colour_list=colours)
+
+    def test_run_AHC_before_figure(self) -> None:
+        with pytest.raises(Exception):
+            self.med_st.create_figure()
 
 
 class TestChangingDataFrame():

@@ -316,10 +316,10 @@ class EventTree(nx.MultiDiGraph):
         return self._catagories_per_variable
 
     @property
-    def dot_graph(self):
-        return self._generate_dot_graph()
+    def dot_event_graph(self):
+        return self._generate_dot_graph(fill_colour='lightgrey')
 
-    def _generate_dot_graph(self):
+    def _generate_dot_graph(self, fill_colour=None):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
@@ -335,19 +335,21 @@ class EventTree(nx.MultiDiGraph):
                     color="black"
                 )
             )
-
         for node in node_list:
-            try:
-                fill_colour = self.nodes[node]['colour']
-            except KeyError:
-                fill_colour = 'lightgrey'
+            if fill_colour is None:
+                try:
+                    fill_node_colour = self.nodes[node]['colour']
+                except KeyError:
+                    fill_node_colour = 'lightgrey'
+            else:
+                fill_node_colour = fill_colour
             label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
                     name=node,
                     label=label,
                     style="filled",
-                    fillcolor=fill_colour))
+                    fillcolor=fill_node_colour))
         return graph
 
     def create_figure(self, filename):
@@ -357,7 +359,7 @@ class EventTree(nx.MultiDiGraph):
         """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self.dot_graph
+        graph = self.dot_event_graph
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 

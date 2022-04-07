@@ -161,10 +161,15 @@ class EventTree(nx.MultiDiGraph):
             if complete_case is True:
                 dataframe.replace(
                     missing_label,
-                    np.NaN,
+                    "missing",
                     inplace=True,
                 )
-                dataframe.dropna(
+                rows_to_delete = np.where(
+                    dataframe == "missing"
+                )[0].tolist()
+                dataframe.drop(
+                    rows_to_delete,
+                    axis = 0,
                     inplace=True,
                 )
                 dataframe.reset_index(drop=True, inplace=True)

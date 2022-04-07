@@ -486,7 +486,6 @@ class StagedTree(EventTree):
                         posteriors[p_index] = [0]
 
                 hyperstage.remove(sub_hyper)
-                print("blash")
 
         hyperstage_combinations = [
             item for sub_hyper in hyperstage
@@ -607,7 +606,7 @@ class StagedTree(EventTree):
     @property
     def dot_staged_graph(self):
         return self._generate_dot_graph()
-    
+
     def create_figure(self, filename, staged=True):
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports

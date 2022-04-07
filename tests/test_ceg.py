@@ -43,7 +43,7 @@ class TestUnitCEG(object):
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):
-    def setup(self):
+    def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
             'w0', 'w1', 'w2', 'w3', 'w4', 'w&infin;'

@@ -199,7 +199,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         }
         expected_count_total = 10984
         (actual_stage_edges, actual_count_total) = _combine_edge_counts(
-            edges_with_counts=edges
+            edges=edges
         )
         self.assertEqual(actual_stage_edges, expected_stage_edges)
         self.assertEqual(actual_count_total, expected_count_total)

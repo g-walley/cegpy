@@ -1,3 +1,4 @@
+from typing import List
 import pydotplus as pdp
 import networkx as nx
 from copy import deepcopy
@@ -377,7 +378,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 if pred not in node_queue:
                     node_queue.append(pred)
 
-    def _gen_nodes_with_increasing_distance(self, start=0) -> list:
+    def _gen_nodes_with_increasing_distance(self, start=0) -> List:
         max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
         distance_dict = {}
         for key, value in max_dists.items():

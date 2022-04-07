@@ -560,29 +560,36 @@ class StagedTree(EventTree):
         }
         return self.ahc_output
 
-    def create_figure(self, filename):
+    @property
+    def dot_staged_graph(self):
+        return self._generate_dot_graph()
+    
+    def create_figure(self, filename, staged=True):
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
         any filetype that graphviz supports. e.g: "event_tree.png" or
         "event_tree.svg" etc.
         """
-        try:
-            self.ahc_output
-            filename, filetype = Util.generate_filename_and_mkdir(filename)
-            logger.info("--- generating graph ---")
-            graph = self.dot_graph
-            logger.info("--- writing " + filetype + " file ---")
-            graph.write(str(filename), format=filetype)
+        if staged:
+            try:
+                self.ahc_output
+                filename, filetype = Util.generate_filename_and_mkdir(filename)
+                logger.info("--- generating graph ---")
+                graph = self.dot_staged_graph
+                logger.info("--- writing " + filetype + " file ---")
+                graph.write(str(filename), format=filetype)
 
-            if get_ipython() is None:
+                if get_ipython() is None:
+                    return None
+                else:
+                    logger.info("--- Exporting graph to notebook ---")
+                    return Image(graph.create_png())
+
+            except AttributeError:
+                logger.error(
+                    "----- PLEASE RUN AHC ALGORITHM before trying to" +
+                    " export graph -----"
+                )
                 return None
-            else:
-                logger.info("--- Exporting graph to notebook ---")
-                return Image(graph.create_png())
-
-        except AttributeError:
-            logger.error(
-                "----- PLEASE RUN AHC ALGORITHM before trying to" +
-                " export graph -----"
-            )
-            return None
+        else:
+            super().create_figure(filename)

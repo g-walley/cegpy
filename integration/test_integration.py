@@ -1,11 +1,9 @@
-# from pathlib import Path
-# import networkx as nx
-# import pandas as pd
-# import os.path
-# from src.cegpy.graphs.ceg import ChainEventGraph
-# from src.cegpy.graphs.ceg import Evidence
-# from src.cegpy.trees.staged import StagedTree
-# from src.cegpy.utilities.util import Util
+from pathlib import Path
+import pandas as pd
+import os.path
+from src.cegpy.graphs.ceg import ChainEventGraph
+from src.cegpy.trees.staged import StagedTree
+from src.cegpy.utilities.util import Util
 
 
 # class TestReducedOutputs:
@@ -233,34 +231,34 @@
 #         assert len(expected_paths) == len(self.evidence.path_list)
 
 
-# class TestCegOutput:
-#     def setup(self):
-#         df_path = Path(__file__).resolve(
-#             ).parent.parent.joinpath(
-#             'data/medical_dm_modified.xlsx')
+class TestCegOutput:
+    def setup(self):
+        df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
 
-#         st = StagedTree(
-#             dataframe=pd.read_excel(df_path),
-#             name="medical_staged"
-#         )
-#         st.calculate_AHC_transitions()
-#         self.ceg = ChainEventGraph(st)
+        st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name="medical_staged"
+        )
+        st.calculate_AHC_transitions()
+        self.ceg = ChainEventGraph(st)
 
-#     def test_creation_of_ceg(self) -> None:
-#         self.ceg.generate()
-#         fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
-#         self.ceg.create_figure(fname)
-#         assert os.path.isfile(fname)
+    def test_creation_of_ceg(self) -> None:
+        self.ceg.generate()
+        fname = Util.create_path('out/medical_dm_CEG', True, 'pdf')
+        self.ceg.create_figure(fname)
+        assert os.path.isfile(fname)
 
-#     def test_generation(self) -> None:
-#         self.ceg.generate()
-#         path_list = self.ceg.path_list
-#         nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'w&infin;']
+    def test_generation(self) -> None:
+        self.ceg.generate()
+        path_list = self.ceg.path_list
+        nodes = ['w0', 'w1', 'w4', 'w10', 'w9', 'w&infin;']
 
-#         subgraph = self.ceg.subgraph(nodes).copy()
-#         fname = Util.create_path('out/Subgraph_test', True, 'pdf')
-#         subgraph.create_figure(fname)
-#         print(path_list)
+        subgraph = self.ceg.subgraph(nodes).copy()
+        fname = Util.create_path('out/Subgraph_test', True, 'pdf')
+        subgraph.create_figure(fname)
+        print(path_list)
 
 
 # class TestCegNonStrat:

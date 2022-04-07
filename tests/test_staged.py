@@ -1,5 +1,8 @@
+import unittest
 import pytest
+import filecmp
 from src.cegpy import StagedTree
+from src.cegpy.trees.staged import _calculate_and_apply_mean_posterior_probs
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
@@ -68,7 +71,7 @@ class TestStagedTrees():
                     med_hyperstage_more
                 )
             )
-           
+
         with pytest.raises(ValueError):
             med_hyperstage_check = (
                 self.med_st._check_hyperstages(
@@ -110,14 +113,14 @@ class TestStagedTrees():
                     fall_hyperstage_less
                 )
             )
-        
+
         with pytest.raises(ValueError):
             fall_hyperstage_check = (
                 self.fall_st._check_hyperstages(
                     fall_hyperstage_more
                 )
             )
-           
+
         with pytest.raises(ValueError):
             fall_hyperstage_check = (
                 self.fall_st._check_hyperstages(
@@ -604,7 +607,7 @@ class TestStagedTrees():
             [338, 1511],
             [716, 1131]
         ]
-        alpha = 3
+        alpha = float(3)
         expected_likelihood = -30134.07
         assert len(med_expected_edge_countset) == 21
         calculate_posterior(
@@ -613,6 +616,38 @@ class TestStagedTrees():
             alpha,
             expected_likelihood
         )
+
+    def test_prior_alpha_conflict(self) -> None:
+        prior = [
+            [frac(3, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+        alpha = 4
+        self.med_st.calculate_AHC_transitions(prior=prior, alpha=alpha)
+        assert (self.med_st.alpha is None)
+
+    def test_alpha_format(self) -> None:
+        with pytest.raises(TypeError):
+            self.med_st.calculate_AHC_transitions(alpha={'5'})
 
     def test_merged_leaves_med(self) -> None:
         # check that no leaves have been merged
@@ -654,7 +689,7 @@ class TestStagedTrees():
                 frozenset([frozenset(sublist) for sublist in hyperstage]))
 
         assert actual_hyperstages == expected_hyperstages
-    
+
     def test_node_colours(self) -> None:
         """ Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey and the nodes in the staged tree
@@ -675,6 +710,27 @@ class TestStagedTrees():
         for node in self.med_st.nodes():
             assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
                 self.med_st.nodes[node]['colour']
+
+    def test_new_colours(self) -> None:
+        colours = [
+            '#8dd3c7', '#ffffb3', '#bebada', '#fb8072',
+            '#80b1d3', '#fdb462'
+        ]
+        self.fall_st.calculate_AHC_transitions(colour_list=colours)
+        dot_staged_nodes = self.fall_st.dot_staged_graph.get_nodes()
+        staged_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
+        ]
+        assert (set(colours + ['lightgrey']) == set(staged_node_colours))
+
+    def test_new_colours_length(self) -> None:
+        colours = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072']
+        with pytest.raises(IndexError):
+            self.fall_st.calculate_AHC_transitions(colour_list=colours)
+
+    def test_run_AHC_before_figure(self) -> None:
+        with pytest.raises(Exception):
+            self.med_st.create_figure()
 
 
 class TestChangingDataFrame():
@@ -871,4 +927,58 @@ class TestNumericalDataset():
         except Exception as err:
             pytest.fail(
                 f"There was an error when using string missing_paths:\n{err}"
+            )
+
+
+class TestPosteriorProbabilityCalculations(unittest.TestCase):
+    """Tests the _calculate_and_apply_mean_posterior_probs() functions"""
+
+    def test_merged_probabilities_are_applied(self):
+        dataframe = pd.DataFrame([
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["2", "Trt1", "Recover"]),
+            np.array(["2", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["2", "Trt2", "Recover"]),
+            np.array(["2", "Trt2", "Dont Recover"]),
+        ])
+        staged = StagedTree(dataframe)
+        merged_situations = [
+            ("s0", "s1"),
+            ("s3", "s5", "s6"),
+        ]
+        probs = [
+            [50, 70],
+            [0],
+            [125, 310],
+            [0],
+            [12, 82],
+            [0],
+            [55, 352],
+        ]
+        _calculate_and_apply_mean_posterior_probs(
+            staged, merged_situations, probs
+        )
+        edges = {
+            ('s0', 's1', '1'): 0.417,
+            ('s0', 's2', '2'): 0.583,
+            ('s1', 's3', 'Trt1'): 0.417,
+            ('s1', 's4', 'Trt2'): 0.583,
+            ('s2', 's5', 'Trt1'): 0.287,
+            ('s2', 's6', 'Trt2'): 0.713,
+            ('s3', 's7', 'Dont Recover'): 0.135,
+            ('s3', 's8', 'Recover'): 0.865,
+            ('s4', 's9', 'Dont Recover'): 0.128,
+            ('s4', 's10', 'Recover'): 0.872,
+            ('s5', 's11', 'Dont Recover'): 0.135,
+            ('s5', 's12', 'Recover'): 0.865,
+            ('s6', 's13', 'Dont Recover'): 0.135,
+            ('s6', 's14', 'Recover'): 0.865,
+        }
+        for edge, probability in edges.items():
+            self.assertEqual(
+                staged.edges[edge]["probability"],
+                probability
             )

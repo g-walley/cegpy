@@ -319,10 +319,6 @@ class EventTree(nx.MultiDiGraph):
     def dot_event_graph(self):
         return self._generate_dot_graph(fill_colour='lightgrey')
 
-    def _node_colour(self, node):
-        print("Event tree colour setter")
-        return 'lightgrey'
-
     def _generate_dot_graph(self, fill_colour=None):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')

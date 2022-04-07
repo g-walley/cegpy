@@ -254,6 +254,26 @@ class TestStagedTrees():
                 frozenset([frozenset(sublist) for sublist in hyperstage]))
 
         assert actual_hyperstages == expected_hyperstages
+    
+    def test_node_colours(self) -> None:
+        """ Ensures that all nodes in the event tree dot graph object
+        are coloured in lightgrey and the nodes in the staged tree
+        agree with the result of AHC """
+        dot_event_nodes = self.med_st.dot_event_graph.get_nodes()
+        dot_staged_nodes = self.med_st.dot_staged_graph.get_nodes()
+        event_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_event_nodes
+        ]
+        staged_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
+        ]
+        assert len(set(event_node_colours)) == 1
+        assert event_node_colours[0] == 'lightgrey'
+        assert len(set(staged_node_colours)) > 1
+        g = self.med_st.dot_staged_graph
+        for node in self.med_st.nodes():
+            assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
+                self.med_st.nodes[node]['colour']
 
 
 class TestChangingDataFrame():

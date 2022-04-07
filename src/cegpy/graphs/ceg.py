@@ -1,5 +1,6 @@
 """Chain Event Graph"""
 
+from collections import defaultdict
 from copy import deepcopy
 import itertools as it
 import logging
@@ -36,7 +37,6 @@ class ChainEventGraph(nx.MultiDiGraph):
     sink_suffix: str
     node_prefix: str
     path_list: List
-    _stages: Mapping[str, List[str]]
     _node_num_iterator: it.count
 
     def __init__(self, staged_tree: Optional[StagedTree] = None, **attr):
@@ -59,16 +59,14 @@ class ChainEventGraph(nx.MultiDiGraph):
         return f"{self.node_prefix}0"
 
     @property
-    def stages(self) -> Mapping[str, List[str]]:
+    def stages(self) -> Mapping[str, Set[str]]:
         """Mapping of stages to constituent nodes."""
         node_stages = dict(self.nodes(data='stage', default=None))
+        stages = defaultdict(set)
         for node, stage in node_stages.items():
-            try:
-                self._stages[stage].append(node)
-            except KeyError:
-                self._stages[stage] = [node]
+            stages[stage].add(node)
 
-        return self._stages
+        return stages
 
     @property
     def next_node_name(self):
@@ -430,3 +428,53 @@ def _gen_nodes_with_increasing_distance(ceg: ChainEventGraph, start=0) -> list:
     for node_idx, dist in enumerate(distance_dict):
         if dist >= start:
             yield distance_dict[node_idx]
+
+
+def _combine_edge_counts(edges_with_counts: List) -> Tuple[Dict, int]:
+    """Takes a list of edges_with_counts, and combines the common edges."""
+    stage_edges = defaultdict(int)
+    count_total = 0
+    for (_, _, label, count) in edges_with_counts:
+        count_total += count
+        stage_edges[label] += count
+    return (stage_edges, count_total)
+
+
+def _propagate_probabilities(ceg: ChainEventGraph):
+    count_total_lbl = 'count_total'
+    edge_counts = list(ceg.edges(data='count', keys=True, default=0))
+
+    for stage, stage_nodes in ceg.stages.items():
+        count_total = 0
+        stage_edges = {}
+        if stage is not None:
+            all_stage_edges = [
+                (src, dst, label, count)
+                for (src, dst, label, count) in edge_counts
+                if src in stage_nodes
+            ]
+            stage_edges, count_total = _combine_edge_counts(all_stage_edges)
+
+            for node in stage_nodes:
+                ceg.nodes[node][count_total_lbl] = count_total
+
+            for (src, dst, label, _) in edge_counts:
+                if src in stage_nodes:
+                    ceg.edges[src, dst, label]['probability'] = (
+                        stage_edges[label] / count_total
+                    )
+        else:
+            for node in stage_nodes:
+                node_edges = [
+                    (src, dst, label, count)
+                    for (src, dst, label, count) in edge_counts
+                    if src == node
+                ]
+                stage_edges, count_total = _combine_edge_counts(node_edges)
+
+                ceg.nodes[node][count_total_lbl] = count_total
+                for (src, dst, label, _) in edge_counts:
+                    if src == node:
+                        ceg.edges[src, dst, label]['probability'] = (
+                            stage_edges[label] / count_total
+                        )

@@ -1,5 +1,6 @@
 import re
 from typing import Dict
+import unittest
 import networkx as nx
 import pandas as pd
 from src.cegpy import StagedTree, ChainEventGraph
@@ -9,7 +10,8 @@ from src.cegpy.graphs.ceg import (
     _merge_and_add_edges,
     _trim_leaves_from_graph,
     _update_distances_to_sink,
-    _gen_nodes_with_increasing_distance
+    _gen_nodes_with_increasing_distance,
+    _combine_edge_counts
 )
 from pathlib import Path
 
@@ -40,7 +42,7 @@ class TestUnitCEG(object):
         assert (prefix + str(largest)) == node_names[largest - 1]
 
 
-class TestCEGHelpersTestCases:
+class TestCEGHelpersTestCases(unittest.TestCase):
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
@@ -179,6 +181,28 @@ class TestCEGHelpersTestCases:
         assert (
             len(expected) == len(actual)
         ), "Actual number of edges does not match expected number of edges."
+
+    def test_combine_edge_counts(self):
+        """_combine_edge_counts combines provided edges"""
+        edges = [
+            ('s1', 's3', 'Experienced', 798),
+            ('s1', 's4', 'Inexperienced', 1000),
+            ('s1', 's5', 'Novice', 3693),
+            ('s2', 's6', 'Experienced', 799),
+            ('s2', 's7', 'Inexperienced', 998),
+            ('s2', 's8', 'Novice', 3696)
+        ]
+        expected_stage_edges = {
+            'Experienced': 1597,
+            'Inexperienced': 1998,
+            'Novice': 7389
+        }
+        expected_count_total = 10984
+        (actual_stage_edges, actual_count_total) = _combine_edge_counts(
+            edges_with_counts=edges
+        )
+        self.assertEqual(actual_stage_edges, expected_stage_edges)
+        self.assertEqual(actual_count_total, expected_count_total)
 
 
 class TestTrimLeavesFromGraph:

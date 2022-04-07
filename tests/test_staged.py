@@ -260,6 +260,7 @@ class TestStagedTrees():
         are coloured in lightgrey and the nodes in the staged tree
         agree with the result of AHC """
         dot_event_nodes = self.med_st.dot_event_graph.get_nodes()
+        self.med_st.calculate_AHC_transitions()
         dot_staged_nodes = self.med_st.dot_staged_graph.get_nodes()
         event_node_colours = [
             n.obj_dict['attributes']['fillcolor'] for n in dot_event_nodes

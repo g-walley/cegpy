@@ -425,6 +425,49 @@ class TestMissingLabels():
 
         self.df = pd.DataFrame(array)
 
+        array_with_empty = [
+            np.array(["1", "N/A", "Recover"]),
+            np.array(["1", "Trt1", "N/A"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["1", "", "Dont Recover"]),
+        ]
+
+        self.df_with_empty = pd.DataFrame(array_with_empty)
+
+        array_with_na = [
+            np.array(["1", "N/A", "Recover"]),
+            np.array(["1", "Trt1", "N/A"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt1", np.nan]),
+        ]
+
+        self.df_with_na = pd.DataFrame(array_with_na)
+
+        array_with_both = [
+            np.array(["1", "N/A", "Recover"]),
+            np.array(["1", "Trt1", "N/A"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt1", np.nan]),
+            np.array(["", "Trt1", "Dont Recover"]),
+        ]
+
+        self.df_with_both = pd.DataFrame(array_with_both)
+
     def test_structural_label_string(self) -> None:
         """struct_missing_label has the wrong type."""
         with pytest.raises(ValueError):
@@ -452,6 +495,10 @@ class TestMissingLabels():
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
+
+        df_with_empty = EventTree(
+            dataframe=self.df_with_empty
+        )
 
     def test_missing_label_string(self) -> None:
         """missing label not correct type."""
@@ -512,6 +559,8 @@ class TestMissingLabels():
 
     def test_complete_case_missing_reduction(self) -> None:
         """complete case missing_label reduces"""
+
+        # Case 1
         df_et = EventTree(
             dataframe=self.df,
             missing_label="N/A",
@@ -528,6 +577,71 @@ class TestMissingLabels():
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
+
+        # Case 2
+        df_with_empty = EventTree(
+            dataframe=self.df_with_empty,
+            missing_label="N/A",
+            complete_case=True
+        )
+        expected_df_with_empty = pd.DataFrame(
+            [
+                np.array(["2", "Struct", "Recover"]),
+                np.array(["2", "Struct", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "", "Dont Recover"]),
+            ]
+        )
+        assert df_with_empty.dataframe.equals(
+            expected_df_with_empty
+            ) is True
+
+        # Case 3
+        df_with_na = EventTree(
+            dataframe=self.df_with_na,
+            missing_label="N/A",
+            complete_case=True
+        )
+        expected_df_with_na = pd.DataFrame(        
+            [
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt1", np.nan]),
+        ]
+        )
+        assert df_with_na.dataframe.equals(
+            expected_df_with_na
+            ) is True
+
+        # Case 4
+        df_with_both = EventTree(
+            dataframe=self.df_with_both,
+            missing_label="N/A",
+            complete_case=True
+        )
+        expected_df_with_both = pd.DataFrame(   
+            
+        [
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt1", np.nan]),
+            np.array(["", "Trt1", "Dont Recover"]),
+        ]
+        )
+        assert df_with_both.dataframe.equals(
+            expected_df_with_both
+            ) is True
 
     def test_complete_case_reduction(self) -> None:
         """struct_missing_label reduces."""

@@ -18,9 +18,6 @@ class StagedTree(EventTree):
     def __init__(
             self,
             dataframe,
-            prior=None,
-            alpha=None,
-            hyperstage=None,
             sampling_zero_paths=None,
             incoming_graph_data=None,
             var_order=None,
@@ -35,7 +32,6 @@ class StagedTree(EventTree):
             **attr
         )
 
-        self.__store_params(prior, alpha, hyperstage)
         self._mean_posterior_probs = []
         self._merged_situations = []
         self._stage_colours = []
@@ -134,7 +130,7 @@ class StagedTree(EventTree):
 
     @property
     def edge_countset(self):
-        return self.__create_edge_countset()
+        return self._create_edge_countset()
 
     @property
     def ahc_output(self):
@@ -144,7 +140,52 @@ class StagedTree(EventTree):
     def ahc_output(self, value):
         self._ahc_output = value
 
-    def __store_params(self, prior, alpha, hyperstage) -> None:
+    def _check_hyperstages(self, hyperstage) -> None:
+        hyper_situations = chain(*hyperstage)
+        hyper_situations_set = set(hyper_situations)
+        situations_set = set(self.situations)
+        # Check if all situations are present
+        missing = situations_set.difference(hyper_situations_set)
+        if missing:
+            raise ValueError(
+                f"Situation(s) {missing} are missing from the list of "
+                "hyperstages."
+            )
+        # Check if all situations provided exist
+        extra = hyper_situations_set.difference(situations_set)
+        if extra:
+            raise ValueError(
+                f"Situation(s) {extra} are not present in the tree."
+            )
+        # Check if all situations in a stage have the same number of edges
+        for stage in hyperstage:
+            n_edges = self.out_degree[stage[0]]
+            for node in stage:
+                if self.out_degree[node] != n_edges:
+                    raise ValueError(
+                        "Situations in the same hyperstage "
+                        "must have the same number of outgoing edges."
+                    )
+
+    def _check_prior(self, prior) -> None:
+        if len(prior) != len(self.edge_countset):
+            raise ValueError(
+                "Number of sub-lists in the list of priors "
+                "must agree with the number of situations."
+            )
+
+        for node_idx, node_priors in enumerate(prior):
+            if len(node_priors) != len(self.edge_countset[node_idx]):
+                raise ValueError(
+                    "The length of each sub-list in the list of priors "
+                    "must agree with the number of edges emanating from "
+                    "its corresponding situation."
+                )
+            for p in node_priors:
+                if p < 0:
+                    raise ValueError("All priors must be non-negative.")
+
+    def _store_params(self, prior, alpha, hyperstage) -> None:
         """User has passed in AHC params, this function processes them,
         and generates any default AHC params if required."""
         if prior:
@@ -152,9 +193,11 @@ class StagedTree(EventTree):
                 self.alpha = None
                 logging.warning("Params Warning!! When prior is given, " +
                                 "alpha is not required!")
+            self._check_prior(prior)
+            self.prior = prior
         else:
             if alpha is None:
-                self.alpha = self.__calculate_default_alpha()
+                self.alpha = self._calculate_default_alpha()
                 logging.warning("Params Warning!! Neither prior nor alpha " +
                                 "were provided. Using default alpha " +
                                 "value of %d.", self.alpha)
@@ -162,14 +205,15 @@ class StagedTree(EventTree):
                 self.alpha = alpha
 
             # No matter what alpha is, generate default prior
-            self.prior = self.__create_default_prior(self.alpha)
+            self.prior = self._create_default_prior(self.alpha)
 
         if hyperstage is None:
-            self.hyperstage = self.__create_default_hyperstage()
+            self.hyperstage = self._create_default_hyperstage()
         else:
+            self._check_hyperstages(hyperstage)
             self.hyperstage = hyperstage
 
-    def __calculate_default_alpha(self) -> int:
+    def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
         The value is calculated by determining the maximum number
         of categories that any one variable has"""
@@ -177,7 +221,7 @@ class StagedTree(EventTree):
         max_count = max(list(self.categories_per_variable.values()))
         return max_count
 
-    def __create_default_prior(self, alpha) -> list:
+    def _create_default_prior(self, alpha) -> list:
         """default prior set for the AHC method using the mass conservation property.
         That is, the alpha param is the phantom sample starting at
         the root, and it is spread equally across all edges along the tree.
@@ -222,7 +266,7 @@ class StagedTree(EventTree):
 
         return default_prior
 
-    def __create_default_hyperstage(self) -> list:
+    def _create_default_hyperstage(self) -> list:
         '''Generates default hyperstage for the AHC method.
         A hyperstage is a list of lists such that two situaions can be in the
         same stage only if there are elements of the same list for some list
@@ -256,7 +300,7 @@ class StagedTree(EventTree):
 
         return hyperstage
 
-    def __create_edge_countset(self) -> list:
+    def _create_edge_countset(self) -> list:
         '''Each element of list contains a list with counts along edges emanating from
         a specific situation. Indexed same as self.situations'''
         logger.info("Creating edge countset")
@@ -423,12 +467,16 @@ class StagedTree(EventTree):
             if self.out_degree[sub_hyper[0]] == 1:
                 merged_situation_list.append(tuple(sub_hyper))
                 indexes = [self.situations.index(situ) for situ in sub_hyper]
-                sub_hyper_priors = list(chain(
-                    *itemgetter(*indexes)(priors)
-                ))
-                sub_hyper_posteriors = list(chain(
-                    *itemgetter(*indexes)(posteriors)
-                ))
+                if len(indexes) == 1:
+                    sub_hyper_priors = itemgetter(*indexes)(priors)
+                    sub_hyper_posteriors = itemgetter(*indexes)(posteriors)
+                else:
+                    sub_hyper_priors = list(chain(
+                        *itemgetter(*indexes)(priors)
+                    ))
+                    sub_hyper_posteriors = list(chain(
+                        *itemgetter(*indexes)(posteriors)
+                    ))
                 for loop_idx, p_index in enumerate(indexes):
                     if loop_idx == 0:
                         priors[p_index] = [sum(sub_hyper_priors)]
@@ -501,10 +549,12 @@ class StagedTree(EventTree):
         This function takes those indexes and creates a new list which is
         in a string representation of nodes."""
         self._sort_count = 0
-        for index, stage in enumerate(merged_situations):
+        stage_count = 0
+        for stage in merged_situations:
             if len(stage) > 1:
                 for node in stage:
-                    self.nodes[node]['stage'] = index
+                    self.nodes[node]['stage'] = stage_count
+                stage_count += 1
 
     def _generate_colours_for_situations(self, merged_situations, colour_list):
         """Colours each stage of the tree with an individual colour"""
@@ -538,7 +588,7 @@ class StagedTree(EventTree):
         colours evenly spaced around the colour spectrum are used.'''
         logger.info("\n\n --- Starting AHC Algorithm ---")
 
-        self.__store_params(prior, alpha, hyperstage)
+        self._store_params(prior, alpha, hyperstage)
 
         mean_posterior_probs, loglikelihood, merged_situations = (
             self._execute_AHC())
@@ -554,29 +604,36 @@ class StagedTree(EventTree):
         }
         return self.ahc_output
 
-    def create_figure(self, filename):
+    @property
+    def dot_staged_graph(self):
+        return self._generate_dot_graph()
+    
+    def create_figure(self, filename, staged=True):
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
         any filetype that graphviz supports. e.g: "event_tree.png" or
         "event_tree.svg" etc.
         """
-        try:
-            self.ahc_output
-            filename, filetype = Util.generate_filename_and_mkdir(filename)
-            logger.info("--- generating graph ---")
-            graph = self.dot_graph
-            logger.info("--- writing " + filetype + " file ---")
-            graph.write(str(filename), format=filetype)
+        if staged:
+            try:
+                self.ahc_output
+                filename, filetype = Util.generate_filename_and_mkdir(filename)
+                logger.info("--- generating graph ---")
+                graph = self.dot_staged_graph
+                logger.info("--- writing " + filetype + " file ---")
+                graph.write(str(filename), format=filetype)
 
-            if get_ipython() is None:
+                if get_ipython() is None:
+                    return None
+                else:
+                    logger.info("--- Exporting graph to notebook ---")
+                    return Image(graph.create_png())
+
+            except AttributeError:
+                logger.error(
+                    "----- PLEASE RUN AHC ALGORITHM before trying to" +
+                    " export graph -----"
+                )
                 return None
-            else:
-                logger.info("--- Exporting graph to notebook ---")
-                return Image(graph.create_png())
-
-        except AttributeError:
-            logger.error(
-                "----- PLEASE RUN AHC ALGORITHM before trying to" +
-                " export graph -----"
-            )
-            return None
+        else:
+            super().create_figure(filename)

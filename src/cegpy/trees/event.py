@@ -1,4 +1,7 @@
+from ast import Str
 from collections import defaultdict
+import itertools
+from typing import List, Mapping, Optional, Tuple
 import numpy as np
 import pydotplus as pdp
 import logging
@@ -50,6 +53,24 @@ class EventTree(nx.MultiDiGraph):
         packages are installed the data can also be a NumPy matrix
         or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
 
+    var_order : ordered list of variable names. (optional, default order
+        of variables in the event tree adopted from the order of columns in
+        the dataframe).
+
+    struct_missing_label : observations which are structurally missing, i.e.
+        where a non-missing value is illogical for a subset of the individuals
+        in our sample.
+        E.g: Post operative health status is irrelevant for a dead patient.
+
+    missing_label : all missing values that are not structurally missing.
+
+    complete_case : If True, all entries (rows) with non-structural missing
+        values are removed.
+
+    stratified : If True, the tree is assumed to be stratified, i.e. all
+        zero frequency paths are considered to be due to a sampling limitation.
+        This overwrites the sampling_zero_paths argument.
+
     attr : keyword arguments, optional (default= no attributes)
         Attributes to add to graph as key=value pairs.
 
@@ -72,71 +93,98 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    def __init__(self, dataframe, sampling_zero_paths=None,
-                 incoming_graph_data=None, var_order=None, **attr) -> None:
-        """Initialize an event tree graph with edges, name, or graph attributes.
-        This class extends the networkx DiGraph class to allow the creation
-        of event trees from data provided in a pandas dataframe.
+    _stratified: Optional[bool]
+    _sampling_zero_paths: Optional[List[Tuple]] = None
+    _sorted_paths: Mapping[Tuple[Str], int]
 
-        Parameters
-        ----------
-        dataframe : Pandas dataframe (required)
-            Dataframe containing variables as column headers, with event
-            name strings in each cell. These event names will be used to
-            create the edges of the event tree. Counts of each event will
-            be extracted and attached to each edge.
+    def __init__(
+        self,
+        dataframe: pd.DataFrame,
+        sampling_zero_paths=None,
+        incoming_graph_data=None,
+        var_order=None,
+        struct_missing_label=None,
+        missing_label=None,
+        complete_case=False,
+        stratified=False,
+        **attr
+    ) -> None:
+        # Checking argument inputs are sensible
+        if not isinstance(dataframe, pd.DataFrame):
+            raise ValueError(
+                "The dataframe parameter must be a pandas.DataFrame"
+            )
 
-        sampling_zero_paths: list of tuples containing paths to sampling
-            zeros.
-            Format is as follows: \
-                [('edge_1',), ('edge_1', 'edge_2'), ...]
+        if (
+            struct_missing_label is not None
+            and not isinstance(struct_missing_label, str)
+        ):
+            raise ValueError(
+                "struct_missing_label should be a string"
+            )
 
-        incoming_graph_data : input graph (optional, default: None)
-            Data to initialize graph.  If None (default) an empty
-            graph is created.  The data can be an edge list, or any
-            NetworkX graph object.  If the corresponding optional Python
-            packages are installed the data can also be a NumPy matrix
-            or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
-        
-        var_order : ordered list of variable names. (optional, default order 
-            of variables in the event tree adopted from the order of columns in 
-            the dataframe). 
+        if (
+            missing_label is not None
+            and not isinstance(missing_label, str)
+        ):
+            raise ValueError(
+                "missing_label should be a string"
+            )
 
-        attr : keyword arguments, optional (default= no attributes)
-            Attributes to add to graph as key=value pairs.
+        if not isinstance(complete_case, bool):
+            raise ValueError(
+                "complete_case should be a boolean"
+            )
 
-        See Also
-        --------
-        convert
+        if not isinstance(stratified, bool):
+            raise ValueError(
+                "stratified should be a boolean"
+            )
 
-        Examples
-        --------
-        >>> G = nx.Graph()  # or DiGraph, MultiGraph, MultiDiGraph, etc
-        >>> G = nx.Graph(name="my graph")
-        >>> e = [(1, 2), (2, 3), (3, 4)]  # list of edges
-        >>> G = nx.Graph(e)
-
-        Arbitrary graph attribute pairs (key=value) may be assigned
-
-        >>> G = nx.Graph(e, day="Friday")
-        >>> G.graph
-        {'day': 'Friday'}
-
-        """
-        logger.info('Initialising')
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
-        self._sampling_zero_paths = None
+
         self.sampling_zeros = sampling_zero_paths
+        self.complete_case = complete_case
+        self.stratified = stratified
+
+        # Dealing with structural and non-structural...
+        # ... missing value labels
+        if struct_missing_label is not None:
+            dataframe.replace(
+                struct_missing_label,
+                "",
+                inplace=True,
+            )
+
+        if missing_label is not None:
+            if complete_case is True:
+                dataframe.replace(
+                    missing_label,
+                    np.NaN,
+                    inplace=True,
+                )
+                dataframe.dropna(
+                    inplace=True,
+                )
+                dataframe.reset_index(drop=True, inplace=True)
+            else:
+                dataframe.replace(
+                    missing_label,
+                    "missing",
+                    inplace=True,
+                )
 
         # Paths sorted alphabetically in order of length
         self._sorted_paths = defaultdict(int)
 
         # pandas dataframe passed via parameters
-        if var_order is not None:
-            self.dataframe = dataframe[var_order]
-        else:
-            self.dataframe = dataframe
+        self.dataframe = (
+            dataframe[var_order].astype(str)
+            if var_order is not None
+            else dataframe.astype(str)
+        )
+
         self.__construct_event_tree()
         logger.info('Initialisation complete!')
 
@@ -149,23 +197,10 @@ class EventTree(nx.MultiDiGraph):
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
-        vars = list(self._dataframe.columns)
+        vars = list(self.dataframe.columns)
         logger.info('Variables extracted from dataframe were:')
         logger.info(vars)
         return vars
-
-    @property
-    def dataframe(self):
-        return self._dataframe
-
-    @dataframe.setter
-    def dataframe(self, value: pd.DataFrame):
-        if isinstance(value, pd.DataFrame):
-            self._dataframe = value
-        else:
-            raise ValueError(
-                "Package currently only supports Pandas DataFrame"
-                " objects provided as the dataframe")
 
     @property
     def sampling_zeros(self):
@@ -187,10 +222,34 @@ class EventTree(nx.MultiDiGraph):
             if sz_paths:
                 self._sampling_zero_paths = sz_paths
             else:
-                error_str = "Parameter 'sampling_zero_paths' not in expected format. \
-                             Should be a list of tuples like so:\n \
-                             [('edge_1',), ('edge_1', 'edge_2'), ...]"
-                raise ValueError(error_str)
+                raise ValueError(
+                    "Parameter 'sampling_zero_paths' not in expected format. "
+                    "Should be a list of tuples like so:\n"
+                    "[('edge_1',), ('edge_1', 'edge_2'), ...]"
+                )
+
+    @property
+    def stratified(self) -> bool:
+        """Auto-stratification has taken place."""
+        return self._stratified
+
+    @stratified.setter
+    def stratified(self, stratified: bool):
+        if stratified and not self.complete_case:
+            raise ValueError(
+                "Under the current implementation, it is not possible to "
+                "automatically stratify the tree when non-structural "
+                "missing values are not removed (complete_case = False).\n"
+                "Please manually stratify the dataset by passing in the "
+                "additional paths required to do so through the "
+                "'sampling_zero_paths' parameter."
+            )
+        self._stratified = stratified
+        if self.sampling_zeros is not None:
+            logger.warn(
+                "User provided sampling_zero_paths, but these are being "
+                "ignored due to 'stratified' being enabled."
+            )
 
     @property
     def situations(self) -> list:
@@ -238,7 +297,7 @@ class EventTree(nx.MultiDiGraph):
         nans_filtered = False
 
         for var in self.variables:
-            categories = set(self._dataframe[var].unique().tolist())
+            categories = set(self.dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
             if pd_filtered_categories != categories:
@@ -257,10 +316,10 @@ class EventTree(nx.MultiDiGraph):
         return self._catagories_per_variable
 
     @property
-    def dot_graph(self):
-        return self._generate_dot_graph()
+    def dot_event_graph(self):
+        return self._generate_dot_graph(fill_colour='lightgrey')
 
-    def _generate_dot_graph(self):
+    def _generate_dot_graph(self, fill_colour=None):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
         for edge, count in self.edge_counts.items():
@@ -276,19 +335,21 @@ class EventTree(nx.MultiDiGraph):
                     color="black"
                 )
             )
-
         for node in node_list:
-            try:
-                fill_colour = self.nodes[node]['colour']
-            except KeyError:
-                fill_colour = 'lightgrey'
+            if fill_colour is None:
+                try:
+                    fill_node_colour = self.nodes[node]['colour']
+                except KeyError:
+                    fill_node_colour = 'lightgrey'
+            else:
+                fill_node_colour = fill_colour
             label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
                     name=node,
                     label=label,
                     style="filled",
-                    fillcolor=fill_colour))
+                    fillcolor=fill_node_colour))
         return graph
 
     def create_figure(self, filename):
@@ -298,7 +359,7 @@ class EventTree(nx.MultiDiGraph):
         """
         filename, filetype = Util.generate_filename_and_mkdir(filename)
         logger.info("--- generating graph ---")
-        graph = self.dot_graph
+        graph = self.dot_event_graph
         logger.info("--- writing " + filetype + " file ---")
         graph.write(str(filename), format=filetype)
 
@@ -346,9 +407,16 @@ class EventTree(nx.MultiDiGraph):
         assuming they are structural zeroes'''
         unsorted_paths = self.__create_unsorted_paths_dict()
 
-        if self.sampling_zeros is not None:
+        sampling_zeros = (
+            _paths_required_for_stratification(self.dataframe)
+            if self.stratified
+            else self.sampling_zeros
+        )
+
+        if sampling_zeros is not None:
             unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zeros, unsorted_paths)
+                sampling_zeros, unsorted_paths
+            )
 
         depth = len(max(list(unsorted_paths.keys()), key=len))
         keys_of_list = list(unsorted_paths.keys())
@@ -364,16 +432,18 @@ class EventTree(nx.MultiDiGraph):
         node_list = self.__create_node_list_from_paths(self._sorted_paths)
         self.add_nodes_from(node_list)
 
-    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> list:
+    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> List:
         """Check param 'sampling_zero_paths' is in the correct format"""
+        coerced_sampling_zero_paths = []
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
                 return None
             else:
-                if not Util.check_tuple_contains_strings(tup):
-                    return None
+                coerced_sampling_zero_paths.append(
+                    tuple([str(elem) for elem in tup])
+                )
 
-        return sampling_zero_paths
+        return coerced_sampling_zero_paths
 
     def __create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
@@ -414,3 +484,34 @@ class EventTree(nx.MultiDiGraph):
                     key=path[-1],
                     count=count
                 )
+
+
+def _paths_required_for_stratification(dataframe: pd.DataFrame) -> List[Tuple]:
+    """produces additional paths required to make the tree stratified."""
+    # TAKE CARE to ensure that missing values and empty cells
+    # are not considered as values of a variable.
+    unique_variable_values = [
+        dataframe[col].unique()
+        for col in dataframe.columns
+    ]
+    all_possible_paths = list(itertools.product(*unique_variable_values))
+    existing_paths = [
+        tuple(path)
+        for path in dataframe.drop_duplicates().values.tolist()
+    ]
+    max_path_length = len(all_possible_paths[0])
+    missing_paths = []
+
+    for col in range(max_path_length, 0, -1):
+        temp_paths = [path[:col] for path in existing_paths]
+        new_missing_paths = [
+            path[:col]
+            for path in all_possible_paths
+            if path[:col] not in temp_paths
+        ]
+        if new_missing_paths:
+            missing_paths = [*new_missing_paths, *missing_paths]
+        else:
+            break
+
+    return missing_paths

@@ -1,3 +1,4 @@
+import pytest
 from src.cegpy import StagedTree
 import pandas as pd
 from pathlib import Path
@@ -30,6 +31,410 @@ class TestStagedTrees():
             dataframe=self.fall_df,
             sampling_zero_paths=self.fall_s_z_paths,
         )
+
+    def test_check_hyperstage(self) -> None:
+        # stratified medical dataset
+        med_hyperstage_less = [
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s19", "s20"],
+            ["s1", "s2"],
+            ["s3", "s4", "s6", "s7", "s8"]
+        ]
+
+        med_hyperstage_more = [
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
+            ["s1", "s2", "s50"],
+            ["s3", "s4", "s5", "s6", "s7", "s8"]
+        ]
+
+        med_hyperstage_unequal = [
+            ["s0", "s1", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
+            ["s2", "s4", "s50"],
+            ["s3", "s5", "s6", "s7", "s8"]
+        ]
+
+        with pytest.raises(ValueError):
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_less
+                )
+            )
+
+        with pytest.raises(ValueError):
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_more
+                )
+            )
+           
+        with pytest.raises(ValueError):
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_unequal
+                )
+            )
+
+        # non-stratified falls dataset
+        fall_hyperstage_less = [
+            ["s1", "s2", "s3", "s4"],
+            ["s5", "s9"],
+            ["s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+
+        fall_hyperstage_more = [
+            ["s0", "v10"],
+            ["s1", "s2", "s3", "s4"],
+            ["s5", "s9", "pg"],
+            ["s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+
+        fall_hyperstage_unequal = [
+            ["s0", "s2"],
+            ["s1", "s3", "s4"],
+            ["s5", "s9", "s8"],
+            ["s6", "s10"],
+            ["s7", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+
+
+        with pytest.raises(ValueError):
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_less
+                )
+            )
+        
+        with pytest.raises(ValueError):
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_more
+                )
+            )
+           
+        with pytest.raises(ValueError):
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_unequal
+                )
+            )
+
+    def test_check_prior(self) -> None:
+        # stratified medical dataset
+        med_prior_incorrect_length = [
+            [frac(3, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+
+        med_prior_unequal = [
+            [frac(3, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+
+        med_prior_negative = [
+            [frac(-3, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(-1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(-1, 8), frac(-1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+
+        with pytest.raises(ValueError):
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_incorrect_length
+                )
+            )
+
+        with pytest.raises(ValueError):
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_unequal
+                )
+            )
+
+        with pytest.raises(ValueError):
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_negative
+                )
+            )
+
+        # non-stratified falls dataset
+        fall_prior_incorrect_length = [
+            [frac(1, 1), frac(1, 1), frac(1, 1), frac(1, 1)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 6), frac(1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
+        ]
+
+        fall_prior_unequal = [
+            [frac(1, 1), frac(1, 1)],
+            [frac(1, 2), frac(1, 1), frac(1, 1), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 6), frac(1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 6), frac(1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8), frac(1, 8)]
+        ]
+
+        fall_prior_negative = [
+            [frac(1, 1), frac(1, 1), frac(1, 1), frac(1, 1)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 6), frac(-1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(-1, 4)],
+            [frac(1, 6), frac(1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 12), frac(-1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
+        ]
+
+        with pytest.raises(ValueError):
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_incorrect_length
+                )
+            )
+
+        with pytest.raises(ValueError):
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_unequal
+                )
+            )
+
+        with pytest.raises(ValueError):
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_negative
+                )
+            )
+
+    def test_check_prior_assigned(self) -> None:
+        # stratified medical dataset
+        med_prior_noerror = [
+            [frac(34, 2), frac(3, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2), frac(1, 2)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(51, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(11, 42)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(21, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+        ]
+        self.med_st.calculate_AHC_transitions(
+            prior=med_prior_noerror
+        )
+        assert self.med_st.prior_list == med_prior_noerror
+
+        # non-stratified falls dataset
+        fall_prior_noerror = [
+            [frac(1, 1), frac(1, 1), frac(1, 1), frac(1, 1)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(21, 2), frac(1, 2)],
+            [frac(1, 2), frac(1, 2)],
+            [frac(1, 6), frac(1, 6), frac(1, 6)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(31, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 6), frac(15, 6), frac(1, 6)],
+            [frac(12, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 4), frac(1, 4)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 12), frac(1, 12)],
+            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
+        ]
+
+        self.fall_st.calculate_AHC_transitions(
+            prior=fall_prior_noerror
+        )
+        assert self.fall_st.prior_list == fall_prior_noerror
+
+    def test_check_hyperstage_assigned(self) -> None:
+        # stratified medical dataset
+        med_hyperstage_noerror = [
+            ["s0", "s9", "s10", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
+            ["s1", "s2"],
+            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"]
+        ]
+
+        self.med_st.calculate_AHC_transitions(
+            hyperstage=med_hyperstage_noerror
+        )
+        assert self.med_st.hyperstage == med_hyperstage_noerror
+
+        # non-stratified falls dataset
+        fall_hyperstage_noerror = [
+            ["s0"],
+            ["s2", "s3", "s4"],
+            ["s5", "s9"],
+            ["s1","s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+
+        self.fall_st.calculate_AHC_transitions(
+            hyperstage=fall_hyperstage_noerror
+        )
+        assert self.fall_st.hyperstage == fall_hyperstage_noerror
+
+    def test_hyperstage_noerror(self) -> None:
+        # stratified medical dataset
+        med_hyperstage_noerror = [
+            ["s0", "s9", "s10", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
+            ["s1", "s2"],
+            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"]
+        ]
+
+        try:
+            self.med_st._check_hyperstages(
+                med_hyperstage_noerror
+            )
+        except  Exception as exc:
+            assert False, \
+            f"'check_hyperstages' raised an exception {exc}"
+
+        # non-stratified falls dataset
+        fall_hyperstage_noerror = [
+            ["s0"],
+            ["s2", "s3", "s4"],
+            ["s5", "s9"],
+            ["s1","s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
+        ]
+
+        try:
+            self.fall_st._check_hyperstages(
+                fall_hyperstage_noerror
+            )
+        except  Exception as exc:
+            assert False, \
+            f"'check_hyperstages' raised an exception {exc}"
 
     def test_create_default_prior(self) -> None:
         # stratified medical dataset
@@ -88,11 +493,11 @@ class TestStagedTrees():
 
         alpha = 3
         # check that prior is correct.
-        prior = self.med_st._StagedTree__create_default_prior(alpha)
+        prior = self.med_st._create_default_prior(alpha)
         assert med_expected_prior == prior
 
         alpha = 4
-        prior = self.fall_st._StagedTree__create_default_prior(alpha)
+        prior = self.fall_st._create_default_prior(alpha)
         assert fall_expected_prior == prior
 
     def test_create_default_hyperstage(self) -> None:
@@ -110,23 +515,19 @@ class TestStagedTrees():
             ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
              "s22", "s23", "s24", "s25", "s26"]
         ]
-        med_hyperstage = self.med_st._StagedTree__create_default_hyperstage()
-        print(med_expected_hyperstage)
-        print(med_hyperstage)
+        med_hyperstage = self.med_st._create_default_hyperstage()
 
-        fall_hyperstage = self.fall_st._StagedTree__create_default_hyperstage()
-        print(fall_expected_hyperstage)
-        print(fall_hyperstage)
+        fall_hyperstage = self.fall_st._create_default_hyperstage()
         assert med_hyperstage == med_expected_hyperstage
         assert fall_hyperstage == fall_expected_hyperstage
 
     def test_calculate_posterior(self) -> None:
         def calculate_posterior(staged_tree: StagedTree, expected_countset,
                                 alpha, expected_likelihood):
-            actual_countset = staged_tree._StagedTree__create_edge_countset()
+            actual_countset = staged_tree._create_edge_countset()
             assert actual_countset == expected_countset
 
-            prior = staged_tree._StagedTree__create_default_prior(alpha)
+            prior = staged_tree._create_default_prior(alpha)
             staged_tree.prior = prior
             expected_posterior = []
             for idx, countset in enumerate(actual_countset):
@@ -253,6 +654,27 @@ class TestStagedTrees():
                 frozenset([frozenset(sublist) for sublist in hyperstage]))
 
         assert actual_hyperstages == expected_hyperstages
+    
+    def test_node_colours(self) -> None:
+        """ Ensures that all nodes in the event tree dot graph object
+        are coloured in lightgrey and the nodes in the staged tree
+        agree with the result of AHC """
+        dot_event_nodes = self.med_st.dot_event_graph.get_nodes()
+        self.med_st.calculate_AHC_transitions()
+        dot_staged_nodes = self.med_st.dot_staged_graph.get_nodes()
+        event_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_event_nodes
+        ]
+        staged_node_colours = [
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
+        ]
+        assert len(set(event_node_colours)) == 1
+        assert event_node_colours[0] == 'lightgrey'
+        assert len(set(staged_node_colours)) > 1
+        g = self.med_st.dot_staged_graph
+        for node in self.med_st.nodes():
+            assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
+                self.med_st.nodes[node]['colour']
 
 
 class TestChangingDataFrame():
@@ -414,3 +836,39 @@ class TestWithDynamicDataset():
         ahc_out = st.calculate_AHC_transitions()
         ms = [set(merged_sits) for merged_sits in ahc_out["Merged Situations"]]
         assert {"s9", "s13", "s14"} in ms
+
+
+class TestNumericalDataset():
+    """Test case for purely numerical dataset."""
+
+    def setup(self):
+        """setup for tests"""
+        self.data = pd.read_csv("data/Asym.csv")
+
+    def test_string_missing_paths(self):
+        """Missing paths are provided as strings, there's no error."""
+        missing_paths = [
+            ('0', '1', '1', '1'),
+            ('1', '0', '1', '1'),
+            ('0', '1', '0', '1')
+        ]
+        try:
+            _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
+        except Exception as err:
+            pytest.fail(
+                f"There was an error when using string missing_paths:\n{err}"
+            )
+
+    def test_numerical_missing_paths(self):
+        """Missing paths are provided as numerical data, there's no error."""
+        missing_paths = [
+            (0, 1, 1, 1),
+            (1, 0, 1, 1),
+            (0, 1, 0, 1)
+        ]
+        try:
+            _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
+        except Exception as err:
+            pytest.fail(
+                f"There was an error when using string missing_paths:\n{err}"
+            )

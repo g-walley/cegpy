@@ -4,7 +4,7 @@ from operator import add, sub, itemgetter
 from IPython.display import Image
 from IPython import get_ipython
 from itertools import combinations, chain
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 import networkx as nx
 import scipy.special
 import logging
@@ -531,13 +531,11 @@ class StagedTree(EventTree):
                 break
 
         merged_situation_list = self._sort_list(merged_situation_list)
-        mean_posterior_probs = (
-            self._calculate_mean_posterior_probs(
-                merged_situation_list,
-                posteriors
-            )
+        _calculate_and_apply_mean_posterior_probs(
+            self, merged_situation_list, posteriors
         )
-        return mean_posterior_probs, loglikelihood, merged_situation_list
+
+        return loglikelihood, merged_situation_list
 
     def _mark_nodes_with_stage_number(self, merged_situations):
         """AHC algorithm creates a list of indexes to the situations list.
@@ -585,7 +583,7 @@ class StagedTree(EventTree):
 
         self._store_params(prior, alpha, hyperstage)
 
-        mean_posterior_probs, loglikelihood, merged_situations = (
+        loglikelihood, merged_situations = (
             self._execute_AHC())
 
         self._mark_nodes_with_stage_number(merged_situations)
@@ -595,14 +593,13 @@ class StagedTree(EventTree):
         self.ahc_output = {
             "Merged Situations": merged_situations,
             "Loglikelihood": loglikelihood,
-            "Mean Posterior Probabilities": mean_posterior_probs
         }
         return self.ahc_output
 
     @property
     def dot_staged_graph(self):
         return self._generate_dot_graph()
-    
+
     def create_figure(self, filename, staged=True):
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
@@ -632,3 +629,34 @@ class StagedTree(EventTree):
                 return None
         else:
             super().create_figure(filename)
+
+
+def _calculate_and_apply_mean_posterior_probs(
+    staged: StagedTree, merged_situations: List, posteriors: List
+):
+    """Given a staged tree, calculate the mean posterior probs,
+    and apply them to each edge."""
+    # Add all situations that are not in a stage.
+    for sit in staged.situations:
+        if sit not in list(chain(*merged_situations)):
+            merged_situations.append((sit,))
+
+    for stage in merged_situations:
+        for sit in stage:
+            sit_idx = staged.situations.index(sit)
+            if all(posteriors[sit_idx]) != 0:
+                stage_posteriors = posteriors[sit_idx]
+                break
+
+        total = sum(stage_posteriors)
+        mean_posterior_probs = [
+            round(posterior/total, 3)
+            for posterior in stage_posteriors
+        ]
+        for sit in stage:
+            dst_nodes = list(chain(staged.succ[sit]))
+            edge_labels = list(chain(*staged.succ[sit].values()))
+            for edge_idx, label in enumerate(edge_labels):
+                staged.edges[
+                    (sit, dst_nodes[edge_idx], label)
+                ]["probability"] = mean_posterior_probs[edge_idx]

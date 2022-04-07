@@ -441,8 +441,8 @@ def _combine_edge_counts(edges_with_counts: List) -> Tuple[Dict, int]:
 
 
 def _propagate_probabilities(ceg: ChainEventGraph):
-    count_total_lbl = 'count_total'
-    edge_counts = list(ceg.edges(data='count', keys=True, default=0))
+    posterior_totals_label = 'posterior_total'
+    edge_posteriors = list(ceg.edges(data='posterior', keys=True, default=0))
 
     for stage, stage_nodes in ceg.stages.items():
         count_total = 0
@@ -450,15 +450,15 @@ def _propagate_probabilities(ceg: ChainEventGraph):
         if stage is not None:
             all_stage_edges = [
                 (src, dst, label, count)
-                for (src, dst, label, count) in edge_counts
+                for (src, dst, label, count) in edge_posteriors
                 if src in stage_nodes
             ]
             stage_edges, count_total = _combine_edge_counts(all_stage_edges)
 
             for node in stage_nodes:
-                ceg.nodes[node][count_total_lbl] = count_total
+                ceg.nodes[node][posterior_totals_label] = count_total
 
-            for (src, dst, label, _) in edge_counts:
+            for (src, dst, label, _) in edge_posteriors:
                 if src in stage_nodes:
                     ceg.edges[src, dst, label]['probability'] = (
                         stage_edges[label] / count_total
@@ -467,13 +467,13 @@ def _propagate_probabilities(ceg: ChainEventGraph):
             for node in stage_nodes:
                 node_edges = [
                     (src, dst, label, count)
-                    for (src, dst, label, count) in edge_counts
+                    for (src, dst, label, count) in edge_posteriors
                     if src == node
                 ]
                 stage_edges, count_total = _combine_edge_counts(node_edges)
 
-                ceg.nodes[node][count_total_lbl] = count_total
-                for (src, dst, label, _) in edge_counts:
+                ceg.nodes[node][posterior_totals_label] = count_total
+                for (src, dst, label, _) in edge_posteriors:
                     if src == node:
                         ceg.edges[src, dst, label]['probability'] = (
                             stage_edges[label] / count_total

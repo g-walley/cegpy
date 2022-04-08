@@ -36,8 +36,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     sink_suffix: str
     node_prefix: str
-    path_list: List
-    _node_num_iterator: it.count
+    path_list: List[str]
 
     def __init__(
         self,
@@ -51,7 +50,6 @@ class ChainEventGraph(nx.MultiDiGraph):
         self.node_prefix = "w"
         self._stages = {}
         self.path_list = []
-        self._node_num_iterator = it.count(1, 1)
 
         if generate:
             self.generate()
@@ -75,10 +73,6 @@ class ChainEventGraph(nx.MultiDiGraph):
             stages[stage].add(node)
 
         return stages
-
-    def _next_node_name(self) -> str:
-        """Next available node number."""
-        return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
     def generate(self):
         """
@@ -288,12 +282,13 @@ def _merge_edge_data(
 
 def _relabel_nodes(ceg: ChainEventGraph):
     """Relabels nodes whilst maintaining ordering."""
+    num_iterator = it.count(1, 1)
     nodes_to_rename = list(ceg.succ[ceg.root_node].keys())
     # first, relabel the successors of this node
     node_mapping = {}
     while nodes_to_rename:
         for node in nodes_to_rename.copy():
-            node_mapping[node] = ceg._next_node_name()
+            node_mapping[node] = f"{ceg.node_prefix}{next(num_iterator)}"
             for succ in ceg.succ[node].keys():
                 if (succ != ceg.sink_node and succ not in nodes_to_rename):
                     nodes_to_rename.append(succ)

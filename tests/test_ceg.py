@@ -53,19 +53,6 @@ class TestUnitCEG(unittest.TestCase):
         )
         self.st.calculate_AHC_transitions()
 
-    def test_node_name_generation_with_prefix(self):
-        """Node names are generated sequentially"""
-        ceg = ChainEventGraph(self.st)
-        prefix = ceg.node_prefix
-        largest = 20
-        ceg._node_num_iterator = itertools.count(1, 1)
-        node_names = [
-            ceg._next_node_name()
-            for _ in range(0, largest)
-        ]
-        assert (prefix + '1') == node_names[0]
-        assert (prefix + str(largest)) == node_names[largest - 1]
-
     def test_stages_property(self):
         """Stages is a mapping of stage names to lists of nodes"""
         ceg = ChainEventGraph(self.st)

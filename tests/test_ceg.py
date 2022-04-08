@@ -12,7 +12,8 @@ from src.cegpy.graphs.ceg import (
     _merge_and_add_edges,
     _trim_leaves_from_graph,
     _update_distances_to_sink,
-    _gen_nodes_with_increasing_distance
+    _gen_nodes_with_increasing_distance,
+    _check_nodes_can_be_merged,
 )
 from pathlib import Path
 
@@ -207,6 +208,16 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         assert (
             len(expected) == len(actual)
         ), "Actual number of edges does not match expected number of edges."
+
+    def test_check_nodes_can_be_merged(self):
+        """Nodes can be merged."""
+        self.ceg.nodes["w1"]["stage"] = 2
+        self.ceg.nodes["w2"]["stage"] = 2
+        assert (
+            _check_nodes_can_be_merged(
+                self.ceg, "w1", "w2"
+            )
+        ), "Nodes cannot be merged."
 
 
 class TestTrimLeavesFromGraph:

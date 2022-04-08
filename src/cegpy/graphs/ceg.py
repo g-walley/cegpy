@@ -96,8 +96,8 @@ class ChainEventGraph(nx.MultiDiGraph):
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
                 for node_2 in next_set_of_nodes:
-                    mergeable = self._check_nodes_can_be_merged(
-                        node_1, node_2
+                    mergeable = _check_nodes_can_be_merged(
+                        self, node_1, node_2
                     )
                     if mergeable:
                         nodes_to_merge.add((node_1, node_2))
@@ -155,41 +155,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                     nodes_to_merge.remove(pair)
                     if new_pair[0] != new_pair[1]:
                         nodes_to_merge.add(new_pair)
-
-    def _check_nodes_can_be_merged(self, node_1, node_2) -> bool:
-        """Determine if the two nodes are able to be merged."""
-        has_same_successor_nodes = \
-            set(self.adj[node_1].keys()) == set(self.adj[node_2].keys())
-
-        if has_same_successor_nodes:
-            has_same_outgoing_edges = True
-            v1_adj = self.succ[node_1]
-            for succ_node in list(v1_adj.keys()):
-                v1_edges = self.succ[node_1][succ_node]
-                v2_edges = self.succ[node_2][succ_node]
-
-                if v1_edges is None or v2_edges is None:
-                    has_same_outgoing_edges &= False
-                    break
-
-                v2_edge_labels = list(v2_edges.keys())
-
-                for label in v1_edges.keys():
-                    if label not in v2_edge_labels:
-                        has_same_outgoing_edges &= False
-                        break
-                    has_same_outgoing_edges &= True
-        else:
-            has_same_outgoing_edges = False
-
-        try:
-            in_same_stage = \
-                self.nodes[node_1]['stage'] == self.nodes[node_2]['stage']
-        except KeyError:
-            in_same_stage = False
-
-        return in_same_stage and \
-            has_same_successor_nodes and has_same_outgoing_edges
 
     @property
     def dot_graph(self) -> pdp.Dot:
@@ -387,3 +352,42 @@ def _gen_nodes_with_increasing_distance(ceg: ChainEventGraph, start=0) -> list:
         nodes = distance_dict.get(dist)
         if dist >= start and nodes is not None:
             yield nodes
+
+
+def _check_nodes_can_be_merged(ceg: ChainEventGraph, node_1, node_2) -> bool:
+    """Determine if the two nodes are able to be merged."""
+    have_same_successor_nodes = (
+        set(ceg.adj[node_1].keys()) == set(ceg.adj[node_2].keys())
+    )
+
+    if have_same_successor_nodes:
+        have_same_outgoing_edges = True
+        v1_adj = ceg.succ[node_1]
+        for succ_node in list(v1_adj.keys()):
+            v1_edges = ceg.succ[node_1][succ_node]
+            v2_edges = ceg.succ[node_2][succ_node]
+
+            if v1_edges is None or v2_edges is None:
+                have_same_outgoing_edges &= False
+                break
+
+            v2_edge_labels = list(v2_edges.keys())
+
+            for label in v1_edges.keys():
+                if label not in v2_edge_labels:
+                    have_same_outgoing_edges &= False
+                    break
+                have_same_outgoing_edges &= True
+    else:
+        have_same_outgoing_edges = False
+
+    try:
+        in_same_stage = (
+            ceg.nodes[node_1]['stage'] == ceg.nodes[node_2]['stage']
+        )
+    except KeyError:
+        in_same_stage = False
+
+    return in_same_stage and (
+        have_same_successor_nodes and have_same_outgoing_edges
+    )

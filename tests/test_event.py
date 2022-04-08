@@ -703,3 +703,45 @@ class TestVariablesFiltered():
             }
         
         assert df_et.categories_per_variable == expected_categories
+
+class TestStageColours():
+    def setup(self):
+        array = [
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", np.NaN, "Dont Recover"]),
+        ]
+
+        self.df = pd.DataFrame(array)
+
+    def test_pd_nans_filtered(self) -> None:
+        '''Checking that the pd.nan filter works'''
+        df_et = EventTree(
+                dataframe=self.df
+            )
+
+        expected_categories = {
+            0: 2, 1: 4, 2: 3
+            }
+        
+        assert df_et.categories_per_variable == expected_categories
+
+    def test_pd_nans_filtered_with_missing(self) -> None:
+        '''Checking that the pd.nan filter works'''
+        df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label="Struct",
+                missing_label="NotANum",
+                complete_case=True
+            )
+
+        expected_categories = {
+            0: 2, 1: 3, 2: 2
+            }
+        
+        assert df_et.categories_per_variable == expected_categories

@@ -209,26 +209,80 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             len(expected) == len(actual)
         ), "Actual number of edges does not match expected number of edges."
 
+
+class TestNodesCanBeMerged(unittest.TestCase):
+    def setUp(self):
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w&infin;'
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+
     def test_check_nodes_can_be_merged(self):
         """Nodes can be merged."""
-        self.ceg.nodes["w1"]["stage"] = 2
-        self.ceg.nodes["w2"]["stage"] = 2
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'c'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+        ceg.nodes["w1"]["stage"] = 2
+        ceg.nodes["w2"]["stage"] = 2
         assert (
             _check_nodes_can_be_merged(
-                self.ceg, "w1", "w2"
+                ceg, "w1", "w2"
             )
         ), "Nodes should be mergeable."
 
     def test_nodes_not_in_same_stage_cannot_be_merged(self):
         """Nodes not in same stage cannot be merged"""
-        self.ceg.nodes["w1"]["stage"] = 1
-        self.ceg.nodes["w2"]["stage"] = 2
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'c'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+        ceg.nodes["w1"]["stage"] = 1
+        ceg.nodes["w2"]["stage"] = 2
         assert (
             not _check_nodes_can_be_merged(
-                self.ceg, "w1", "w2"
+                ceg, "w1", "w2"
             )
         ), "Nodes should not be mergeable."
 
+    def test_nodes_with_different_successor_nodes(self):
+        """Nodes with different successor nodes won't be merged."""
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w&infin;', 'c'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+        ceg.nodes["w1"]["stage"] = 2
+        ceg.nodes["w2"]["stage"] = 2
+        assert (
+            not _check_nodes_can_be_merged(
+                ceg, "w1", "w2"
+            )
+        ), "Nodes should not be mergeable."
 
 class TestTrimLeavesFromGraph:
     def setup(self):

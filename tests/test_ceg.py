@@ -1,3 +1,4 @@
+import itertools
 import re
 from typing import Dict
 import unittest
@@ -10,8 +11,7 @@ from src.cegpy.graphs.ceg import (
     _merge_and_add_edges,
     _trim_leaves_from_graph,
     _update_distances_to_sink,
-    _gen_nodes_with_increasing_distance,
-    _combine_edge_counts
+    _gen_nodes_with_increasing_distance
 )
 from pathlib import Path
 
@@ -34,8 +34,9 @@ class TestUnitCEG(object):
     def test_node_name_generation(self):
         prefix = self.ceg.node_prefix
         largest = 20
+        self.ceg._node_num_iterator = itertools.count(1, 1)
         node_names = [
-            self.ceg.next_node_name
+            self.ceg._next_node_name()
             for _ in range(0, largest)
         ]
         assert (prefix + '1') == node_names[0]
@@ -181,28 +182,6 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         assert (
             len(expected) == len(actual)
         ), "Actual number of edges does not match expected number of edges."
-
-    def test_combine_edge_counts(self):
-        """_combine_edge_counts combines provided edges"""
-        edges = [
-            ('s1', 's3', 'Experienced', 798),
-            ('s1', 's4', 'Inexperienced', 1000),
-            ('s1', 's5', 'Novice', 3693),
-            ('s2', 's6', 'Experienced', 799),
-            ('s2', 's7', 'Inexperienced', 998),
-            ('s2', 's8', 'Novice', 3696)
-        ]
-        expected_stage_edges = {
-            'Experienced': 1597,
-            'Inexperienced': 1998,
-            'Novice': 7389
-        }
-        expected_count_total = 10984
-        (actual_stage_edges, actual_count_total) = _combine_edge_counts(
-            edges=edges
-        )
-        self.assertEqual(actual_stage_edges, expected_stage_edges)
-        self.assertEqual(actual_count_total, expected_count_total)
 
 
 class TestTrimLeavesFromGraph:

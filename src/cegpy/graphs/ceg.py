@@ -39,7 +39,12 @@ class ChainEventGraph(nx.MultiDiGraph):
     path_list: List
     _node_num_iterator: it.count
 
-    def __init__(self, staged_tree: Optional[StagedTree] = None, **attr):
+    def __init__(
+        self,
+        staged_tree: Optional[StagedTree] = None,
+        generate: bool = False,
+        **attr
+    ):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
         self.sink_suffix = "&infin;"
@@ -47,7 +52,9 @@ class ChainEventGraph(nx.MultiDiGraph):
         self._stages = {}
         self.path_list = []
         self._node_num_iterator = it.count(1, 1)
-        self._generate()
+
+        if generate:
+            self.generate()
 
     @property
     def sink_node(self) -> str:
@@ -69,12 +76,11 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         return stages
 
-    @property
-    def next_node_name(self):
+    def _next_node_name(self) -> str:
         """Next available node number."""
         return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
-    def _generate(self):
+    def generate(self):
         """
         This function takes the output of the AHC algorithm and identifies
         the positions i.e. the vertices of the CEG and the edges of the CEG
@@ -287,7 +293,7 @@ def _relabel_nodes(ceg: ChainEventGraph):
     node_mapping = {}
     while nodes_to_rename:
         for node in nodes_to_rename.copy():
-            node_mapping[node] = ceg.next_node_name
+            node_mapping[node] = ceg._next_node_name()
             for succ in ceg.succ[node].keys():
                 if (succ != ceg.sink_node and succ not in nodes_to_rename):
                     nodes_to_rename.append(succ)

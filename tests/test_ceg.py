@@ -217,7 +217,17 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             _check_nodes_can_be_merged(
                 self.ceg, "w1", "w2"
             )
-        ), "Nodes cannot be merged."
+        ), "Nodes should be mergeable."
+
+    def test_nodes_not_in_same_stage_cannot_be_merged(self):
+        """Nodes not in same stage cannot be merged"""
+        self.ceg.nodes["w1"]["stage"] = 1
+        self.ceg.nodes["w2"]["stage"] = 2
+        assert (
+            not _check_nodes_can_be_merged(
+                self.ceg, "w1", "w2"
+            )
+        ), "Nodes should not be mergeable."
 
 
 class TestTrimLeavesFromGraph:

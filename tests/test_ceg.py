@@ -17,6 +17,28 @@ from src.cegpy.graphs.ceg import (
 from pathlib import Path
 
 
+class TestMockedCEGMethods():
+    def setup(self):
+        self.node_prefix = 'w'
+        self.sink_suffix = '&infin;'
+        df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+
+        self.st = StagedTree(
+            dataframe=pd.read_excel(df_path),
+            name="medical_staged"
+        )
+        self.st.calculate_AHC_transitions()
+
+    def test_generate_argument(self, mocker: pytest_mock.mocker):
+        """When ChainEventGraph called with generate, the .generate()
+        method is called."""
+        mocker.patch('src.cegpy.graphs.ceg.ChainEventGraph.generate')
+        ceg = ChainEventGraph(self.st, generate=True)
+        ceg.generate.assert_called_once()
+
+
 class TestUnitCEG(unittest.TestCase):
     def setUp(self):
         self.node_prefix = 'w'
@@ -43,13 +65,6 @@ class TestUnitCEG(unittest.TestCase):
         ]
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
-
-    def test_generate_argument(self, mocker: pytest_mock.mocker):
-        """When ChainEventGraph called with generate, the .generate()
-        method is called."""
-        mocker.patch('src.cegpy.graphs.ceg.ChainEventGraph.generate')
-        ceg = ChainEventGraph(self.st, generate=True)
-        ceg.generate.assert_called_once()
 
     def test_stages_property(self):
         """Stages is a mapping of stage names to lists of nodes"""

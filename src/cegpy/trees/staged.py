@@ -4,7 +4,7 @@ from operator import add, sub, itemgetter
 from IPython.display import Image
 from IPython import get_ipython
 from itertools import combinations, chain
-from typing import Dict, List, Tuple
+from typing import List, Tuple
 import networkx as nx
 import scipy.special
 import logging
@@ -570,7 +570,8 @@ class StagedTree(EventTree):
             if len(colour_list) < num_colours:
                 raise IndexError(
                     f"The number of colours provided ({len(colour_list)}) is "
-                    f"less than the number of distinct colours required ({num_colours})."
+                    "less than the number of distinct colours required "
+                    f"({num_colours})."
                 )
         self._stage_colours = stage_colours
         for node in self.nodes:

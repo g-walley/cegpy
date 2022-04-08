@@ -413,8 +413,8 @@ class TestStratification(unittest.TestCase):
 class TestMissingLabels():
     def setup(self):
         array = [
-            np.array(["1", "N/A", "Recover"]),
-            np.array(["1", "Trt1", "N/A"]),
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
             np.array(["2", "Struct", "Recover"]),
             np.array(["2", "Struct", "Dont Recover"]),
             np.array(["1", "Trt1", "Recover"]),
@@ -426,8 +426,8 @@ class TestMissingLabels():
         self.df = pd.DataFrame(array)
 
         array_with_empty = [
-            np.array(["1", "N/A", "Recover"]),
-            np.array(["1", "Trt1", "N/A"]),
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
             np.array(["2", "Struct", "Recover"]),
             np.array(["2", "Struct", "Dont Recover"]),
             np.array(["1", "Trt1", "Recover"]),
@@ -440,8 +440,8 @@ class TestMissingLabels():
         self.df_with_empty = pd.DataFrame(array_with_empty)
 
         array_with_na = [
-            np.array(["1", "N/A", "Recover"]),
-            np.array(["1", "Trt1", "N/A"]),
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
             np.array(["2", "Struct", "Recover"]),
             np.array(["2", "Struct", "Dont Recover"]),
             np.array(["1", "Trt1", "Recover"]),
@@ -454,8 +454,8 @@ class TestMissingLabels():
         self.df_with_na = pd.DataFrame(array_with_na)
 
         array_with_both = [
-            np.array(["1", "N/A", "Recover"]),
-            np.array(["1", "Trt1", "N/A"]),
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
             np.array(["2", "Struct", "Recover"]),
             np.array(["2", "Struct", "Dont Recover"]),
             np.array(["1", "Trt1", "Recover"]),
@@ -484,8 +484,8 @@ class TestMissingLabels():
             )
         expected_df = pd.DataFrame(
             [
-                np.array(["1", "N/A", "Recover"]),
-                np.array(["1", "Trt1", "N/A"]),
+                np.array(["1", "NotANum", "Recover"]),
+                np.array(["1", "Trt1", "NotANum"]),
                 np.array(["2", "", "Recover"]),
                 np.array(["2", "", "Dont Recover"]),
                 np.array(["1", "Trt1", "Recover"]),
@@ -512,7 +512,7 @@ class TestMissingLabels():
         """missing label replaced with 'missing'."""
         df_et = EventTree(
             dataframe=self.df,
-            missing_label="N/A"
+            missing_label="NotANum"
         )
         expected_df = pd.DataFrame(
             [
@@ -533,7 +533,7 @@ class TestMissingLabels():
         df_et = EventTree(
             dataframe=self.df,
             struct_missing_label="Struct",
-            missing_label="N/A"
+            missing_label="NotANum"
         )
         expected_df = pd.DataFrame(
             [
@@ -563,7 +563,7 @@ class TestMissingLabels():
         # Case 1
         df_et = EventTree(
             dataframe=self.df,
-            missing_label="N/A",
+            missing_label="NotANum",
             complete_case=True
         )
         expected_df = pd.DataFrame(
@@ -581,7 +581,7 @@ class TestMissingLabels():
         # Case 2
         df_with_empty = EventTree(
             dataframe=self.df_with_empty,
-            missing_label="N/A",
+            missing_label="NotANum",
             complete_case=True
         )
         expected_df_with_empty = pd.DataFrame(
@@ -602,7 +602,7 @@ class TestMissingLabels():
         # Case 3
         df_with_na = EventTree(
             dataframe=self.df_with_na,
-            missing_label="N/A",
+            missing_label="NotANum",
             complete_case=True
         )
         expected_df_with_na = pd.DataFrame(        
@@ -623,11 +623,10 @@ class TestMissingLabels():
         # Case 4
         df_with_both = EventTree(
             dataframe=self.df_with_both,
-            missing_label="N/A",
+            missing_label="NotANum",
             complete_case=True
         )
         expected_df_with_both = pd.DataFrame(   
-            
         [
             np.array(["2", "Struct", "Recover"]),
             np.array(["2", "Struct", "Dont Recover"]),
@@ -648,7 +647,7 @@ class TestMissingLabels():
         df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label="Struct",
-                missing_label="N/A",
+                missing_label="NotANum",
                 complete_case=True
             )
         expected_df = pd.DataFrame(
@@ -662,3 +661,45 @@ class TestMissingLabels():
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
+
+class TestVariablesFiltered():
+    def setup(self):
+        array = [
+            np.array(["1", "NotANum", "Recover"]),
+            np.array(["1", "Trt1", "NotANum"]),
+            np.array(["2", "Struct", "Recover"]),
+            np.array(["2", "Struct", "Dont Recover"]),
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["1", np.NaN, "Dont Recover"]),
+        ]
+
+        self.df = pd.DataFrame(array)
+
+    def test_pd_nans_filtered(self) -> None:
+        '''Checking that the pd.nan filter works'''
+        df_et = EventTree(
+                dataframe=self.df
+            )
+
+        expected_categories = {
+            0: 2, 1: 4, 2: 3
+            }
+        
+        assert df_et.categories_per_variable == expected_categories
+
+    def test_pd_nans_filtered_with_missing(self) -> None:
+        '''Checking that the pd.nan filter works'''
+        df_et = EventTree(
+                dataframe=self.df,
+                struct_missing_label="Struct",
+                missing_label="NotANum",
+                complete_case=True
+            )
+
+        expected_categories = {
+            0: 2, 1: 3, 2: 2
+            }
+        
+        assert df_et.categories_per_variable == expected_categories

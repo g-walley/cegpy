@@ -7,29 +7,27 @@ import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
 from pydotplus.graphviz import InvocationException
-
 # import xlsxwriter
 import numpy as np
 
 
-class TestStagedTrees:
+class TestStagedTrees():
     def setup(self):
         # stratified dataset
-        med_df_path = (
-            Path(__file__)
-            .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
-        )
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
         self.med_st = StagedTree(
-            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
         )
 
         # non-stratified dataset
-        fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
-        )
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
         self.fall_st = StagedTree(
@@ -40,74 +38,45 @@ class TestStagedTrees:
     def test_check_hyperstage(self) -> None:
         # stratified medical dataset
         med_hyperstage_less = [
-            [
-                "s0",
-                "s9",
-                "s10",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s19",
-                "s20",
-            ],
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s19", "s20"],
             ["s1", "s2"],
-            ["s3", "s4", "s6", "s7", "s8"],
+            ["s3", "s4", "s6", "s7", "s8"]
         ]
 
         med_hyperstage_more = [
-            [
-                "s0",
-                "s9",
-                "s10",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s18",
-                "s19",
-                "s20",
-            ],
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
             ["s1", "s2", "s50"],
-            ["s3", "s4", "s5", "s6", "s7", "s8"],
+            ["s3", "s4", "s5", "s6", "s7", "s8"]
         ]
 
         med_hyperstage_unequal = [
-            [
-                "s0",
-                "s1",
-                "s9",
-                "s10",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s18",
-                "s19",
-                "s20",
-            ],
+            ["s0", "s1", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
             ["s2", "s4", "s50"],
-            ["s3", "s5", "s6", "s7", "s8"],
+            ["s3", "s5", "s6", "s7", "s8"]
         ]
 
         with pytest.raises(ValueError):
-            med_hyperstage_check = self.med_st._check_hyperstages(med_hyperstage_less)
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_less
+                )
+            )
 
         with pytest.raises(ValueError):
-            med_hyperstage_check = self.med_st._check_hyperstages(med_hyperstage_more)
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_more
+                )
+            )
 
         with pytest.raises(ValueError):
-            med_hyperstage_check = self.med_st._check_hyperstages(
-                med_hyperstage_unequal
+            med_hyperstage_check = (
+                self.med_st._check_hyperstages(
+                    med_hyperstage_unequal
+                )
             )
 
         # non-stratified falls dataset
@@ -115,22 +84,8 @@ class TestStagedTrees:
             ["s1", "s2", "s3", "s4"],
             ["s5", "s9"],
             ["s6", "s10"],
-            [
-                "s7",
-                "s8",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
 
         fall_hyperstage_more = [
@@ -138,22 +93,8 @@ class TestStagedTrees:
             ["s1", "s2", "s3", "s4"],
             ["s5", "s9", "pg"],
             ["s6", "s10"],
-            [
-                "s7",
-                "s8",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
 
         fall_hyperstage_unequal = [
@@ -161,36 +102,30 @@ class TestStagedTrees:
             ["s1", "s3", "s4"],
             ["s5", "s9", "s8"],
             ["s6", "s10"],
-            [
-                "s7",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s7", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
 
+
         with pytest.raises(ValueError):
-            fall_hyperstage_check = self.fall_st._check_hyperstages(
-                fall_hyperstage_less
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_less
+                )
             )
 
         with pytest.raises(ValueError):
-            fall_hyperstage_check = self.fall_st._check_hyperstages(
-                fall_hyperstage_more
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_more
+                )
             )
 
         with pytest.raises(ValueError):
-            fall_hyperstage_check = self.fall_st._check_hyperstages(
-                fall_hyperstage_unequal
+            fall_hyperstage_check = (
+                self.fall_st._check_hyperstages(
+                    fall_hyperstage_unequal
+                )
             )
 
     def test_check_prior(self) -> None:
@@ -263,13 +198,25 @@ class TestStagedTrees:
         ]
 
         with pytest.raises(ValueError):
-            med_prior_check = self.med_st._check_prior(med_prior_incorrect_length)
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_incorrect_length
+                )
+            )
 
         with pytest.raises(ValueError):
-            med_prior_check = self.med_st._check_prior(med_prior_unequal)
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_unequal
+                )
+            )
 
         with pytest.raises(ValueError):
-            med_prior_check = self.med_st._check_prior(med_prior_negative)
+            med_prior_check =  (
+                self.med_st._check_prior(
+                    med_prior_negative
+                )
+            )
 
         # non-stratified falls dataset
         fall_prior_incorrect_length = [
@@ -290,7 +237,7 @@ class TestStagedTrees:
             [frac(1, 12), frac(1, 12)],
             [frac(1, 12), frac(1, 12)],
             [frac(1, 8), frac(1, 8)],
-            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
         ]
 
         fall_prior_unequal = [
@@ -316,7 +263,7 @@ class TestStagedTrees:
             [frac(1, 12), frac(1, 12)],
             [frac(1, 12), frac(1, 12)],
             [frac(1, 8), frac(1, 8)],
-            [frac(1, 8), frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8), frac(1, 8)]
         ]
 
         fall_prior_negative = [
@@ -342,17 +289,29 @@ class TestStagedTrees:
             [frac(1, 12), frac(1, 12)],
             [frac(1, 12), frac(1, 12)],
             [frac(1, 8), frac(1, 8)],
-            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
         ]
 
         with pytest.raises(ValueError):
-            fall_prior_check = self.fall_st._check_prior(fall_prior_incorrect_length)
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_incorrect_length
+                )
+            )
 
         with pytest.raises(ValueError):
-            fall_prior_check = self.fall_st._check_prior(fall_prior_unequal)
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_unequal
+                )
+            )
 
         with pytest.raises(ValueError):
-            fall_prior_check = self.fall_st._check_prior(fall_prior_negative)
+            fall_prior_check =  (
+                self.fall_st._check_prior(
+                    fall_prior_negative
+                )
+            )
 
     def test_check_prior_assigned(self) -> None:
         # stratified medical dataset
@@ -379,7 +338,9 @@ class TestStagedTrees:
             [frac(1, 8), frac(1, 8)],
             [frac(1, 8), frac(1, 8)],
         ]
-        self.med_st.calculate_AHC_transitions(prior=med_prior_noerror)
+        self.med_st.calculate_AHC_transitions(
+            prior=med_prior_noerror
+        )
         assert self.med_st.prior_list == med_prior_noerror
 
         # non-stratified falls dataset
@@ -406,21 +367,26 @@ class TestStagedTrees:
             [frac(1, 12), frac(1, 12)],
             [frac(1, 12), frac(1, 12)],
             [frac(1, 8), frac(1, 8)],
-            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
         ]
 
-        self.fall_st.calculate_AHC_transitions(prior=fall_prior_noerror)
+        self.fall_st.calculate_AHC_transitions(
+            prior=fall_prior_noerror
+        )
         assert self.fall_st.prior_list == fall_prior_noerror
 
     def test_check_hyperstage_assigned(self) -> None:
         # stratified medical dataset
         med_hyperstage_noerror = [
-            ["s0", "s9", "s10", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20"],
+            ["s0", "s9", "s10", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
             ["s1", "s2"],
-            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"],
+            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"]
         ]
 
-        self.med_st.calculate_AHC_transitions(hyperstage=med_hyperstage_noerror)
+        self.med_st.calculate_AHC_transitions(
+            hyperstage=med_hyperstage_noerror
+        )
         assert self.med_st.hyperstage == med_hyperstage_noerror
 
         # non-stratified falls dataset
@@ -428,69 +394,50 @@ class TestStagedTrees:
             ["s0"],
             ["s2", "s3", "s4"],
             ["s5", "s9"],
-            ["s1", "s6", "s10"],
-            [
-                "s7",
-                "s8",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s1","s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
 
-        self.fall_st.calculate_AHC_transitions(hyperstage=fall_hyperstage_noerror)
+        self.fall_st.calculate_AHC_transitions(
+            hyperstage=fall_hyperstage_noerror
+        )
         assert self.fall_st.hyperstage == fall_hyperstage_noerror
 
     def test_hyperstage_noerror(self) -> None:
         # stratified medical dataset
         med_hyperstage_noerror = [
-            ["s0", "s9", "s10", "s13", "s14", "s15", "s16", "s17", "s18", "s19", "s20"],
+            ["s0", "s9", "s10", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
             ["s1", "s2"],
-            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"],
+            ["s3", "s4", "s5", "s11", "s12", "s6", "s7", "s8"]
         ]
 
         try:
-            self.med_st._check_hyperstages(med_hyperstage_noerror)
-        except Exception as exc:
-            assert False, f"'check_hyperstages' raised an exception {exc}"
+            self.med_st._check_hyperstages(
+                med_hyperstage_noerror
+            )
+        except  Exception as exc:
+            assert False, \
+            f"'check_hyperstages' raised an exception {exc}"
 
         # non-stratified falls dataset
         fall_hyperstage_noerror = [
             ["s0"],
             ["s2", "s3", "s4"],
             ["s5", "s9"],
-            ["s1", "s6", "s10"],
-            [
-                "s7",
-                "s8",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s1","s6", "s10"],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
 
         try:
-            self.fall_st._check_hyperstages(fall_hyperstage_noerror)
-        except Exception as exc:
-            assert False, f"'check_hyperstages' raised an exception {exc}"
+            self.fall_st._check_hyperstages(
+                fall_hyperstage_noerror
+            )
+        except  Exception as exc:
+            assert False, \
+            f"'check_hyperstages' raised an exception {exc}"
 
     def test_create_default_prior(self) -> None:
         # stratified medical dataset
@@ -542,7 +489,7 @@ class TestStagedTrees:
             [frac(1, 12), frac(1, 12)],
             [frac(1, 12), frac(1, 12)],
             [frac(1, 8), frac(1, 8)],
-            [frac(1, 8), frac(1, 8)],
+            [frac(1, 8), frac(1, 8)]
         ]
         assert len(med_expected_prior) == 21
         assert len(fall_expected_prior) == 23
@@ -558,45 +505,18 @@ class TestStagedTrees:
 
     def test_create_default_hyperstage(self) -> None:
         med_expected_hyperstage = [
-            [
-                "s0",
-                "s9",
-                "s10",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s18",
-                "s19",
-                "s20",
-            ],
+            ["s0", "s9", "s10", "s11", "s12", "s13", "s14", "s15", "s16",
+             "s17", "s18", "s19", "s20"],
             ["s1", "s2"],
-            ["s3", "s4", "s5", "s6", "s7", "s8"],
+            ["s3", "s4", "s5", "s6", "s7", "s8"]
         ]
         fall_expected_hyperstage = [
             ["s0"],
             ["s1", "s2", "s3", "s4"],
             ["s5", "s9"],
             ["s6", "s10"],
-            [
-                "s7",
-                "s8",
-                "s11",
-                "s12",
-                "s13",
-                "s14",
-                "s15",
-                "s16",
-                "s17",
-                "s22",
-                "s23",
-                "s24",
-                "s25",
-                "s26",
-            ],
+            ["s7", "s8", "s11", "s12", "s13", "s14", "s15", "s16", "s17",
+             "s22", "s23", "s24", "s25", "s26"]
         ]
         med_hyperstage = self.med_st._create_default_hyperstage()
 
@@ -605,9 +525,8 @@ class TestStagedTrees:
         assert fall_hyperstage == fall_expected_hyperstage
 
     def test_calculate_posterior(self) -> None:
-        def calculate_posterior(
-            staged_tree: StagedTree, expected_countset, alpha, expected_likelihood
-        ):
+        def calculate_posterior(staged_tree: StagedTree, expected_countset,
+                                alpha, expected_likelihood):
             actual_countset = staged_tree._create_edge_countset()
             assert actual_countset == expected_countset
 
@@ -653,13 +572,16 @@ class TestStagedTrees:
             [151, 164],
             [379, 436],
             [974, 292],
-            [133, 23],
+            [133, 23]
         ]
         alpha = 4
         expected_likelihood = -68721.50  # Calculated manually
         assert len(falls_expected_edge_countset) == 23
         calculate_posterior(
-            self.fall_st, falls_expected_edge_countset, alpha, expected_likelihood
+            self.fall_st,
+            falls_expected_edge_countset,
+            alpha,
+            expected_likelihood
         )
 
         med_expected_edge_countset = [
@@ -683,13 +605,16 @@ class TestStagedTrees:
             [70, 430],
             [202, 296],
             [338, 1511],
-            [716, 1131],
+            [716, 1131]
         ]
         alpha = float(3)
         expected_likelihood = -30134.07
         assert len(med_expected_edge_countset) == 21
         calculate_posterior(
-            self.med_st, med_expected_edge_countset, alpha, expected_likelihood
+            self.med_st,
+            med_expected_edge_countset,
+            alpha,
+            expected_likelihood
         )
 
     def test_prior_alpha_conflict(self) -> None:
@@ -718,22 +643,22 @@ class TestStagedTrees:
         ]
         alpha = 4
         self.med_st.calculate_AHC_transitions(prior=prior, alpha=alpha)
-        assert self.med_st.alpha is None
+        assert (self.med_st.alpha is None)
 
     def test_alpha_format(self) -> None:
         with pytest.raises(TypeError):
-            self.med_st.calculate_AHC_transitions(alpha={"5"})
+            self.med_st.calculate_AHC_transitions(alpha={'5'})
 
     def test_merged_leaves_med(self) -> None:
         # check that no leaves have been merged
         self.med_st.calculate_AHC_transitions()
-        for stage in self.med_st.ahc_output["Merged Situations"]:
+        for stage in self.med_st.ahc_output['Merged Situations']:
             for situ in stage:
                 assert situ not in self.med_st.leaves
 
     def test_merged_leaves_fall(self) -> None:
         self.fall_st.calculate_AHC_transitions()
-        for stage in self.fall_st.ahc_output["Merged Situations"]:
+        for stage in self.fall_st.ahc_output['Merged Situations']:
             for situ in stage:
                 assert situ not in self.fall_st.leaves
 
@@ -741,12 +666,11 @@ class TestStagedTrees:
         """generator correctly establishes which subsets have
         cross-over, and returns correct number of subsets"""
         example_hyperstage = [
-            ["s1", "s2", "s3"],
-            ["s3", "s4"],
-            ["s5", "s6"],
-            ["s7", "s8"],
-            ["s6", "s4"],
-        ]
+            ['s1', 's2', 's3'],
+            ['s3', 's4'],
+            ['s5', 's6'],
+            ['s7', 's8'],
+            ['s6', 's4']]
         first_hyperstage = set()
         first_hyperstage.add(frozenset(example_hyperstage[0]))
         first_hyperstage.add(frozenset(example_hyperstage[1]))
@@ -760,48 +684,47 @@ class TestStagedTrees:
 
         actual_hyperstages = set()
         for hyperstage in self.fall_st._independent_hyperstage_generator(
-            hyperstage=example_hyperstage
-        ):
+                hyperstage=example_hyperstage):
             actual_hyperstages.add(
-                frozenset([frozenset(sublist) for sublist in hyperstage])
-            )
+                frozenset([frozenset(sublist) for sublist in hyperstage]))
 
         assert actual_hyperstages == expected_hyperstages
 
     def test_node_colours(self) -> None:
-        """Ensures that all nodes in the event tree dot graph object
+        """ Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey and the nodes in the staged tree
-        agree with the result of AHC"""
+        agree with the result of AHC """
         dot_event_nodes = self.med_st.dot_event_graph.get_nodes()
         self.med_st.calculate_AHC_transitions()
         dot_staged_nodes = self.med_st.dot_staged_graph.get_nodes()
         event_node_colours = [
-            n.obj_dict["attributes"]["fillcolor"] for n in dot_event_nodes
+            n.obj_dict['attributes']['fillcolor'] for n in dot_event_nodes
         ]
         staged_node_colours = [
-            n.obj_dict["attributes"]["fillcolor"] for n in dot_staged_nodes
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
         ]
         assert len(set(event_node_colours)) == 1
-        assert event_node_colours[0] == "lightgrey"
+        assert event_node_colours[0] == 'lightgrey'
         assert len(set(staged_node_colours)) > 1
         g = self.med_st.dot_staged_graph
         for node in self.med_st.nodes():
-            assert (
-                g.get_node(node)[0].obj_dict["attributes"]["fillcolor"]
-                == self.med_st.nodes[node]["colour"]
-            )
+            assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
+                self.med_st.nodes[node]['colour']
 
     def test_new_colours(self) -> None:
-        colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
+        colours = [
+            '#8dd3c7', '#ffffb3', '#bebada', '#fb8072',
+            '#80b1d3', '#fdb462'
+        ]
         self.fall_st.calculate_AHC_transitions(colour_list=colours)
         dot_staged_nodes = self.fall_st.dot_staged_graph.get_nodes()
         staged_node_colours = [
-            n.obj_dict["attributes"]["fillcolor"] for n in dot_staged_nodes
+            n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
         ]
-        assert set(colours + ["lightgrey"]) == set(staged_node_colours)
+        assert (set(colours + ['lightgrey']) == set(staged_node_colours))
 
     def test_new_colours_length(self) -> None:
-        colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072"]
+        colours = ['#8dd3c7', '#ffffb3', '#bebada', '#fb8072']
         with pytest.raises(IndexError):
             self.fall_st.calculate_AHC_transitions(colour_list=colours)
 
@@ -810,28 +733,28 @@ class TestStagedTrees:
             self.med_st.create_figure()
 
 
-class TestChangingDataFrame:
+class TestChangingDataFrame():
     def setup(self):
         # stratified dataset
-        med_df_path = (
-            Path(__file__)
-            .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
-        )
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
         self.med_st = StagedTree(
-            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
         )
         self.med_st.calculate_AHC_transitions()
         # non-stratified dataset
-        fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
-        )
+        fall_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/Falls_Data.xlsx')
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
         self.fall_st = StagedTree(
-            dataframe=self.fall_df, sampling_zero_path=self.fall_s_z_paths
+            dataframe=self.fall_df,
+            sampling_zero_path=self.fall_s_z_paths
         )
         self.fall_st.calculate_AHC_transitions()
 
@@ -839,13 +762,17 @@ class TestChangingDataFrame:
         # adding empty column
         med_empty_column_df = self.med_df
         med_empty_column_df["extra"] = ""
-        med_empty_column_st = StagedTree(dataframe=med_empty_column_df)
+        med_empty_column_st = StagedTree(
+            dataframe=med_empty_column_df
+        )
         med_empty_column_st.calculate_AHC_transitions()
         assert med_empty_column_st.ahc_output == self.med_st.ahc_output
 
         fall_empty_column_df = self.fall_df
         fall_empty_column_df["extra"] = ""
-        fall_empty_column_st = StagedTree(dataframe=fall_empty_column_df)
+        fall_empty_column_st = StagedTree(
+            dataframe=fall_empty_column_df
+        )
         fall_empty_column_st.calculate_AHC_transitions()
         assert fall_empty_column_st.ahc_output == self.fall_st.ahc_output
 
@@ -853,13 +780,17 @@ class TestChangingDataFrame:
         # adding NA column
         med_add_NA_df = self.med_df
         med_add_NA_df["extra"] = np.nan
-        med_add_NA_st = StagedTree(dataframe=med_add_NA_df)
+        med_add_NA_st = StagedTree(
+            dataframe=med_add_NA_df
+        )
         med_add_NA_st.calculate_AHC_transitions()
         assert med_add_NA_st.ahc_output == self.med_st.ahc_output
 
         fall_add_NA_df = self.fall_df
         fall_add_NA_df["extra"] = np.nan
-        fall_add_NA_st = StagedTree(dataframe=fall_add_NA_df)
+        fall_add_NA_st = StagedTree(
+            dataframe=fall_add_NA_df
+        )
         fall_add_NA_st.calculate_AHC_transitions()
         assert fall_add_NA_st.ahc_output == self.fall_st.ahc_output
 
@@ -867,32 +798,42 @@ class TestChangingDataFrame:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = "same for all"
-        med_add_same_st = StagedTree(dataframe=med_add_same_df)
+        med_add_same_st = StagedTree(
+            dataframe=med_add_same_df
+        )
         med_add_same_st.calculate_AHC_transitions()
         try:
-            med_add_same_st.create_figure("out/test_add_same_column_med_fig.pdf")
+            med_add_same_st.create_figure(
+                "out/test_add_same_column_med_fig.pdf")
         except InvocationException:
             pass
 
-        first_set = set(tuple(x) for x in self.med_st.ahc_output["Merged Situations"])
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
         second_set = set(
-            tuple(x) for x in med_add_same_st.ahc_output["Merged Situations"]
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
         )
         assert first_set.issubset(second_set)
 
     def test_add_same_column_fall(self) -> None:
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = "same for all"
-        fall_add_same_st = StagedTree(dataframe=fall_add_same_df)
+        fall_add_same_st = StagedTree(
+            dataframe=fall_add_same_df
+        )
         fall_add_same_st.calculate_AHC_transitions()
         try:
-            fall_add_same_st.create_figure("out/test_add_same_column_fall_fig.pdf")
+            fall_add_same_st.create_figure(
+                "out/test_add_same_column_fall_fig.pdf")
         except InvocationException:
             pass
 
-        first_set = set(tuple(x) for x in self.fall_st.ahc_output["Merged Situations"])
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
         second_set = set(
-            tuple(x) for x in fall_add_same_st.ahc_output["Merged Situations"]
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
         )
         assert first_set.issubset(second_set)
 
@@ -900,37 +841,47 @@ class TestChangingDataFrame:
         # adding column with no more information
         med_add_same_df = self.med_df
         med_add_same_df["extra"] = 1
-        med_add_same_st = StagedTree(dataframe=med_add_same_df)
+        med_add_same_st = StagedTree(
+            dataframe=med_add_same_df
+        )
         med_add_same_st.calculate_AHC_transitions()
         try:
-            med_add_same_st.create_figure("out/test_add_same_column_int_med_fig.pdf")
+            med_add_same_st.create_figure(
+                "out/test_add_same_column_int_med_fig.pdf")
         except InvocationException:
             pass
 
-        first_set = set(tuple(x) for x in self.med_st.ahc_output["Merged Situations"])
+        first_set = set(
+            tuple(x) for x in self.med_st.ahc_output['Merged Situations']
+        )
         second_set = set(
-            tuple(x) for x in med_add_same_st.ahc_output["Merged Situations"]
+            tuple(x) for x in med_add_same_st.ahc_output['Merged Situations']
         )
         assert first_set.issubset(second_set)
 
     def test_add_same_column_int_fall(self) -> None:
         fall_add_same_df = self.fall_df
         fall_add_same_df["extra"] = 1
-        fall_add_same_st = StagedTree(dataframe=fall_add_same_df)
+        fall_add_same_st = StagedTree(
+            dataframe=fall_add_same_df
+        )
         fall_add_same_st.calculate_AHC_transitions()
         try:
-            fall_add_same_st.create_figure("out/test_add_same_column_int_fall_fig.pdf")
+            fall_add_same_st.create_figure(
+                "out/test_add_same_column_int_fall_fig.pdf")
         except InvocationException:
             pass
 
-        first_set = set(tuple(x) for x in self.fall_st.ahc_output["Merged Situations"])
+        first_set = set(
+            tuple(x) for x in self.fall_st.ahc_output['Merged Situations']
+        )
         second_set = set(
-            tuple(x) for x in fall_add_same_st.ahc_output["Merged Situations"]
+            tuple(x) for x in fall_add_same_st.ahc_output['Merged Situations']
         )
         assert first_set.issubset(second_set)
 
 
-class TestWithDynamicDataset:
+class TestWithDynamicDataset():
     def setup(self):
         self.df = pd.read_excel("data/Falls_Dynamic_Data.xlsx")
 
@@ -943,7 +894,7 @@ class TestWithDynamicDataset:
         assert {"s9", "s13", "s14"} in ms
 
 
-class TestNumericalDataset:
+class TestNumericalDataset():
     """Test case for purely numerical dataset."""
 
     def setup(self):
@@ -953,46 +904,51 @@ class TestNumericalDataset:
     def test_string_missing_paths(self):
         """Missing paths are provided as strings, there's no error."""
         missing_paths = [
-            ("0", "1", "1", "1"),
-            ("1", "0", "1", "1"),
-            ("0", "1", "0", "1"),
+            ('0', '1', '1', '1'),
+            ('1', '0', '1', '1'),
+            ('0', '1', '0', '1')
         ]
         try:
             _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
         except Exception as err:
-            pytest.fail(f"There was an error when using string missing_paths:\n{err}")
+            pytest.fail(
+                f"There was an error when using string missing_paths:\n{err}"
+            )
 
     def test_numerical_missing_paths(self):
         """Missing paths are provided as numerical data, there's no error."""
-        missing_paths = [(0, 1, 1, 1), (1, 0, 1, 1), (0, 1, 0, 1)]
+        missing_paths = [
+            (0, 1, 1, 1),
+            (1, 0, 1, 1),
+            (0, 1, 0, 1)
+        ]
         try:
             _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
         except Exception as err:
-            pytest.fail(f"There was an error when using string missing_paths:\n{err}")
+            pytest.fail(
+                f"There was an error when using string missing_paths:\n{err}"
+            )
 
 
 class TestPosteriorProbabilityCalculations(unittest.TestCase):
     """Tests the _calculate_and_apply_mean_posterior_probs() functions"""
-
     def setUp(self) -> None:
-        self.dataframe = pd.DataFrame(
-            [
-                np.array(["1", "Trt1", "Recover"]),
-                np.array(["1", "Trt1", "Dont Recover"]),
-                np.array(["2", "Trt1", "Recover"]),
-                np.array(["2", "Trt1", "Dont Recover"]),
-                np.array(["1", "Trt2", "Recover"]),
-                np.array(["1", "Trt2", "Dont Recover"]),
-                np.array(["2", "Trt2", "Recover"]),
-                np.array(["2", "Trt2", "Dont Recover"]),
-            ]
-        )
+        self.dataframe = pd.DataFrame([
+            np.array(["1", "Trt1", "Recover"]),
+            np.array(["1", "Trt1", "Dont Recover"]),
+            np.array(["2", "Trt1", "Recover"]),
+            np.array(["2", "Trt1", "Dont Recover"]),
+            np.array(["1", "Trt2", "Recover"]),
+            np.array(["1", "Trt2", "Dont Recover"]),
+            np.array(["2", "Trt2", "Recover"]),
+            np.array(["2", "Trt2", "Dont Recover"]),
+        ])
         self.staged = StagedTree(self.dataframe)
         self.merged_situations = [
             ("s0", "s1"),
             ("s3", "s5", "s6"),
-            ("s2",),
-            ("s4",),
+            ('s2',),
+            ('s4',),
         ]
         self.probs = [
             [50, 70],
@@ -1026,20 +982,25 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
         ]
         self.staged._apply_mean_posterior_probs(self.merged_situations, expected_mpp)
         edges = {
-            ("s0", "s1", "1"): 0.417,
-            ("s0", "s2", "2"): 0.583,
-            ("s1", "s3", "Trt1"): 0.417,
-            ("s1", "s4", "Trt2"): 0.583,
-            ("s2", "s5", "Trt1"): 0.287,
-            ("s2", "s6", "Trt2"): 0.713,
-            ("s3", "s7", "Dont Recover"): 0.135,
-            ("s3", "s8", "Recover"): 0.865,
-            ("s4", "s9", "Dont Recover"): 0.128,
-            ("s4", "s10", "Recover"): 0.872,
-            ("s5", "s11", "Dont Recover"): 0.135,
-            ("s5", "s12", "Recover"): 0.865,
-            ("s6", "s13", "Dont Recover"): 0.135,
-            ("s6", "s14", "Recover"): 0.865,
+            ('s0', 's1', '1'): 0.417,
+            ('s0', 's2', '2'): 0.583,
+            ('s1', 's3', 'Trt1'): 0.417,
+            ('s1', 's4', 'Trt2'): 0.583,
+            ('s2', 's5', 'Trt1'): 0.287,
+            ('s2', 's6', 'Trt2'): 0.713,
+            ('s3', 's7', 'Dont Recover'): 0.135,
+            ('s3', 's8', 'Recover'): 0.865,
+            ('s4', 's9', 'Dont Recover'): 0.128,
+            ('s4', 's10', 'Recover'): 0.872,
+            ('s5', 's11', 'Dont Recover'): 0.135,
+            ('s5', 's12', 'Recover'): 0.865,
+            ('s6', 's13', 'Dont Recover'): 0.135,
+            ('s6', 's14', 'Recover'): 0.865,
         }
         for edge, probability in edges.items():
-            self.assertEqual(self.staged.edges[edge]["probability"], probability)
+            self.assertEqual(
+                self.staged.edges[edge]["probability"],
+                probability
+            )
+
+

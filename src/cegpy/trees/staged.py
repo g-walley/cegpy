@@ -543,7 +543,7 @@ class StagedTree(EventTree):
                 merged_situation_list.append((sit,))
 
         _calculate_mean_posterior_probs(
-            self, merged_situation_list, posteriors
+            self.situations, merged_situation_list, posteriors
         )
 
         return loglikelihood, merged_situation_list
@@ -658,7 +658,7 @@ class StagedTree(EventTree):
 
 
 def _calculate_mean_posterior_probs(
-    all_situations: List , merged_situations: List, posteriors: List
+    all_situations: List, merged_situations: List, posteriors: List
 ) -> List:
     """Given a staged tree, calculate the mean posterior probs."""
     # Add all situations that are not in a stage.

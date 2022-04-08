@@ -21,6 +21,10 @@ class StagedTree(EventTree):
             sampling_zero_paths=None,
             incoming_graph_data=None,
             var_order=None,
+            struct_missing_label=None,
+            missing_label=None,
+            complete_case=False,
+            stratified=False,
             **attr) -> None:
 
         # Call event tree init to generate event tree
@@ -29,6 +33,10 @@ class StagedTree(EventTree):
             sampling_zero_paths,
             incoming_graph_data,
             var_order,
+            struct_missing_label,
+            missing_label,
+            complete_case,
+            stratified,
             **attr
         )
 

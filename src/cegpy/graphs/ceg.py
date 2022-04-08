@@ -203,7 +203,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         )
 
         for (src, dst, label, probability) in edge_probabilities:
-            full_label = f"{label}\n{probability:.2f}"
+            full_label = f"{label}\n{float(probability):.2f}"
             graph.add_edge(
                 pdp.Edge(
                     src=src,

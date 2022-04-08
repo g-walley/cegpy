@@ -47,6 +47,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         self._stages = {}
         self.path_list = []
         self._node_num_iterator = it.count(1, 1)
+        self._generate()
 
     @property
     def sink_node(self) -> str:
@@ -73,7 +74,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Next available node number."""
         return f"{self.node_prefix}{next(self._node_num_iterator)}"
 
-    def generate(self):
+    def _generate(self):
         """
         This function takes the output of the AHC algorithm and identifies
         the positions i.e. the vertices of the CEG and the edges of the CEG
@@ -85,7 +86,6 @@ class ChainEventGraph(nx.MultiDiGraph):
             raise ValueError("Run staged tree AHC transitions first.")
         # rename root node:
         nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
-        self._update_probabilities()
         _trim_leaves_from_graph(self)
         _update_distances_to_sink(self)
         src_node_gen = _gen_nodes_with_increasing_distance(self, start=1)
@@ -102,12 +102,13 @@ class ChainEventGraph(nx.MultiDiGraph):
                     if mergeable:
                         nodes_to_merge.add((node_1, node_2))
 
-            self._merge_nodes(nodes_to_merge)
+            if nodes_to_merge:
+                self._merge_nodes(nodes_to_merge)
 
             try:
                 next_set_of_nodes = next(src_node_gen)
             except StopIteration:
-                next_set_of_nodes = []
+                break
 
         _relabel_nodes(self)
         self._update_path_list()
@@ -246,50 +247,6 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         return None
 
-    def _update_probabilities(self):
-        count_total_lbl = 'count_total'
-        edge_counts = list(self.edges(data='count', keys=True, default=0))
-
-        for stage, stage_nodes in self.stages.items():
-            count_total = 0
-            stage_edges = {}
-            if stage is not None:
-
-                for (src, _, label, count) in edge_counts:
-                    if src in stage_nodes:
-                        count_total += count
-                        try:
-                            stage_edges[label] += count
-                        except KeyError:
-                            stage_edges[label] = count
-
-                for node in stage_nodes:
-                    self.nodes[node][count_total_lbl] = count_total
-
-                for (src, dst, label, _) in edge_counts:
-                    if src in stage_nodes:
-                        self.edges[src, dst, label]['probability'] = (
-                            stage_edges[label] / count_total
-                        )
-            else:
-                for node in stage_nodes:
-                    count_total = 0
-                    stage_edges = {}
-                    for (src, _, label, count) in edge_counts:
-                        if src == node:
-                            count_total += count
-                            try:
-                                stage_edges[label] += count
-                            except KeyError:
-                                stage_edges[label] = count
-
-                    self.nodes[node][count_total_lbl] = count_total
-                    for (src, dst, label, _) in edge_counts:
-                        if src == node:
-                            self.edges[src, dst, label]['probability'] = (
-                                stage_edges[label] / count_total
-                            )
-
     def _update_path_list(self) -> None:
         """Updates the path list, should be called after graph is modified."""
         path_generator = nx.all_simple_edge_paths(
@@ -425,56 +382,7 @@ def _gen_nodes_with_increasing_distance(ceg: ChainEventGraph, start=0) -> list:
         dist_list: List = distance_dict.setdefault(distance, [])
         dist_list.append(node)
 
-    for node_idx, dist in enumerate(distance_dict):
-        if dist >= start:
-            yield distance_dict[node_idx]
-
-
-def _combine_edge_counts(edges_with_counts: List) -> Tuple[Dict, int]:
-    """Takes a list of edges_with_counts, and combines the common edges."""
-    stage_edges = defaultdict(int)
-    count_total = 0
-    for (_, _, label, count) in edges_with_counts:
-        count_total += count
-        stage_edges[label] += count
-    return (stage_edges, count_total)
-
-
-def _propagate_probabilities(ceg: ChainEventGraph):
-    posterior_totals_label = 'posterior_total'
-    edge_posteriors = list(ceg.edges(data='posterior', keys=True, default=0))
-
-    for stage, stage_nodes in ceg.stages.items():
-        count_total = 0
-        stage_edges = {}
-        if stage is not None:
-            all_stage_edges = [
-                (src, dst, label, count)
-                for (src, dst, label, count) in edge_posteriors
-                if src in stage_nodes
-            ]
-            stage_edges, count_total = _combine_edge_counts(all_stage_edges)
-
-            for node in stage_nodes:
-                ceg.nodes[node][posterior_totals_label] = count_total
-
-            for (src, dst, label, _) in edge_posteriors:
-                if src in stage_nodes:
-                    ceg.edges[src, dst, label]['probability'] = (
-                        stage_edges[label] / count_total
-                    )
-        else:
-            for node in stage_nodes:
-                node_edges = [
-                    (src, dst, label, count)
-                    for (src, dst, label, count) in edge_posteriors
-                    if src == node
-                ]
-                stage_edges, count_total = _combine_edge_counts(node_edges)
-
-                ceg.nodes[node][posterior_totals_label] = count_total
-                for (src, dst, label, _) in edge_posteriors:
-                    if src == node:
-                        ceg.edges[src, dst, label]['probability'] = (
-                            stage_edges[label] / count_total
-                        )
+    for dist in range(0, max(distance_dict) + 1):
+        nodes = distance_dict.get(dist)
+        if dist >= start and nodes is not None:
+            yield nodes

@@ -608,7 +608,7 @@ class StagedTree(EventTree):
     def dot_staged_graph(self):
         return self._generate_dot_graph()
 
-    def create_figure(self, filename, staged=True):
+    def create_figure(self, filename=None, staged=True):
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
         any filetype that graphviz supports. e.g: "event_tree.png" or
@@ -616,28 +616,19 @@ class StagedTree(EventTree):
         """
         if staged:
             try:
-                self.ahc_output
-                filename, filetype = Util.generate_filename_and_mkdir(filename)
-                logger.info("--- generating graph ---")
+                ahc = self._ahc_output
                 graph = self.dot_staged_graph
-                logger.info("--- writing " + filetype + " file ---")
-                graph.write(str(filename), format=filetype)
-
-                if get_ipython() is None:
-                    return None
-                else:
-                    logger.info("--- Exporting graph to notebook ---")
-                    return Image(graph.create_png())
+                graph_image = super()._create_figure(graph, filename)
 
             except AttributeError:
                 logger.error(
                     "----- PLEASE RUN AHC ALGORITHM before trying to" +
-                    " export graph -----"
+                    " export a staged tree graph -----"
                 )
-                return None
+                graph_image = None
         else:
-            super().create_figure(filename)
-
+            graph_image = super().create_figure(filename)
+        return graph_image
 
 def _calculate_and_apply_mean_posterior_probs(
     staged: StagedTree, merged_situations: List, posteriors: List

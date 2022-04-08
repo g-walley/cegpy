@@ -542,8 +542,11 @@ class StagedTree(EventTree):
             if sit not in list(chain(*merged_situation_list)):
                 merged_situation_list.append((sit,))
 
-        _calculate_mean_posterior_probs(
-            self.situations, merged_situation_list, posteriors
+        self._apply_mean_posterior_probs(
+            merged_situations=merged_situation_list,
+            mean_posterior_probs=_calculate_mean_posterior_probs(
+                self.situations, merged_situation_list, posteriors
+            ),
         )
 
         return loglikelihood, merged_situation_list

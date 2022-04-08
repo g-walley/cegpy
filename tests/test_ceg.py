@@ -1,9 +1,10 @@
 import itertools
 import re
-from typing import Dict
+from typing import Dict, Mapping
 import unittest
 import networkx as nx
 import pandas as pd
+import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (
     _merge_edge_data,
@@ -16,8 +17,8 @@ from src.cegpy.graphs.ceg import (
 from pathlib import Path
 
 
-class TestUnitCEG(object):
-    def setup(self):
+class TestUnitCEG(unittest.TestCase):
+    def setUp(self):
         self.node_prefix = 'w'
         self.sink_suffix = '&infin;'
         df_path = Path(__file__).resolve(
@@ -29,18 +30,40 @@ class TestUnitCEG(object):
             name="medical_staged"
         )
         self.st.calculate_AHC_transitions()
-        self.ceg = ChainEventGraph(self.st)
 
-    def test_node_name_generation(self):
-        prefix = self.ceg.node_prefix
+    def test_node_name_generation_with_prefix(self):
+        """Node names are generated sequentially"""
+        ceg = ChainEventGraph(self.st)
+        prefix = ceg.node_prefix
         largest = 20
-        self.ceg._node_num_iterator = itertools.count(1, 1)
+        ceg._node_num_iterator = itertools.count(1, 1)
         node_names = [
-            self.ceg._next_node_name()
+            ceg._next_node_name()
             for _ in range(0, largest)
         ]
         assert (prefix + '1') == node_names[0]
         assert (prefix + str(largest)) == node_names[largest - 1]
+
+    def test_generate_argument(self, mocker: pytest_mock.mocker):
+        """When ChainEventGraph called with generate, the .generate()
+        method is called."""
+        mocker.patch('src.cegpy.graphs.ceg.ChainEventGraph.generate')
+        ceg = ChainEventGraph(self.st, generate=True)
+        ceg.generate.assert_called_once()
+
+    def test_stages_property(self):
+        """Stages is a mapping of stage names to lists of nodes"""
+        ceg = ChainEventGraph(self.st)
+        node_stage_mapping: Mapping = (
+            dict(ceg.nodes(data='stage', default=None))
+        )
+        stages = ceg.stages
+        self.assertEqual(
+            len(ceg.nodes),
+            sum(len(nodes) for nodes in stages.values())
+        )
+        for node, stage in node_stage_mapping.items():
+            self.assertIn(node, stages[stage])
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):

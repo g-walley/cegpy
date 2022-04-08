@@ -29,14 +29,14 @@ class StagedTree(EventTree):
 
         # Call event tree init to generate event tree
         super().__init__(
-            dataframe,
-            sampling_zero_paths,
-            incoming_graph_data,
-            var_order,
-            struct_missing_label,
-            missing_label,
-            complete_case,
-            stratified,
+            dataframe=dataframe,
+            sampling_zero_paths=sampling_zero_paths,
+            incoming_graph_data=incoming_graph_data,
+            var_order=var_order,
+            struct_missing_label=struct_missing_label,
+            missing_label=missing_label,
+            complete_case=complete_case,
+            stratified=stratified,
             **attr
         )
 

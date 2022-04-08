@@ -253,7 +253,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         )
 
         for (u, v, k, p) in edge_probabilities:
-            full_label = "{}\n{:.2f}".format(k, p)
+            full_label = f"{k}\n{float(p):.2f}"
             graph.add_edge(
                 pdp.Edge(
                     src=u,
@@ -281,20 +281,27 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
         return graph
 
-    def create_figure(self, filename):
+    def create_figure(self, filename=None):
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
-        filename, filetype = Util.generate_filename_and_mkdir(filename)
         graph = self.dot_graph
-        graph.write(str(filename), format=filetype)
-
-        if get_ipython() is None:
-            return None
+        if filename is None:
+            logger.warn("No filename. Figure not saved.")
         else:
-            return Image(graph.create_png())
+            filename, filetype = Util.generate_filename_and_mkdir(filename)
+            logger.info("--- generating graph ---")
+            logger.info("--- writing " + filetype + " file ---")
+            graph.write(str(filename), format=filetype)
+            graph_image = None
+    
+        if get_ipython is not None:
+            logger.info("--- Exporting graph to notebook ---")
+            graph_image = Image(graph.create_png())
+
+        return graph_image
 
     def _update_probabilities(self):
         count_total_lbl = 'count_total'

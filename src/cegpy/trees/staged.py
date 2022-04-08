@@ -530,7 +530,11 @@ class StagedTree(EventTree):
                 break
 
         merged_situation_list = self._sort_list(merged_situation_list)
-        _calculate_and_apply_mean_posterior_probs(
+        for sit in self.situations:
+            if sit not in list(chain(*merged_situation_list)):
+                merged_situation_list.append((sit,))
+
+        _calculate_mean_posterior_probs(
             self, merged_situation_list, posteriors
         )
 
@@ -629,33 +633,40 @@ class StagedTree(EventTree):
         else:
             super().create_figure(filename)
 
+    def _apply_mean_posterior_probs(
+        self, merged_situations: List, mean_posterior_probs: List
+    ) -> None:
+        """Apply the mean posterior probabilities to each edge."""
+        for stage_idx, stage in enumerate(merged_situations):
 
-def _calculate_and_apply_mean_posterior_probs(
-    staged: StagedTree, merged_situations: List, posteriors: List
-):
-    """Given a staged tree, calculate the mean posterior probs,
-    and apply them to each edge."""
+            for sit in stage:
+                dst_nodes = list(chain(self.succ[sit]))
+                edge_labels = list(chain(*self.succ[sit].values()))
+                for edge_idx, label in enumerate(edge_labels):
+                    self.edges[
+                        (sit, dst_nodes[edge_idx], label)
+                    ]["probability"] = mean_posterior_probs[stage_idx][edge_idx]
+
+
+def _calculate_mean_posterior_probs(
+    all_situations: List , merged_situations: List, posteriors: List
+) -> List:
+    """Given a staged tree, calculate the mean posterior probs."""
     # Add all situations that are not in a stage.
-    for sit in staged.situations:
-        if sit not in list(chain(*merged_situations)):
-            merged_situations.append((sit,))
-
+    mean_posterior_probs = []
     for stage in merged_situations:
         for sit in stage:
-            sit_idx = staged.situations.index(sit)
+            sit_idx = all_situations.index(sit)
             if all(posteriors[sit_idx]) != 0:
                 stage_posteriors = posteriors[sit_idx]
                 break
 
         total = sum(stage_posteriors)
-        mean_posterior_probs = [
-            round(posterior/total, 3)
-            for posterior in stage_posteriors
-        ]
-        for sit in stage:
-            dst_nodes = list(chain(staged.succ[sit]))
-            edge_labels = list(chain(*staged.succ[sit].values()))
-            for edge_idx, label in enumerate(edge_labels):
-                staged.edges[
-                    (sit, dst_nodes[edge_idx], label)
-                ]["probability"] = mean_posterior_probs[edge_idx]
+        mean_posterior_probs.append(
+            [
+                round(posterior/total, 3)
+                for posterior in stage_posteriors
+            ]
+        )
+
+    return mean_posterior_probs

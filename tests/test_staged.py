@@ -1,8 +1,8 @@
+from itertools import chain
 import unittest
 import pytest
-import filecmp
 from src.cegpy import StagedTree
-from src.cegpy.trees.staged import _calculate_and_apply_mean_posterior_probs
+from src.cegpy.trees.staged import _calculate_mean_posterior_probs
 import pandas as pd
 from pathlib import Path
 from fractions import Fraction as frac
@@ -932,9 +932,8 @@ class TestNumericalDataset():
 
 class TestPosteriorProbabilityCalculations(unittest.TestCase):
     """Tests the _calculate_and_apply_mean_posterior_probs() functions"""
-
-    def test_merged_probabilities_are_applied(self):
-        dataframe = pd.DataFrame([
+    def setUp(self) -> None:
+        self.dataframe = pd.DataFrame([
             np.array(["1", "Trt1", "Recover"]),
             np.array(["1", "Trt1", "Dont Recover"]),
             np.array(["2", "Trt1", "Recover"]),
@@ -944,12 +943,14 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
             np.array(["2", "Trt2", "Recover"]),
             np.array(["2", "Trt2", "Dont Recover"]),
         ])
-        staged = StagedTree(dataframe)
-        merged_situations = [
+        self.staged = StagedTree(self.dataframe)
+        self.merged_situations = [
             ("s0", "s1"),
             ("s3", "s5", "s6"),
+            ('s2',),
+            ('s4',),
         ]
-        probs = [
+        self.probs = [
             [50, 70],
             [0],
             [125, 310],
@@ -958,9 +959,28 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
             [0],
             [55, 352],
         ]
-        _calculate_and_apply_mean_posterior_probs(
-            staged, merged_situations, probs
+
+    def test_merged_probabilities(self):
+        actual_mpp = _calculate_mean_posterior_probs(
+            self.staged.situations, self.merged_situations, self.probs
         )
+        expected_mpp = [
+            [0.417, 0.583],
+            [0.135, 0.865],
+            [0.287, 0.713],
+            [0.128, 0.872],
+        ]
+        self.assertEqual(actual_mpp, expected_mpp)
+
+    def test_merged_probabilities_are_applied(self):
+        """Merged probabilites are applied to the StagedTree."""
+        expected_mpp = [
+            [0.417, 0.583],
+            [0.135, 0.865],
+            [0.287, 0.713],
+            [0.128, 0.872],
+        ]
+        self.staged._apply_mean_posterior_probs(self.merged_situations, expected_mpp)
         edges = {
             ('s0', 's1', '1'): 0.417,
             ('s0', 's2', '2'): 0.583,
@@ -979,6 +999,8 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
         }
         for edge, probability in edges.items():
             self.assertEqual(
-                staged.edges[edge]["probability"],
+                self.staged.edges[edge]["probability"],
                 probability
             )
+
+

@@ -284,6 +284,57 @@ class TestNodesCanBeMerged(unittest.TestCase):
             )
         ), "Nodes should not be mergeable."
 
+    def test_nodes_with_different_outgoing_edges(self):
+        """Nodes with different outgoing edges won't be merged."""
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'g'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+        ceg.nodes["w1"]["stage"] = 2
+        ceg.nodes["w2"]["stage"] = 2
+        assert (
+            not _check_nodes_can_be_merged(
+                ceg, "w1", "w2"
+            )
+        ), "Nodes should not be mergeable."
+
+    def test_merging_of_nodes(self):
+        """The nodes are merged, and all edges are merged too."""
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w2', 'w3', 'c'),
+            ('w2', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+        ceg.nodes["w1"]["stage"] = 2
+        ceg.nodes["w2"]["stage"] = 2
+        ceg._merge_nodes({("w1", "w2")})
+        expected_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w1', 'b'),
+            ('w1', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w3', 'w&infin;', 'e'),
+            ('w4', 'w&infin;', 'f'),
+        ]
+        for edge in expected_edges:
+            self.assertIn(edge, list(ceg.edges))
+
+
 class TestTrimLeavesFromGraph:
     def setup(self):
         self.graph = nx.MultiDiGraph()

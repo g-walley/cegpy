@@ -2,9 +2,8 @@ from copy import deepcopy
 from fractions import Fraction
 from operator import add, sub, itemgetter
 from IPython.display import Image
-from IPython import get_ipython
 from itertools import combinations, chain
-from typing import Dict, List, Tuple
+from typing import List, Optional, Tuple, Union
 import networkx as nx
 import scipy.special
 import logging
@@ -489,7 +488,6 @@ class StagedTree(EventTree):
                         posteriors[p_index] = [0]
 
                 hyperstage.remove(sub_hyper)
-                print("blash")
 
         hyperstage_combinations = [
             item for sub_hyper in hyperstage
@@ -539,8 +537,15 @@ class StagedTree(EventTree):
                 break
 
         merged_situation_list = self._sort_list(merged_situation_list)
-        _calculate_and_apply_mean_posterior_probs(
-            self, merged_situation_list, posteriors
+        for sit in self.situations:
+            if sit not in list(chain(*merged_situation_list)):
+                merged_situation_list.append((sit,))
+
+        self._apply_mean_posterior_probs(
+            merged_situations=merged_situation_list,
+            mean_posterior_probs=_calculate_mean_posterior_probs(
+                self.situations, merged_situation_list, posteriors
+            ),
         )
 
         return loglikelihood, merged_situation_list
@@ -567,7 +572,8 @@ class StagedTree(EventTree):
             if len(colour_list) < num_colours:
                 raise IndexError(
                     f"The number of colours provided ({len(colour_list)}) is "
-                    f"less than the number of distinct colours required ({num_colours})."
+                    "less than the number of distinct colours required "
+                    f"({num_colours})."
                 )
         self._stage_colours = stage_colours
         for node in self.nodes:
@@ -608,7 +614,11 @@ class StagedTree(EventTree):
     def dot_staged_graph(self):
         return self._generate_dot_graph()
 
-    def create_figure(self, filename=None, staged=True):
+    def create_figure(
+        self,
+        filename: Optional[str] = None,
+        staged: bool = True
+    ) -> Union[Image, None]:
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
         any filetype that graphviz supports. e.g: "event_tree.png" or
@@ -616,7 +626,7 @@ class StagedTree(EventTree):
         """
         if staged:
             try:
-                ahc = self._ahc_output
+                _ = self._ahc_output
                 graph = self.dot_staged_graph
                 graph_image = super()._create_figure(graph, filename)
 
@@ -630,32 +640,39 @@ class StagedTree(EventTree):
             graph_image = super().create_figure(filename)
         return graph_image
 
-def _calculate_and_apply_mean_posterior_probs(
-    staged: StagedTree, merged_situations: List, posteriors: List
-):
-    """Given a staged tree, calculate the mean posterior probs,
-    and apply them to each edge."""
-    # Add all situations that are not in a stage.
-    for sit in staged.situations:
-        if sit not in list(chain(*merged_situations)):
-            merged_situations.append((sit,))
+    def _apply_mean_posterior_probs(
+        self, merged_situations: List, mean_posterior_probs: List
+    ) -> None:
+        """Apply the mean posterior probabilities to each edge."""
+        for stage_idx, stage in enumerate(merged_situations):
+            for sit in stage:
+                dst_nodes = list(chain(self.succ[sit]))
+                edge_labels = list(chain(*self.succ[sit].values()))
+                for edge_idx, label in enumerate(edge_labels):
+                    self.edges[
+                        (sit, dst_nodes[edge_idx], label)
+                    ]["probability"] = mean_posterior_probs[stage_idx][edge_idx]
 
+
+def _calculate_mean_posterior_probs(
+    all_situations: List, merged_situations: List, posteriors: List
+) -> List:
+    """Given a staged tree, calculate the mean posterior probs."""
+    # Add all situations that are not in a stage.
+    mean_posterior_probs = []
     for stage in merged_situations:
         for sit in stage:
-            sit_idx = staged.situations.index(sit)
+            sit_idx = all_situations.index(sit)
             if all(posteriors[sit_idx]) != 0:
                 stage_posteriors = posteriors[sit_idx]
                 break
 
         total = sum(stage_posteriors)
-        mean_posterior_probs = [
-            round(posterior/total, 3)
-            for posterior in stage_posteriors
-        ]
-        for sit in stage:
-            dst_nodes = list(chain(staged.succ[sit]))
-            edge_labels = list(chain(*staged.succ[sit].values()))
-            for edge_idx, label in enumerate(edge_labels):
-                staged.edges[
-                    (sit, dst_nodes[edge_idx], label)
-                ]["probability"] = mean_posterior_probs[edge_idx]
+        mean_posterior_probs.append(
+            [
+                round(posterior/total, 3)
+                for posterior in stage_posteriors
+            ]
+        )
+
+    return mean_posterior_probs

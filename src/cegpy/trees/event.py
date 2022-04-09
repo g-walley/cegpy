@@ -357,7 +357,7 @@ class EventTree(nx.MultiDiGraph):
                     fillcolor=fill_node_colour))
         return graph
 
-    def _create_figure(self, graph, filename):
+    def _create_figure(self, graph: pdp.Dot, filename: str):
         """Draws the event tree for the process described by the dataset,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
@@ -370,7 +370,7 @@ class EventTree(nx.MultiDiGraph):
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
             graph_image = None
-    
+
         if get_ipython is not None:
             logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())

@@ -2,9 +2,8 @@ from copy import deepcopy
 from fractions import Fraction
 from operator import add, sub, itemgetter
 from IPython.display import Image
-from IPython import get_ipython
 from itertools import combinations, chain
-from typing import List, Tuple
+from typing import List, Optional, Tuple, Union
 import networkx as nx
 import scipy.special
 import logging
@@ -615,7 +614,11 @@ class StagedTree(EventTree):
     def dot_staged_graph(self):
         return self._generate_dot_graph()
 
-    def create_figure(self, filename, staged=True):
+    def create_figure(
+        self,
+        filename: Optional[str] = None,
+        staged: bool = True
+    ) -> Union[Image, None]:
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
         any filetype that graphviz supports. e.g: "event_tree.png" or
@@ -623,34 +626,25 @@ class StagedTree(EventTree):
         """
         if staged:
             try:
-                self.ahc_output
-                filename, filetype = Util.generate_filename_and_mkdir(filename)
-                logger.info("--- generating graph ---")
+                _ = self._ahc_output
                 graph = self.dot_staged_graph
-                logger.info("--- writing " + filetype + " file ---")
-                graph.write(str(filename), format=filetype)
-
-                if get_ipython() is None:
-                    return None
-                else:
-                    logger.info("--- Exporting graph to notebook ---")
-                    return Image(graph.create_png())
+                graph_image = super()._create_figure(graph, filename)
 
             except AttributeError:
                 logger.error(
                     "----- PLEASE RUN AHC ALGORITHM before trying to" +
-                    " export graph -----"
+                    " export a staged tree graph -----"
                 )
-                return None
+                graph_image = None
         else:
-            super().create_figure(filename)
+            graph_image = super().create_figure(filename)
+        return graph_image
 
     def _apply_mean_posterior_probs(
         self, merged_situations: List, mean_posterior_probs: List
     ) -> None:
         """Apply the mean posterior probabilities to each edge."""
         for stage_idx, stage in enumerate(merged_situations):
-
             for sit in stage:
                 dst_nodes = list(chain(self.succ[sit]))
                 edge_labels = list(chain(*self.succ[sit].values()))

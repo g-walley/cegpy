@@ -91,7 +91,7 @@ class Util:
         return hex_colours
 
     @staticmethod
-    def generate_filename_and_mkdir(filename) -> str:
+    def generate_filename_and_mkdir(filename: str) -> str:
         if filename is not Path:
             filename = Path(filename)
 

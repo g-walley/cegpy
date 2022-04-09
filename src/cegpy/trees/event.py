@@ -357,22 +357,28 @@ class EventTree(nx.MultiDiGraph):
                     fillcolor=fill_node_colour))
         return graph
 
-    def create_figure(self, filename):
+    def _create_figure(self, graph: pdp.Dot, filename: str):
         """Draws the event tree for the process described by the dataset,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
-        filename, filetype = Util.generate_filename_and_mkdir(filename)
-        logger.info("--- generating graph ---")
-        graph = self.dot_event_graph
-        logger.info("--- writing " + filetype + " file ---")
-        graph.write(str(filename), format=filetype)
-
-        if get_ipython() is None:
-            return None
+        if filename is None:
+            logger.warn("No filename. Figure not saved.")
         else:
+            filename, filetype = Util.generate_filename_and_mkdir(filename)
+            logger.info("--- generating graph ---")
+            logger.info("--- writing " + filetype + " file ---")
+            graph.write(str(filename), format=filetype)
+            graph_image = None
+
+        if get_ipython is not None:
             logger.info("--- Exporting graph to notebook ---")
-            return Image(graph.create_png())
+            graph_image = Image(graph.create_png())
+
+        return graph_image
+
+    def create_figure(self, filename=None):
+        return self._create_figure(self.dot_event_graph, filename)
 
     def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,

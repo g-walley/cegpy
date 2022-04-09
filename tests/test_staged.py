@@ -728,9 +728,12 @@ class TestStagedTrees():
         with pytest.raises(IndexError):
             self.fall_st.calculate_AHC_transitions(colour_list=colours)
 
-    def test_run_AHC_before_figure(self) -> None:
-        with pytest.raises(Exception):
+    def test_run_AHC_before_figure(self, caplog) -> None:
+        try:
             self.med_st.create_figure()
+            assert 'PLEASE RUN AHC' in caplog.text
+        except InvocationException:
+            pass
 
 
 class TestChangingDataFrame():

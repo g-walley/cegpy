@@ -9,12 +9,6 @@ import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (
     _merge_edge_data,
-    _relabel_nodes,
-    _merge_and_add_edges,
-    _trim_leaves_from_graph,
-    _update_distances_to_sink,
-    _gen_nodes_with_increasing_distance,
-    _check_nodes_can_be_merged,
 )
 from pathlib import Path
 
@@ -147,7 +141,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
 
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""
-        _relabel_nodes(self.ceg)
+        self.ceg._relabel_nodes()
         node_pattern = r"^w([0-9]+)|w(_infinity)$"
         prog = re.compile(node_pattern)
         for node in self.ceg.nodes:
@@ -200,7 +194,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             (edge["src"], edge["dst"], edge["key"]) for edge in edges_to_add
         ]
         actual = (
-            _merge_and_add_edges(self.ceg, "s99", "s1", "s2")
+            self.ceg._merge_and_add_edges("s99", "s1", "s2")
         )
         for edge in expected:
             assert (
@@ -236,9 +230,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
-            _check_nodes_can_be_merged(
-                ceg, "w1", "w2"
-            )
+            ceg._check_nodes_can_be_merged("w1", "w2")
         ), "Nodes should be mergeable."
 
     def test_nodes_not_in_same_stage_cannot_be_merged(self):
@@ -258,9 +250,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w1"]["stage"] = 1
         ceg.nodes["w2"]["stage"] = 2
         assert (
-            not _check_nodes_can_be_merged(
-                ceg, "w1", "w2"
-            )
+            not ceg._check_nodes_can_be_merged("w1", "w2")
         ), "Nodes should not be mergeable."
 
     def test_nodes_with_different_successor_nodes(self):
@@ -280,9 +270,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
-            not _check_nodes_can_be_merged(
-                ceg, "w1", "w2"
-            )
+            not ceg._check_nodes_can_be_merged("w1", "w2")
         ), "Nodes should not be mergeable."
 
     def test_nodes_with_different_outgoing_edges(self):
@@ -302,9 +290,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
-            not _check_nodes_can_be_merged(
-                ceg, "w1", "w2"
-            )
+            not ceg._check_nodes_can_be_merged("w1", "w2")
         ), "Nodes should not be mergeable."
 
     def test_merging_of_nodes(self):
@@ -508,14 +494,14 @@ class TestDistanceToSink:
             "w5": 1,
             "w_infinity": 0
         }
-        _update_distances_to_sink(self.ceg)
+        self.ceg._update_distances_to_sink()
         check_distances()
 
         # Add another edge to the dictionary, to show that the path is max,
         # and not min distance to sink
         self.ceg.add_edge("w1", self.ceg.sink_node)
         self.ceg.add_edge("w4", self.ceg.sink_node)
-        _update_distances_to_sink(self.ceg)
+        self.ceg._update_distances_to_sink()
         check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
@@ -530,7 +516,7 @@ class TestDistanceToSink:
             for node in nodes:
                 self.ceg.nodes[node]["max_dist_to_sink"] = dist
 
-        nodes_gen = _gen_nodes_with_increasing_distance(self.ceg, start=0)
+        nodes_gen = self.ceg._gen_nodes_with_increasing_distance(start=0)
 
         for nodes in range(len(expected_nodes)):
             expected_node_list = expected_nodes[nodes]

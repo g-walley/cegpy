@@ -93,11 +93,12 @@ class ChainEventGraph(nx.MultiDiGraph):
             raise ValueError("Run staged tree AHC transitions first.")
         # rename root node:
         nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
-        _trim_leaves_from_graph(self)
-        _update_distances_to_sink(self)
-        node_generator = _gen_nodes_with_increasing_distance(self, start=1)
-        self._backwards_construction(node_generator)
-        _relabel_nodes(self)
+        self._trim_leaves_from_graph()
+        self._update_distances_to_sink()
+        self._backwards_construction(
+            self._gen_nodes_with_increasing_distance(start=1)
+        )
+        self._relabel_nodes()
 
     def _backwards_construction(self, node_generator: Iterable[str]) -> None:
         """Working backwards from the sink, the algorithm constructs the CEG."""
@@ -137,8 +138,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             nx.relabel_nodes(self, node_map, copy=False)
             self.add_node(new_node)
 
-            edges_to_remove = _merge_and_add_edges(
-                self,
+            edges_to_remove = self._merge_and_add_edges(
                 new_node,
                 temp_1,
                 temp_2,
@@ -234,6 +234,150 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         return graph_image
 
+    def _trim_leaves_from_graph(self):
+        """Trims all the leaves from the graph, and points each incoming
+        edge to the sink node."""
+        # Create new CEG sink node
+        self.add_node(self.sink_node, colour='lightgrey')
+        outgoing_edges = deepcopy(self.succ).items()
+        # Check to see if any nodes have no outgoing edges.
+        mapping = {}
+        for node, out_edges in outgoing_edges:
+            if not out_edges and node != self.sink_node:
+                mapping[node] = self.sink_node
+
+        nx.relabel_nodes(self, mapping, copy=False)
+
+    def _update_distances_to_sink(self) -> None:
+        """
+        Iterates through the graph until it finds the root node.
+        For each node, it determines the maximum number of edges
+        from that node to the sink node.
+        """
+        max_dist = "max_dist_to_sink"
+        self.nodes[self.sink_node][max_dist] = 0
+        node_queue = [self.sink_node]
+
+        while node_queue != [self.root_node]:
+            node = node_queue.pop(0)
+            for pred in self.predecessors(node):
+                max_dist_to_sink = set()
+                for succ in self.successors(pred):
+                    try:
+                        max_dist_to_sink.add(
+                            self.nodes[succ][max_dist]
+                        )
+                        self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
+                    except KeyError:
+                        break
+
+                if pred not in node_queue:
+                    node_queue.append(pred)
+
+    def _gen_nodes_with_increasing_distance(self, start=0) -> list:
+        """Generates nodes that are either the same or further
+        from the sink node than the last node generated."""
+        max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
+        distance_dict: Mapping[int, Iterable[str]] = {}
+        for node, distance in max_dists.items():
+            dist_list: List = distance_dict.setdefault(distance, [])
+            dist_list.append(node)
+
+        for dist in range(0, max(distance_dict) + 1):
+            nodes = distance_dict.get(dist)
+            if dist >= start and nodes is not None:
+                yield nodes
+
+    def _relabel_nodes(self):
+        """Relabels nodes whilst maintaining ordering."""
+        num_iterator = it.count(1, 1)
+        nodes_to_rename = list(self.succ[self.root_node].keys())
+        # first, relabel the successors of this node
+        node_mapping = {}
+        while nodes_to_rename:
+            for node in nodes_to_rename.copy():
+                node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
+                for succ in self.succ[node].keys():
+                    if (succ != self.sink_node and succ not in nodes_to_rename):
+                        nodes_to_rename.append(succ)
+                nodes_to_rename.remove(node)
+
+        nx.relabel_nodes(
+            self,
+            node_mapping,
+            copy=False
+        )
+
+    def _merge_and_add_edges(
+        self,
+        new_node: str,
+        node_1: str,
+        node_2: str,
+    ) -> List[Tuple]:
+        """Merges outgoing edges of two nodes so that the two nodes can be
+        merged."""
+        old_edges_to_remove = []
+        for succ, t1_edge_dict in self.succ[node_1].items():
+            edge_labels = list(t1_edge_dict.keys())
+            while edge_labels:
+                label = edge_labels.pop(0)
+                n1_edge_data = t1_edge_dict[label]
+                n2_edge_data = self.succ[node_2][succ][label]
+
+                new_edge_data = _merge_edge_data(
+                    edge_1=n1_edge_data,
+                    edge_2=n2_edge_data,
+                )
+                self.add_edge(
+                    u_for_edge=new_node,
+                    v_for_edge=succ,
+                    key=label,
+                    **new_edge_data,
+                )
+                old_edges_to_remove.extend(
+                    [(node_1, succ, label), (node_2, succ, label)]
+                )
+
+        return old_edges_to_remove
+
+    def _check_nodes_can_be_merged(self, node_1, node_2) -> bool:
+        """Determine if the two nodes are able to be merged."""
+        have_same_successor_nodes = (
+            set(self.adj[node_1].keys()) == set(self.adj[node_2].keys())
+        )
+
+        if have_same_successor_nodes:
+            have_same_outgoing_edges = True
+            v1_adj = self.succ[node_1]
+            for succ_node in list(v1_adj.keys()):
+                v1_edges = self.succ[node_1][succ_node]
+                v2_edges = self.succ[node_2][succ_node]
+
+                if v1_edges is None or v2_edges is None:
+                    have_same_outgoing_edges &= False
+                    break
+
+                v2_edge_labels = list(v2_edges.keys())
+
+                for label in v1_edges.keys():
+                    if label not in v2_edge_labels:
+                        have_same_outgoing_edges &= False
+                        break
+                    have_same_outgoing_edges &= True
+        else:
+            have_same_outgoing_edges = False
+
+        try:
+            in_same_stage = (
+                self.nodes[node_1]['stage'] == self.nodes[node_2]['stage']
+            )
+        except KeyError:
+            in_same_stage = False
+
+        return in_same_stage and (
+            have_same_successor_nodes and have_same_outgoing_edges
+        )
+
 
 def _merge_edge_data(
     edge_1: Dict[str, Any],
@@ -250,153 +394,3 @@ def _merge_edge_data(
                 edge_1.get(key, 0) + edge_2.get(key, 0)
             )
     return new_edge_data
-
-
-def _relabel_nodes(ceg: ChainEventGraph):
-    """Relabels nodes whilst maintaining ordering."""
-    num_iterator = it.count(1, 1)
-    nodes_to_rename = list(ceg.succ[ceg.root_node].keys())
-    # first, relabel the successors of this node
-    node_mapping = {}
-    while nodes_to_rename:
-        for node in nodes_to_rename.copy():
-            node_mapping[node] = f"{ceg.node_prefix}{next(num_iterator)}"
-            for succ in ceg.succ[node].keys():
-                if (succ != ceg.sink_node and succ not in nodes_to_rename):
-                    nodes_to_rename.append(succ)
-            nodes_to_rename.remove(node)
-
-    nx.relabel_nodes(
-        ceg,
-        node_mapping,
-        copy=False
-    )
-
-
-def _merge_and_add_edges(
-    ceg: ChainEventGraph,
-    new_node: str,
-    node_1: str,
-    node_2: str,
-) -> List[Tuple]:
-    """Merges outgoing edges of two nodes so that the two nodes can be
-    merged."""
-    old_edges_to_remove = []
-    for succ, t1_edge_dict in ceg.succ[node_1].items():
-        edge_labels = list(t1_edge_dict.keys())
-        while edge_labels:
-            label = edge_labels.pop(0)
-            n1_edge_data = t1_edge_dict[label]
-            n2_edge_data = ceg.succ[node_2][succ][label]
-
-            new_edge_data = _merge_edge_data(
-                edge_1=n1_edge_data,
-                edge_2=n2_edge_data,
-            )
-            ceg.add_edge(
-                u_for_edge=new_node,
-                v_for_edge=succ,
-                key=label,
-                **new_edge_data,
-            )
-            old_edges_to_remove.extend(
-                [(node_1, succ, label), (node_2, succ, label)]
-            )
-
-    return old_edges_to_remove
-
-
-def _trim_leaves_from_graph(ceg: ChainEventGraph):
-    """Trims all the leaves from the graph, and points each incoming
-    edge to the sink node."""
-    # Create new CEG sink node
-    ceg.add_node(ceg.sink_node, colour='lightgrey')
-    outgoing_edges = deepcopy(ceg.succ).items()
-    # Check to see if any nodes have no outgoing edges.
-    mapping = {}
-    for node, out_edges in outgoing_edges:
-        if not out_edges and node != ceg.sink_node:
-            mapping[node] = ceg.sink_node
-
-    nx.relabel_nodes(ceg, mapping, copy=False)
-
-
-def _update_distances_to_sink(ceg: ChainEventGraph) -> None:
-    """
-    Iterates through the graph until it finds the root node.
-    For each node, it determines the maximum number of edges
-    from that node to the sink node.
-    """
-    max_dist = "max_dist_to_sink"
-    ceg.nodes[ceg.sink_node][max_dist] = 0
-    node_queue = [ceg.sink_node]
-
-    while node_queue != [ceg.root_node]:
-        node = node_queue.pop(0)
-        for pred in ceg.predecessors(node):
-            max_dist_to_sink = set()
-            for succ in ceg.successors(pred):
-                try:
-                    max_dist_to_sink.add(
-                        ceg.nodes[succ][max_dist]
-                    )
-                    ceg.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
-                except KeyError:
-                    break
-
-            if pred not in node_queue:
-                node_queue.append(pred)
-
-
-def _gen_nodes_with_increasing_distance(ceg: ChainEventGraph, start=0) -> list:
-    """Generates nodes that are either the same or further
-    from the sink node than the last node generated."""
-    max_dists = nx.get_node_attributes(ceg, 'max_dist_to_sink')
-    distance_dict: Mapping[int, Iterable[str]] = {}
-    for node, distance in max_dists.items():
-        dist_list: List = distance_dict.setdefault(distance, [])
-        dist_list.append(node)
-
-    for dist in range(0, max(distance_dict) + 1):
-        nodes = distance_dict.get(dist)
-        if dist >= start and nodes is not None:
-            yield nodes
-
-
-def _check_nodes_can_be_merged(ceg: ChainEventGraph, node_1, node_2) -> bool:
-    """Determine if the two nodes are able to be merged."""
-    have_same_successor_nodes = (
-        set(ceg.adj[node_1].keys()) == set(ceg.adj[node_2].keys())
-    )
-
-    if have_same_successor_nodes:
-        have_same_outgoing_edges = True
-        v1_adj = ceg.succ[node_1]
-        for succ_node in list(v1_adj.keys()):
-            v1_edges = ceg.succ[node_1][succ_node]
-            v2_edges = ceg.succ[node_2][succ_node]
-
-            if v1_edges is None or v2_edges is None:
-                have_same_outgoing_edges &= False
-                break
-
-            v2_edge_labels = list(v2_edges.keys())
-
-            for label in v1_edges.keys():
-                if label not in v2_edge_labels:
-                    have_same_outgoing_edges &= False
-                    break
-                have_same_outgoing_edges &= True
-    else:
-        have_same_outgoing_edges = False
-
-    try:
-        in_same_stage = (
-            ceg.nodes[node_1]['stage'] == ceg.nodes[node_2]['stage']
-        )
-    except KeyError:
-        in_same_stage = False
-
-    return in_same_stage and (
-        have_same_successor_nodes and have_same_outgoing_edges
-    )

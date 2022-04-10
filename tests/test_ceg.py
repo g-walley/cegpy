@@ -56,7 +56,7 @@ class TestUnitCEG(unittest.TestCase):
 
     def test_stages_property(self):
         """Stages is a mapping of stage names to lists of nodes"""
-        ceg = ChainEventGraph(self.st)
+        ceg = ChainEventGraph(self.st, generate=False)
         node_stage_mapping: Mapping = (
             dict(ceg.nodes(data='stage', default=None))
         )
@@ -87,7 +87,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_merge_edge_data(self):
         """Edges are merged"""
@@ -231,7 +231,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
@@ -253,7 +253,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 1
         ceg.nodes["w2"]["stage"] = 2
         assert (
@@ -275,7 +275,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
@@ -297,7 +297,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         assert (
@@ -319,7 +319,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w4', 'w&infin;', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         ceg._merge_nodes({("w1", "w2")})
@@ -352,7 +352,7 @@ class TestTrimLeavesFromGraph:
         self.leaves = ["s3", "s4"]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_leaves_trimmed_from_graph(self) -> None:
         """Leaves are trimmed from the graph."""
@@ -390,7 +390,7 @@ class TestDistanceToSink:
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_update_distances_to_sink(self) -> None:
         """Distance to sink is always max length of paths to sink."""

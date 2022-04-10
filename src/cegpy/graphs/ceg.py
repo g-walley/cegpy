@@ -41,7 +41,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     def __init__(
         self,
         staged_tree: Optional[StagedTree] = None,
-        generate: bool = False,
+        generate: bool = True,
         **attr
     ):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))

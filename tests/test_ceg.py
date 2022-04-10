@@ -398,7 +398,7 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
 
     def test_leaves_trimmed_from_graph(self) -> None:
         """Leaves are trimmed from the graph."""
-        _trim_leaves_from_graph(self.ceg)
+        self.ceg._trim_leaves_from_graph()
         for leaf in self.leaves:
             try:
                 self.ceg.nodes[leaf]

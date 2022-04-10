@@ -83,7 +83,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def generate(self):
         """
-        This function takes the output of the AHC algorithm and identifies
+        Given the output of the AHC algorithm, this function identifies
         the positions i.e. the vertices of the CEG and the edges of the CEG
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
@@ -95,8 +95,13 @@ class ChainEventGraph(nx.MultiDiGraph):
         nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
         _trim_leaves_from_graph(self)
         _update_distances_to_sink(self)
-        src_node_gen = _gen_nodes_with_increasing_distance(self, start=1)
-        next_set_of_nodes = next(src_node_gen)
+        node_generator = _gen_nodes_with_increasing_distance(self, start=1)
+        self._backwards_construction(node_generator)
+        _relabel_nodes(self)
+
+    def _backwards_construction(self, node_generator: Iterable[str]) -> None:
+        """Working backwards from the sink, the algorithm constructs the CEG."""
+        next_set_of_nodes = next(node_generator)
 
         while next_set_of_nodes != [self.root_node]:
             nodes_to_merge = set()
@@ -113,11 +118,9 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self._merge_nodes(nodes_to_merge)
 
             try:
-                next_set_of_nodes = next(src_node_gen)
+                next_set_of_nodes = next(node_generator)
             except StopIteration:
                 break
-
-        _relabel_nodes(self)
 
     def _merge_nodes(self, nodes_to_merge: Set):
         """nodes to merge should be a set of 2 element tuples"""
@@ -310,10 +313,12 @@ def _trim_leaves_from_graph(ceg: ChainEventGraph):
     ceg.add_node(ceg.sink_node, colour='lightgrey')
     outgoing_edges = deepcopy(ceg.succ).items()
     # Check to see if any nodes have no outgoing edges.
+    mapping = {}
     for node, out_edges in outgoing_edges:
         if not out_edges and node != ceg.sink_node:
-            mapping = {node: ceg.sink_node}
-            nx.relabel_nodes(ceg, mapping, copy=False)
+            mapping[node] = ceg.sink_node
+
+    nx.relabel_nodes(ceg, mapping, copy=False)
 
 
 def _update_distances_to_sink(ceg: ChainEventGraph) -> None:

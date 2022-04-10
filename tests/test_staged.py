@@ -35,6 +35,32 @@ class TestStagedTrees():
             sampling_zero_paths=self.fall_s_z_paths,
         )
 
+    def test_figure_with_wrong_edge_attribute(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Ensures a warning is raised when a non-existent
+        attribute is passed for the edge_info argument"""
+        msg = (
+            r"edge_info 'prob' does not exist for the "
+            r"StagedTree class. Using the default of 'count' values "
+            r"on edges instead. For more information, see the "
+            r"documentation."
+        )
+
+        # stratified medical dataset
+        self.med_st.calculate_AHC_transitions()
+        _ = self.med_st.create_figure(
+            filename=None, 
+            edge_info="prob"
+        )
+        assert msg in caplog.text, "Expected log message not logged."
+
+        # non-stratified dataset
+        self.fall_st.calculate_AHC_transitions()
+        _ = self.fall_st.create_figure(
+            filename=None, 
+            edge_info="prob"
+        )
+        assert msg in caplog.text, "Expected log message not logged."
+
     def test_check_hyperstage(self) -> None:
         # stratified medical dataset
         med_hyperstage_less = [
@@ -694,9 +720,9 @@ class TestStagedTrees():
         """ Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey and the nodes in the staged tree
         agree with the result of AHC """
-        dot_event_nodes = self.med_st.dot_event_graph.get_nodes()
+        dot_event_nodes = self.med_st.dot_event_graph().get_nodes()
         self.med_st.calculate_AHC_transitions()
-        dot_staged_nodes = self.med_st.dot_staged_graph.get_nodes()
+        dot_staged_nodes = self.med_st.dot_staged_graph().get_nodes()
         event_node_colours = [
             n.obj_dict['attributes']['fillcolor'] for n in dot_event_nodes
         ]
@@ -706,7 +732,7 @@ class TestStagedTrees():
         assert len(set(event_node_colours)) == 1
         assert event_node_colours[0] == 'lightgrey'
         assert len(set(staged_node_colours)) > 1
-        g = self.med_st.dot_staged_graph
+        g = self.med_st.dot_staged_graph()
         for node in self.med_st.nodes():
             assert g.get_node(node)[0].obj_dict['attributes']['fillcolor'] == \
                 self.med_st.nodes[node]['colour']
@@ -717,7 +743,7 @@ class TestStagedTrees():
             '#80b1d3', '#fdb462'
         ]
         self.fall_st.calculate_AHC_transitions(colour_list=colours)
-        dot_staged_nodes = self.fall_st.dot_staged_graph.get_nodes()
+        dot_staged_nodes = self.fall_st.dot_staged_graph().get_nodes()
         staged_node_colours = [
             n.obj_dict['attributes']['fillcolor'] for n in dot_staged_nodes
         ]

@@ -14,6 +14,14 @@ logger = logging.getLogger('cegpy.staged_tree')
 
 
 class StagedTree(EventTree):
+
+    _edge_attributes: List = [
+        'count', 
+        'prior', 
+        'posterior',
+        'probability' 
+        ]
+
     def __init__(
             self,
             dataframe,
@@ -610,14 +618,14 @@ class StagedTree(EventTree):
         }
         return self.ahc_output
 
-    @property
-    def dot_staged_graph(self):
-        return self._generate_dot_graph()
+    def dot_staged_graph(self, edge_info: str ="count"):
+        return self._generate_dot_graph(edge_info=edge_info)
 
     def create_figure(
         self,
         filename: Optional[str] = None,
-        staged: bool = True
+        staged: bool = True,
+        edge_info: str ="count"
     ) -> Union[Image, None]:
         """Draws the coloured staged tree for the process described by
         the dataset, and saves it to "<filename>.filetype". Supports
@@ -627,7 +635,7 @@ class StagedTree(EventTree):
         if staged:
             try:
                 _ = self._ahc_output
-                graph = self.dot_staged_graph
+                graph = self.dot_staged_graph(edge_info)
                 graph_image = super()._create_figure(graph, filename)
 
             except AttributeError:

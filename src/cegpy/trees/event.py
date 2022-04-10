@@ -335,7 +335,7 @@ class EventTree(nx.MultiDiGraph):
         else:
             logger.warning(
                 f"edge_info '{edge_info}' does not exist for the "
-                "EventTree class. Using the default of 'count' values "
+                f"{self.__class__.__name__} class. Using the default of 'count' values "
                 "on edges instead. For more information, see the "
                 "documentation."
             )

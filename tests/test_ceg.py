@@ -413,6 +413,45 @@ class TestTrimLeavesFromGraph:
                 ), f"Edge still pointing to leaf: {leaf}"
 
 
+class TestPathList:
+    def test_path_list_generation(self):
+        """Path list is generated correctly."""
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w_infinity'
+        ]
+        self.init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w1', 'w3', 'e'),
+            ('w1', 'w4', 'f'),
+            ('w2', 'w_infinity', 'c'),
+            ('w3', 'w_infinity', 'd'),
+            ('w4', 'w5', 'c'),
+            ('w5', 'w_infinity', 'd'),
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+        self.ceg = ChainEventGraph(self.graph)
+        actual_path_list = self.ceg.path_list
+        expected_paths = [
+            [('w0', 'w1', 'a'), ('w1', 'w3', 'e'), ('w3', 'w_infinity', 'd')],
+            [
+                ('w0', 'w1', 'a'),
+                ('w1', 'w4', 'f'),
+                ('w4', 'w5', 'c'),
+                ('w5', 'w_infinity', 'd')
+            ],
+            [('w0', 'w2', 'b'), ('w2', 'w_infinity', 'c')],
+        ]
+        for path in expected_paths:
+            assert path in actual_path_list, f"Path not found: {path}"
+
+        assert (
+            len(actual_path_list) == len(expected_paths), "Incorrect number of paths."
+        )
+
+
 class TestDistanceToSink:
     def setup(self):
         self.graph = nx.MultiDiGraph()
@@ -423,7 +462,7 @@ class TestDistanceToSink:
             ('w0', 'w1', 'a'),
             ('w0', 'w2', 'b'),
             ('w1', 'w3', 'e'),
-            ('w1', 'w4', 'e'),
+            ('w1', 'w4', 'f'),
             ('w2', 'w_infinity', 'c'),
             ('w3', 'w_infinity', 'd'),
             ('w4', 'w5', 'c'),

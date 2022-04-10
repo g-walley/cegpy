@@ -334,6 +334,47 @@ class TestNodesCanBeMerged(unittest.TestCase):
         for edge in expected_edges:
             self.assertIn(edge, list(ceg.edges))
 
+    def test_merging_of_three_nodes(self):
+        """The three nodes are merged, and all edges are merged too."""
+        self.graph.add_node("w5")
+        init_edges = [
+            ('w0', 'w1', 'a'),
+            ('w0', 'w2', 'b'),
+            ('w0', 'w3', 'c'),
+            ('w1', 'w4', 'd'),
+            ('w1', 'w5', 'e'),
+            ('w2', 'w4', 'd'),
+            ('w2', 'w5', 'e'),
+            ('w3', 'w4', 'd'),
+            ('w3', 'w5', 'e'),
+            ('w4', 'w&infin;', 'f'),
+            ('w5', 'w&infin;', 'g'),
+        ]
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph)
+
+        nodes_to_merge = {"w1", "w2", "w3"}
+        ceg.nodes["w1"]["stage"] = 2
+        ceg.nodes["w2"]["stage"] = 2
+        ceg.nodes["w3"]["stage"] = 2
+        ceg._merge_nodes({("w1", "w2"), ("w2", "w3"), ("w1", "w3")})
+        nodes_post_merge = set(ceg.nodes)
+        merged_node = nodes_post_merge.intersection(nodes_to_merge).pop()
+        expected_edges = [
+            ('w0', merged_node, 'a'),
+            ('w0', merged_node, 'b'),
+            ('w0', merged_node, 'c'),
+            (merged_node, 'w4', 'd'),
+            (merged_node, 'w5', 'e'),
+            ('w4', 'w&infin;', 'f'),
+            ('w5', 'w&infin;', 'g'),
+        ]
+
+        for edge in expected_edges:
+            self.assertIn(edge, list(ceg.edges))
+
+        self.assertEqual(len(list(ceg.edges)), len(expected_edges))
+
 
 class TestTrimLeavesFromGraph:
     def setup(self):

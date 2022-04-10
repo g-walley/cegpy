@@ -34,22 +34,20 @@ class ChainEventGraph(nx.MultiDiGraph):
     Output: Chain event graphs
     """
 
-    sink_suffix: str
+    sink_suffix: str = "&infin;"
     node_prefix: str
-    path_list: List[str]
 
     def __init__(
         self,
         staged_tree: Optional[StagedTree] = None,
         generate: bool = False,
+        node_prefix: str = "w",
         **attr
     ):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
         super().__init__(staged_tree, **attr)
-        self.sink_suffix = "&infin;"
-        self.node_prefix = "w"
+        self.node_prefix = node_prefix
         self._stages = {}
-        self.path_list = []
 
         if generate:
             self.generate()
@@ -57,7 +55,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     @property
     def sink_node(self) -> str:
         """Sink node name as a string."""
-        return f"{self.node_prefix}{self.sink_suffix}"
+        return f"{self.node_prefix}_infinity"
 
     @property
     def root_node(self) -> str:
@@ -73,6 +71,15 @@ class ChainEventGraph(nx.MultiDiGraph):
             stages[stage].add(node)
 
         return stages
+
+    @property
+    def path_list(self) -> List[Tuple[str]]:
+        """All the paths through the CEG, as a list of edge tuples."""
+        path_list: List[Tuple[str]] = [
+            path
+            for path in nx.all_simple_paths(self, self.root_node, self.sink_node)
+        ]
+        return path_list
 
     def generate(self):
         """
@@ -111,7 +118,6 @@ class ChainEventGraph(nx.MultiDiGraph):
                 break
 
         _relabel_nodes(self)
-        self._update_path_list()
 
     def _merge_nodes(self, nodes_to_merge: Set):
         """nodes to merge should be a set of 2 element tuples"""
@@ -169,6 +175,10 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         for (src, dst, label, probability) in edge_probabilities:
             full_label = f"{label}\n{float(probability):.2f}"
+
+            if dst[1:] == "_infinity":
+                dst = f"{self.node_prefix}&infin;"
+
             graph.add_edge(
                 pdp.Edge(
                     src=src,
@@ -185,6 +195,8 @@ class ChainEventGraph(nx.MultiDiGraph):
                 fill_colour = self.nodes[node]['colour']
             except KeyError:
                 fill_colour = 'white'
+            if node[1:] == "_infinity":
+                node = f"{self.node_prefix}&infin;"
             label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
@@ -218,21 +230,6 @@ class ChainEventGraph(nx.MultiDiGraph):
             graph_image = None
 
         return graph_image
-
-    def _update_path_list(self) -> None:
-        """Updates the path list, should be called after graph is modified."""
-        path_generator = nx.all_simple_edge_paths(
-            self,
-            self.root_node,
-            self.sink_node
-        )
-        path_list = []
-        while True:
-            try:
-                path_list.append(next(path_generator))
-            except StopIteration:
-                self.path_list = path_list
-                break
 
 
 def _merge_edge_data(

@@ -73,7 +73,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
     def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w&infin;'
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
         ]
         self.init_edges = [
             ('w0', 'w1', 'a'),
@@ -82,8 +82,8 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             ('w1', 'w4', 'd'),
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -147,7 +147,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""
         _relabel_nodes(self.ceg)
-        node_pattern = r"^w([0-9]+)|w(&infin;)$"
+        node_pattern = r"^w([0-9]+)|w(_infinity)$"
         prog = re.compile(node_pattern)
         for node in self.ceg.nodes:
             result = prog.match(node)
@@ -214,7 +214,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
     def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w&infin;'
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
         ]
         self.graph.add_nodes_from(self.init_nodes)
 
@@ -227,8 +227,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w1', 'w4', 'd'),
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -249,8 +249,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w1', 'w4', 'd'),
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -269,10 +269,10 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w0', 'w2', 'b'),
             ('w1', 'w3', 'c'),
             ('w1', 'w4', 'd'),
-            ('w2', 'w&infin;', 'c'),
+            ('w2', 'w_infinity', 'c'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -293,8 +293,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w1', 'w4', 'd'),
             ('w2', 'w3', 'g'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -315,8 +315,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w1', 'w4', 'd'),
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -328,8 +328,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w0', 'w1', 'b'),
             ('w1', 'w3', 'c'),
             ('w1', 'w4', 'd'),
-            ('w3', 'w&infin;', 'e'),
-            ('w4', 'w&infin;', 'f'),
+            ('w3', 'w_infinity', 'e'),
+            ('w4', 'w_infinity', 'f'),
         ]
         for edge in expected_edges:
             self.assertIn(edge, list(ceg.edges))
@@ -347,8 +347,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w2', 'w5', 'e'),
             ('w3', 'w4', 'd'),
             ('w3', 'w5', 'e'),
-            ('w4', 'w&infin;', 'f'),
-            ('w5', 'w&infin;', 'g'),
+            ('w4', 'w_infinity', 'f'),
+            ('w5', 'w_infinity', 'g'),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph)
@@ -366,8 +366,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w0', merged_node, 'c'),
             (merged_node, 'w4', 'd'),
             (merged_node, 'w5', 'e'),
-            ('w4', 'w&infin;', 'f'),
-            ('w5', 'w&infin;', 'g'),
+            ('w4', 'w_infinity', 'f'),
+            ('w5', 'w_infinity', 'g'),
         ]
 
         for edge in expected_edges:
@@ -417,17 +417,17 @@ class TestDistanceToSink:
     def setup(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w&infin;'
+            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w_infinity'
         ]
         self.init_edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w2', 'b'),
             ('w1', 'w3', 'e'),
             ('w1', 'w4', 'e'),
-            ('w2', 'w&infin;', 'c'),
-            ('w3', 'w&infin;', 'd'),
+            ('w2', 'w_infinity', 'c'),
+            ('w3', 'w_infinity', 'd'),
             ('w4', 'w5', 'c'),
-            ('w5', 'w&infin;', 'd'),
+            ('w5', 'w_infinity', 'd'),
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -449,7 +449,7 @@ class TestDistanceToSink:
             "w3": 1,
             "w4": 2,
             "w5": 1,
-            "w&infin;": 0
+            "w_infinity": 0
         }
         _update_distances_to_sink(self.ceg)
         check_distances()

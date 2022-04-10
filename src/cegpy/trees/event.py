@@ -96,6 +96,7 @@ class EventTree(nx.MultiDiGraph):
     _stratified: Optional[bool]
     _sampling_zero_paths: Optional[List[Tuple]] = None
     _sorted_paths: Mapping[Tuple[Str], int]
+    _edge_attributes: List = ['count']
 
     def __init__(
         self,
@@ -251,7 +252,7 @@ class EventTree(nx.MultiDiGraph):
             )
         self._stratified = stratified
         if self.sampling_zeros is not None:
-            logger.warn(
+            logger.warning(
                 "User provided sampling_zero_paths, but these are being "
                 "ignored due to 'stratified' being enabled."
             )
@@ -320,15 +321,28 @@ class EventTree(nx.MultiDiGraph):
 
         return self._catagories_per_variable
 
-    @property
-    def dot_event_graph(self):
-        return self._generate_dot_graph(fill_colour='lightgrey')
+    def dot_event_graph(self, edge_info: str = "count"):
+        return self._generate_dot_graph(
+            fill_colour='lightgrey',
+            edge_info=edge_info
+        )
 
-    def _generate_dot_graph(self, fill_colour=None):
+    def _generate_dot_graph(self, fill_colour=None, edge_info="count"):
         node_list = list(self)
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        for edge, count in self.edge_counts.items():
-            edge_details = str(edge[2]) + '\n' + str(count)
+        if edge_info in self._edge_attributes:
+            edge_info_dict = nx.get_edge_attributes(self, edge_info)
+        else:
+            logger.warning(
+                f"edge_info '{edge_info}' does not exist for the "
+                "EventTree class. Using the default of 'count' values "
+                "on edges instead. For more information, see the "
+                "documentation."
+            )
+            edge_info_dict = nx.get_edge_attributes(self, 'count')
+
+        for edge, attribute in edge_info_dict.items():
+            edge_details = str(edge[2]) + '\n' + str(attribute)
 
             graph.add_edge(
                 pdp.Edge(
@@ -357,13 +371,17 @@ class EventTree(nx.MultiDiGraph):
                     fillcolor=fill_node_colour))
         return graph
 
-    def _create_figure(self, graph: pdp.Dot, filename: str):
+    def _create_figure(
+        self, 
+        graph: pdp.Dot, 
+        filename: str
+    ):
         """Draws the event tree for the process described by the dataset,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
         if filename is None:
-            logger.warn("No filename. Figure not saved.")
+            logger.warning("No filename. Figure not saved.")
         else:
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
@@ -377,8 +395,11 @@ class EventTree(nx.MultiDiGraph):
 
         return graph_image
 
-    def create_figure(self, filename=None):
-        return self._create_figure(self.dot_event_graph, filename)
+    def create_figure(self, filename=None, edge_info: str ="count"):
+        return self._create_figure(
+            self.dot_event_graph(edge_info=edge_info),
+            filename
+        )
 
     def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,

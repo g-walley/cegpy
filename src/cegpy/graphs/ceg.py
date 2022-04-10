@@ -77,7 +77,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """All the paths through the CEG, as a list of edge tuples."""
         path_list: List[Tuple[str]] = [
             path
-            for path in nx.all_simple_paths(self, self.root_node, self.sink_node)
+            for path in nx.all_simple_edge_paths(self, self.root_node, self.sink_node)
         ]
         return path_list
 

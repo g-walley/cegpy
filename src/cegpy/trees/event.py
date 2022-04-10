@@ -324,7 +324,7 @@ class EventTree(nx.MultiDiGraph):
     def dot_event_graph(self, edge_info: str = "count"):
         return self._generate_dot_graph(
             fill_colour='lightgrey',
-            edge_info=edge_info
+            edge_info=edge_info  
         )
 
     def _generate_dot_graph(self, fill_colour=None, edge_info="count"):

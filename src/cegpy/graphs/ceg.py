@@ -237,7 +237,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
 
-        if get_ipython is not None:
+        if get_ipython() is not None:
             logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())
         else:

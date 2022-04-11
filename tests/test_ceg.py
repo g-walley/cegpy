@@ -1,4 +1,5 @@
 import itertools
+import logging
 import re
 from typing import Dict, Mapping
 import unittest
@@ -64,6 +65,16 @@ class TestUnitCEG(unittest.TestCase):
         )
         for node, stage in node_stage_mapping.items():
             self.assertIn(node, stages[stage])
+
+    def test_create_figure(self):
+        """.create_figure() called with no filename"""
+        ceg = ChainEventGraph(self.st, generate=False)
+        with self.assertLogs('cegpy', level='INFO') as cm:
+            assert ceg.create_figure() is None
+        self.assertEqual(
+            ['WARNING:cegpy.chain_event_graph:No filename. Figure not saved.'],
+            cm.output
+        )
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):

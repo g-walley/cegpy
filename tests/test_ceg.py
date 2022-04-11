@@ -1,12 +1,9 @@
-import itertools
-import logging
 import re
 from typing import Dict, Mapping
 import unittest
 from unittest.mock import Mock, patch
 import networkx as nx
 import pandas as pd
-import pytest
 import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (

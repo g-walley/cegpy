@@ -529,7 +529,12 @@ class TestDistanceToSink:
             actual_node_list = next(nodes_gen)
             assert actual_node_list.sort() == expected_node_list.sort()
 
-
+@patch.object(ChainEventGraph, "_relabel_nodes")
+@patch.object(ChainEventGraph, "_gen_nodes_with_increasing_distance")
+@patch.object(ChainEventGraph, "_backwards_construction")
+@patch.object(ChainEventGraph, "_update_distances_to_sink")
+@patch.object(ChainEventGraph, "_trim_leaves_from_graph")
+@patch.object(nx, "relabel_nodes")
 class TestGenerate(unittest.TestCase):
     """Tests the .generate() method"""
     def setUp(self) -> None:
@@ -561,13 +566,13 @@ class TestGenerate(unittest.TestCase):
         }
         self.ceg = ChainEventGraph(self.graph, generate=False)
 
-    def test_raises_exception_when_called_twice(self):
+    def test_raises_exception_when_called_twice(self, *_):
         """.generate() raises a CegAlreadyGenerated error when called twice"""
         self.ceg.generate()
         with self.assertRaises(CegAlreadyGenerated):
             self.ceg.generate()
 
-    def test_raises_exception_when_there_is_no_ahc_output(self):
+    def test_raises_exception_when_there_is_no_ahc_output(self, *_):
         """.generate() raises a ValueError when ahc_output doesn't exist"""
         self.ceg.ahc_output = None
         with self.assertRaises(
@@ -576,12 +581,6 @@ class TestGenerate(unittest.TestCase):
         ):
             self.ceg.generate()
 
-    @patch.object(ChainEventGraph, "_relabel_nodes")
-    @patch.object(ChainEventGraph, "_gen_nodes_with_increasing_distance")
-    @patch.object(ChainEventGraph, "_backwards_construction")
-    @patch.object(ChainEventGraph, "_update_distances_to_sink")
-    @patch.object(ChainEventGraph, "_trim_leaves_from_graph")
-    @patch.object(nx, "relabel_nodes")
     def test_calls_helper_functions_in_the_correct_order(
         self,
         nx_relabel: Mock,
@@ -604,7 +603,7 @@ class TestGenerate(unittest.TestCase):
         gen_nodes.assert_called_once_with(start=1)
         relabel_nodes.assert_called_once_with()
 
-    def test_generated_flag_set(self):
+    def test_generated_flag_set(self, *_):
         """The generated flag is set to True when .generate() is called"""
         self.ceg.generate()
         assert self.ceg.generated is True

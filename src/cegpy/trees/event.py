@@ -306,8 +306,6 @@ class EventTree(nx.MultiDiGraph):
             categories = set(self.dataframe[var].unique().tolist())
             # remove nan with pandas
             pd_filtered_categories = {x for x in categories if pd.notna(x)}
-            if pd_filtered_categories != categories:
-                nans_filtered = True
 
             # remove any string nans that might have made it in.
             filtered_cats = pd_filtered_categories - categories_to_ignore

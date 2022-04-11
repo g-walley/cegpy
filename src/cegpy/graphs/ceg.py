@@ -38,10 +38,10 @@ class ChainEventGraph(nx.MultiDiGraph):
     Output: Chain event graphs
     """
     _edge_attributes: List = [
-        'count', 
-        'prior', 
+        'count',
+        'prior',
         'posterior',
-        'probability' 
+        'probability'
         ]
 
     sink_suffix: str = "&infin;"
@@ -238,10 +238,10 @@ class ChainEventGraph(nx.MultiDiGraph):
         return graph
 
     def create_figure(
-        self, 
-        filename=None, 
-        edge_info: str ="probability"
-        ) -> Union[Image, None]:
+        self,
+        filename=None,
+        edge_info: str = "probability",
+    ) -> Union[Image, None]:
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that
@@ -249,7 +249,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """
         graph = self.dot_graph(edge_info=edge_info)
         if filename is None:
-            logger.warn("No filename. Figure not saved.")
+            logger.warning("No filename. Figure not saved.")
         else:
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")

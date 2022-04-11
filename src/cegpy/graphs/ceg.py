@@ -359,19 +359,15 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         if have_same_successor_nodes:
             have_same_outgoing_edges = True
-            v1_adj = self.succ[node_1]
-            for succ_node in list(v1_adj.keys()):
-                v1_edges = self.succ[node_1][succ_node]
-                v2_edges = self.succ[node_2][succ_node]
+            n1_adj = self.succ[node_1]
+            for succ_node in list(n1_adj.keys()):
+                n1_edges = self.succ[node_1][succ_node]
+                n2_edges = self.succ[node_2][succ_node]
 
-                if v1_edges is None or v2_edges is None:
-                    have_same_outgoing_edges &= False
-                    break
+                n2_edge_labels = list(n2_edges.keys())
 
-                v2_edge_labels = list(v2_edges.keys())
-
-                for label in v1_edges.keys():
-                    if label not in v2_edge_labels:
+                for label in n1_edges.keys():
+                    if label not in n2_edge_labels:
                         have_same_outgoing_edges &= False
                         break
                     have_same_outgoing_edges &= True

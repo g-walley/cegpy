@@ -2,7 +2,7 @@ import itertools
 import re
 from typing import Dict, Mapping
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import networkx as nx
 import pandas as pd
 import pytest_mock
@@ -570,3 +570,31 @@ class TestGenerate(unittest.TestCase):
             msg="There is no AHC output in your StagedTree."
         ):
             self.ceg.generate()
+
+    @patch.object(ChainEventGraph, "_relabel_nodes")
+    @patch.object(ChainEventGraph, "_gen_nodes_with_increasing_distance")
+    @patch.object(ChainEventGraph, "_backwards_construction")
+    @patch.object(ChainEventGraph, "_update_distances_to_sink")
+    @patch.object(ChainEventGraph, "_trim_leaves_from_graph")
+    @patch.object(nx, "relabel_nodes")
+    def test_calls_helper_functions_in_the_correct_order(
+        self,
+        nx_relabel: Mock,
+        trim_leaves: Mock,
+        update_distances: Mock,
+        backwards_construction: Mock,
+        gen_nodes: Mock,
+        relabel_nodes: Mock,
+    ):
+        """.generate() calls the helper functions"""
+        self.ceg.generate()
+        nx_relabel.assert_called_once_with(
+            self.ceg,
+            {self.ceg.staged_root: self.ceg.root_node},
+            copy=False
+        )
+        trim_leaves.assert_called_once_with()
+        update_distances.assert_called_once_with()
+        backwards_construction.assert_called_once_with(gen_nodes.return_value)
+        gen_nodes.assert_called_once_with(start=1)
+        relabel_nodes.assert_called_once_with()

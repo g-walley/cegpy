@@ -566,7 +566,7 @@ class TestCEG():
         )
 
         # stratified medical dataset
-        ceg = ChainEventGraph(self.med_st)
+        ceg = ChainEventGraph(self.med_st, generate=False)
         _ = ceg.create_figure(
             filename=None,
             edge_info="prob"

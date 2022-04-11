@@ -49,7 +49,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         generate: bool = True,
         **attr
     ):
-        self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
+        self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", {}))
         super().__init__(staged_tree, **attr)
         self.node_prefix = node_prefix
         self._stages = {}
@@ -97,8 +97,11 @@ class ChainEventGraph(nx.MultiDiGraph):
         if self.generated:
             raise CegAlreadyGenerated("CEG has already been generated.")
 
-        if self.ahc_output == {}:
-            raise ValueError("Run staged tree AHC transitions first.")
+        if self.ahc_output is None or self.ahc_output == {}:
+            raise ValueError(
+                "There is no AHC output in your StagedTree. "
+                "Run StagedTree.calculate_AHC_transitions() first."
+            )
 
         # rename root node:
         nx.relabel_nodes(self, {self.staged_root: self.root_node}, copy=False)

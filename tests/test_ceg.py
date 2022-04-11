@@ -564,7 +564,7 @@ class TestGenerate(unittest.TestCase):
 
     def test_raises_exception_when_there_is_no_ahc_output(self):
         """.generate() raises a ValueError when ahc_output doesn't exist"""
-        self.graph.ahc_output = None
+        self.ceg.ahc_output = None
         with self.assertRaises(
             ValueError,
             msg="There is no AHC output in your StagedTree."

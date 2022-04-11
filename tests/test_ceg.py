@@ -5,6 +5,7 @@ import unittest
 from unittest.mock import Mock, patch
 import networkx as nx
 import pandas as pd
+import pytest
 import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (
@@ -607,3 +608,47 @@ class TestGenerate(unittest.TestCase):
         """The generated flag is set to True when .generate() is called"""
         self.ceg.generate()
         assert self.ceg.generated is True
+
+
+class TestBackwardsConstruction:
+    """Tests the ._backwards_construction() method"""
+    @staticmethod
+    def gen_sets_of_nodes():
+        nodes = [[f"w{i}", f"w{i+1}"] for i in range(5, 1, -1)]
+        for node in nodes:
+            yield node
+
+    def test_backwards_construction_always_ends(self):
+        """
+        ._backwards_construction() always ends, even if there are no
+        nodes to process
+        """
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            "w0", "w1", "w2", "w3", "w4", "w5", "w6",
+            "w7", "w8", "w9", "w10", "w11", "w12",
+        ]
+        self.init_edges = [
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w5", "e"),
+            ("w2", "w6", "f"),
+            ("w3", "w7", "g"),
+            ("w3", "w8", "h"),
+            ("w4", "w9", "i"),
+            ("w4", "w10", "j"),
+            ("w4", "w11", "k"),
+            ("w0", "w12", "l"),
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+        self.graph.root = "w0"
+        self.graph.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        ceg = ChainEventGraph(self.graph, generate=False)
+
+        ceg._backwards_construction(self.gen_sets_of_nodes())

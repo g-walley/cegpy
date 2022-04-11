@@ -26,6 +26,10 @@ from ..trees.staged import StagedTree
 logger = logging.getLogger('cegpy.chain_event_graph')
 
 
+class CegAlreadyGenerated(Exception):
+    """Raised when a CEG is generated twice."""
+
+
 class ChainEventGraph(nx.MultiDiGraph):
     """
     Class: Chain Event Graph
@@ -36,6 +40,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     sink_suffix: str = "&infin;"
     node_prefix: str
+    generated: bool = False
 
     def __init__(
         self,
@@ -48,6 +53,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         super().__init__(staged_tree, **attr)
         self.node_prefix = node_prefix
         self._stages = {}
+        self.staged_root = staged_tree.root
 
         if generate:
             self.generate()
@@ -88,17 +94,21 @@ class ChainEventGraph(nx.MultiDiGraph):
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
         """
+        if self.generated:
+            raise CegAlreadyGenerated("CEG has already been generated.")
 
         if self.ahc_output == {}:
             raise ValueError("Run staged tree AHC transitions first.")
+
         # rename root node:
-        nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
+        nx.relabel_nodes(self, {self.staged_root: self.root_node}, copy=False)
         self._trim_leaves_from_graph()
         self._update_distances_to_sink()
         self._backwards_construction(
             self._gen_nodes_with_increasing_distance(start=1)
         )
         self._relabel_nodes()
+        self.generated = True
 
     def _backwards_construction(self, node_generator: Iterable[str]) -> None:
         """Working backwards from the sink, the algorithm constructs the CEG."""

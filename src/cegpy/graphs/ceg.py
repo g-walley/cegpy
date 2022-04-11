@@ -115,7 +115,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def _backwards_construction(self, node_generator: Iterable[str]) -> None:
         """Working backwards from the sink, the algorithm constructs the CEG."""
-        next_set_of_nodes = next(node_generator)
+        next_set_of_nodes: List = next(node_generator)
 
         while next_set_of_nodes != [self.root]:
             nodes_to_merge = set()
@@ -130,7 +130,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self._merge_nodes(nodes_to_merge)
 
             try:
-                next_set_of_nodes = next(node_generator)
+                next_set_of_nodes: List = next(node_generator)
             except StopIteration:
                 break
 

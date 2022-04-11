@@ -652,3 +652,53 @@ class TestBackwardsConstruction:
         ceg = ChainEventGraph(self.graph, generate=False)
 
         ceg._backwards_construction(self.gen_sets_of_nodes())
+
+    def test_backwards_construction_produces_ceg(self):
+        """The backwards construction algorithm takes the staged tree and
+        makes the ceg."""
+        nodes = ["w0", "s1", "s2", "s3", "s4", "s5", "s11", "s12", "s13", "w_infinity"]
+        edges = [
+            ("w0", "s1", "hospital"),
+            ("w0", "s2", "community"),
+            ("s1", "s3", "test"),
+            ("s1", "s4", "no test"),
+            ("s2", "s11", "test"),
+            ("s2", "s12", "no test"),
+            ("s3", "s5", "positive"),
+            ("s3", "w_infinity", "negative"),
+            ("s4", "w_infinity", "death"),
+            ("s4", "w_infinity", "recovery"),
+            ("s5", "w_infinity", "death"),
+            ("s5", "w_infinity", "recovery"),
+            ("s11", "s13", "positive"),
+            ("s11", "w_infinity", "negative"),
+            ("s12", "w_infinity", "death"),
+            ("s12", "w_infinity", "recovery"),
+            ("s13", "w_infinity", "death"),
+            ("s13", "w_infinity", "recovery"),
+        ]
+        graph = nx.MultiDiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        graph.root = "w0"
+        graph.nodes["w0"]["stage"] = 0
+        graph.nodes["s1"]["stage"] = 1
+        graph.nodes["s2"]["stage"] = 2
+        graph.nodes["s3"]["stage"] = 3
+        graph.nodes["s4"]["stage"] = 4
+        graph.nodes["s5"]["stage"] = 4
+        graph.nodes["s11"]["stage"] = 3
+        graph.nodes["s12"]["stage"] = 5
+        graph.nodes["s13"]["stage"] = 4
+
+        def gen_sets_of_nodes():
+            yield ["s4", "s5", "s12", "s13"]
+            yield ["s3", "s11"]
+            yield ["s1", "s2"]
+            yield ["w0"]
+
+        ceg = ChainEventGraph(graph, generate=False)
+        ceg._backwards_construction(gen_sets_of_nodes())
+        all_nodes = set(ceg.nodes)
+        assert len(all_nodes.intersection({"s5", "s4", "s13"})) == 1
+        assert len(all_nodes.intersection({"s11", "s3"})) == 1

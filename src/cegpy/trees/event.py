@@ -322,7 +322,7 @@ class EventTree(nx.MultiDiGraph):
     def dot_event_graph(self, edge_info: str = "count"):
         return self._generate_dot_graph(
             fill_colour='lightgrey',
-            edge_info=edge_info  
+            edge_info=edge_info
         )
 
     def _generate_dot_graph(self, fill_colour=None, edge_info="count"):
@@ -373,8 +373,8 @@ class EventTree(nx.MultiDiGraph):
         return graph
 
     def _create_figure(
-        self, 
-        graph: pdp.Dot, 
+        self,
+        graph: pdp.Dot,
         filename: str
     ):
         """Draws the event tree for the process described by the dataset,
@@ -393,10 +393,12 @@ class EventTree(nx.MultiDiGraph):
         if get_ipython() is not None:
             logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())
+        else:
+            graph_image = None
 
         return graph_image
 
-    def create_figure(self, filename=None, edge_info: str ="count"):
+    def create_figure(self, filename=None, edge_info: str = "count"):
         return self._create_figure(
             self.dot_event_graph(edge_info=edge_info),
             filename

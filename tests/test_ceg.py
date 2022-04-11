@@ -8,6 +8,7 @@ import pandas as pd
 import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (
+    CegAlreadyGenerated,
     _merge_edge_data,
 )
 from pathlib import Path
@@ -548,4 +549,11 @@ class TestGenerate(unittest.TestCase):
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.graph.root = "s0"
+        self.ceg = ChainEventGraph(self.graph, generate=False)
+
+    def test_raises_exception_when_called_twice(self):
+        """.generate() raises a CegAlreadyGenerated error when called twice"""
+        self.ceg.generate()
+        with self.assertRaises(CegAlreadyGenerated):
+            self.ceg.generate()

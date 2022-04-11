@@ -406,10 +406,10 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
         expected_edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w2', 'b'),
-            ('w1', self.ceg.sink_node, 'c'),
-            ('w1', self.ceg.sink_node, 'd'),
-            ('w2', self.ceg.sink_node, 'c'),
-            ('w2', self.ceg.sink_node, 'd'),
+            ('w1', self.ceg.sink, 'c'),
+            ('w1', self.ceg.sink, 'd'),
+            ('w2', self.ceg.sink, 'c'),
+            ('w2', self.ceg.sink, 'd'),
         ]
         for edge in expected_edges:
             self.assertIn(edge, list(self.ceg.edges)), f"Edge not found: {edge}"
@@ -505,18 +505,18 @@ class TestDistanceToSink:
 
         # Add another edge to the dictionary, to show that the path is max,
         # and not min distance to sink
-        self.ceg.add_edge("w1", self.ceg.sink_node)
-        self.ceg.add_edge("w4", self.ceg.sink_node)
+        self.ceg.add_edge("w1", self.ceg.sink)
+        self.ceg.add_edge("w4", self.ceg.sink)
         self.ceg._update_distances_to_sink()
         check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
         expected_nodes = {
-            0: [self.ceg.sink_node],
+            0: [self.ceg.sink],
             1: ["w2", "w3", "w5"],
             2: ["w4"],
             3: ["w1"],
-            4: [self.ceg.root_node]
+            4: [self.ceg.root]
         }
         for dist, nodes in expected_nodes.items():
             for node in nodes:
@@ -595,7 +595,7 @@ class TestGenerate(unittest.TestCase):
         self.ceg.generate()
         nx_relabel.assert_called_once_with(
             self.ceg,
-            {self.ceg.staged_root: self.ceg.root_node},
+            {self.ceg.staged_root: self.ceg.root},
             copy=False
         )
         trim_leaves.assert_called_once_with()

@@ -53,18 +53,18 @@ class ChainEventGraph(nx.MultiDiGraph):
         super().__init__(staged_tree, **attr)
         self.node_prefix = node_prefix
         self._stages = {}
-        self.staged_root = staged_tree.root
+        self.staged_root = staged_tree.root if staged_tree is not None else None
 
-        if generate:
+        if generate and staged_tree is not None:
             self.generate()
 
     @property
-    def sink_node(self) -> str:
+    def sink(self) -> str:
         """Sink node name as a string."""
         return f"{self.node_prefix}_infinity"
 
     @property
-    def root_node(self) -> str:
+    def root(self) -> str:
         """Root node name as a string."""
         return f"{self.node_prefix}0"
 
@@ -83,7 +83,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """All the paths through the CEG, as a list of edge tuples."""
         path_list: List[Tuple[str]] = [
             path
-            for path in nx.all_simple_edge_paths(self, self.root_node, self.sink_node)
+            for path in nx.all_simple_edge_paths(self, self.root, self.sink)
         ]
         return path_list
 
@@ -104,7 +104,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
 
         # rename root node:
-        nx.relabel_nodes(self, {self.staged_root: self.root_node}, copy=False)
+        nx.relabel_nodes(self, {self.staged_root: self.root}, copy=False)
         self._trim_leaves_from_graph()
         self._update_distances_to_sink()
         self._backwards_construction(
@@ -117,7 +117,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Working backwards from the sink, the algorithm constructs the CEG."""
         next_set_of_nodes = next(node_generator)
 
-        while next_set_of_nodes != [self.root_node]:
+        while next_set_of_nodes != [self.root]:
             nodes_to_merge = set()
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
@@ -249,13 +249,13 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Trims all the leaves from the graph, and points each incoming
         edge to the sink node."""
         # Create new CEG sink node
-        self.add_node(self.sink_node, colour='lightgrey')
+        self.add_node(self.sink, colour='lightgrey')
         outgoing_edges = deepcopy(self.succ).items()
         # Check to see if any nodes have no outgoing edges.
         mapping = {}
         for node, out_edges in outgoing_edges:
-            if not out_edges and node != self.sink_node:
-                mapping[node] = self.sink_node
+            if not out_edges and node != self.sink:
+                mapping[node] = self.sink
 
         nx.relabel_nodes(self, mapping, copy=False)
 
@@ -266,10 +266,10 @@ class ChainEventGraph(nx.MultiDiGraph):
         from that node to the sink node.
         """
         max_dist = "max_dist_to_sink"
-        self.nodes[self.sink_node][max_dist] = 0
-        node_queue = [self.sink_node]
+        self.nodes[self.sink][max_dist] = 0
+        node_queue = [self.sink]
 
-        while node_queue != [self.root_node]:
+        while node_queue != [self.root]:
             node = node_queue.pop(0)
             for pred in self.predecessors(node):
                 max_dist_to_sink = set()
@@ -302,14 +302,14 @@ class ChainEventGraph(nx.MultiDiGraph):
     def _relabel_nodes(self):
         """Relabels nodes whilst maintaining ordering."""
         num_iterator = it.count(1, 1)
-        nodes_to_rename = list(self.succ[self.root_node].keys())
+        nodes_to_rename = list(self.succ[self.root].keys())
         # first, relabel the successors of this node
         node_mapping = {}
         while nodes_to_rename:
             for node in nodes_to_rename.copy():
                 node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
                 for succ in self.succ[node].keys():
-                    if (succ != self.sink_node and succ not in nodes_to_rename):
+                    if (succ != self.sink and succ not in nodes_to_rename):
                         nodes_to_rename.append(succ)
                 nodes_to_rename.remove(node)
 

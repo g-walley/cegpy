@@ -601,13 +601,13 @@ class TestTransporterCEGTwo(object):
 
     def test_propagation_three(self):
         uncertain_edges = {
-            ("w4", "w5", "k"),
-            ("w5", "w&infin;", "l"),
+            ('w4', 'w5', 'k'),
+            ('w5', 'w_infinity', 'l'),
         }
 
         self.tceg.add_uncertain_edge_set(uncertain_edges)
         tceg_out = self.tceg.reduced
         try:
-            tceg_out.create_figure("out/prop_two_test_propagation_three.pdf")
+            tceg_out.create_figure('out/prop_two_test_propagation_three.pdf')
         except InvocationException:
             pass

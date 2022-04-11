@@ -550,10 +550,23 @@ class TestGenerate(unittest.TestCase):
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
         self.graph.root = "s0"
+        self.graph.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
         self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_raises_exception_when_called_twice(self):
         """.generate() raises a CegAlreadyGenerated error when called twice"""
         self.ceg.generate()
         with self.assertRaises(CegAlreadyGenerated):
+            self.ceg.generate()
+
+    def test_raises_exception_when_there_is_no_ahc_output(self):
+        """.generate() raises a ValueError when ahc_output doesn't exist"""
+        self.graph.ahc_output = None
+        with self.assertRaises(
+            ValueError,
+            msg="There is no AHC output in your StagedTree."
+        ):
             self.ceg.generate()

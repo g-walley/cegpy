@@ -342,7 +342,10 @@ class EventTree(nx.MultiDiGraph):
             edge_info_dict = nx.get_edge_attributes(self, 'count')
 
         for edge, attribute in edge_info_dict.items():
-            edge_details = str(edge[2]) + '\n' + str(attribute)
+            if edge_info == "count":
+                edge_details = str(edge[2]) + '\n' + str(attribute)
+            else:
+                edge_details = f"{edge[2]}\n{float(attribute):.2f}"
 
             graph.add_edge(
                 pdp.Edge(

@@ -2,6 +2,7 @@ import itertools
 import re
 from typing import Dict, Mapping
 import unittest
+import pytest
 import networkx as nx
 import pandas as pd
 import pytest_mock
@@ -438,3 +439,34 @@ class TestDistanceToSink:
             expected_node_list = expected_nodes[nodes]
             actual_node_list = next(nodes_gen)
             assert actual_node_list.sort() == expected_node_list.sort()
+
+
+class TestCEG():
+    def setup(self):
+        med_df_path = Path(__file__).resolve(
+            ).parent.parent.joinpath(
+            'data/medical_dm_modified.xlsx')
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_st = StagedTree(
+            dataframe=self.med_df,
+            sampling_zero_paths=self.med_s_z_paths
+        )
+
+    def test_figure_with_wrong_edge_attribute(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Ensures a warning is raised when a non-existent
+        attribute is passed for the edge_info argument"""
+        msg = (
+            r"edge_info 'prob' does not exist for the "
+            r"ChainEventGraph class. Using the default of 'probability' values "
+            r"on edges instead. For more information, see the "
+            r"documentation."
+        )
+
+        # stratified medical dataset
+        ceg = ChainEventGraph(self.med_st)
+        _ = ceg.create_figure(
+            filename=None, 
+            edge_info="prob"
+        )
+        assert msg in caplog.text, "Expected log message not logged."

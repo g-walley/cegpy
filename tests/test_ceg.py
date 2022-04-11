@@ -81,6 +81,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             ('w3', 'w_infinity', 'e'),
             ('w4', 'w_infinity', 'f'),
         ]
+        self.graph.root = 'w0'
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
         self.ceg = ChainEventGraph(self.graph, generate=False)
@@ -212,6 +213,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         self.init_nodes = [
             'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
         ]
+        self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
 
     def test_check_nodes_can_be_merged(self):
@@ -339,7 +341,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w5', 'w_infinity', 'g'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
 
         nodes_to_merge = {"w1", "w2", "w3"}
         ceg.nodes["w1"]["stage"] = 2
@@ -378,6 +380,7 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
         ]
+        self.graph.root = "w0"
         self.leaves = ["w3", "w4"]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -435,9 +438,10 @@ class TestPathList:
             ('w4', 'w5', 'c'),
             ('w5', 'w_infinity', 'd'),
         ]
+        self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.ceg = ChainEventGraph(self.graph, generate=False)
         actual_path_list = self.ceg.path_list
         expected_paths = [
             [('w0', 'w1', 'a'), ('w1', 'w3', 'e'), ('w3', 'w_infinity', 'd')],
@@ -475,6 +479,7 @@ class TestDistanceToSink:
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
+        self.graph.root = "w0"
         self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_update_distances_to_sink(self) -> None:

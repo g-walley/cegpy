@@ -598,3 +598,8 @@ class TestGenerate(unittest.TestCase):
         backwards_construction.assert_called_once_with(gen_nodes.return_value)
         gen_nodes.assert_called_once_with(start=1)
         relabel_nodes.assert_called_once_with()
+
+    def test_generated_flag_set(self):
+        """The generated flag is set to True when .generate() is called"""
+        self.ceg.generate()
+        assert self.ceg.generated is True

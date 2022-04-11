@@ -37,6 +37,12 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
+    _edge_attributes: List = [
+        'count', 
+        'prior', 
+        'posterior',
+        'probability' 
+        ]
 
     sink_suffix: str = "&infin;"
     node_prefix: str
@@ -176,28 +182,37 @@ class ChainEventGraph(nx.MultiDiGraph):
                     if new_pair[0] != new_pair[1]:
                         nodes_to_merge.add(new_pair)
 
-    @property
-    def dot_graph(self) -> pdp.Dot:
+    def dot_graph(self, edge_info: str ="probability") -> pdp.Dot:
         """Dot representation of the CEG."""
-        return self._generate_dot_graph()
+        return self._generate_dot_graph(edge_info=edge_info)
 
-    def _generate_dot_graph(self):
+    def _generate_dot_graph(self, edge_info="probability"):
         graph = pdp.Dot(graph_type='digraph', rankdir='LR')
-        edge_probabilities = list(
-            self.edges(data='probability', default=1, keys=True)
-        )
+        if edge_info in self._edge_attributes:
+            edge_info_dict = nx.get_edge_attributes(self, edge_info)
+        else:
+            logger.warning(
+                f"edge_info '{edge_info}' does not exist for the "
+                f"{self.__class__.__name__} class. Using the default of 'probability' values "
+                "on edges instead. For more information, see the "
+                "documentation."
+            )
+            edge_info_dict = nx.get_edge_attributes(self, 'probability')
 
-        for (src, dst, label, probability) in edge_probabilities:
-            full_label = f"{label}\n{float(probability):.2f}"
+        for (src, dst, label), attribute in edge_info_dict.items():
+            if edge_info == "count":
+                edge_details = str(label) + '\n' + str(attribute)
+            else:
+                edge_details = f"{label}\n{float(attribute):.2f}"
 
             if dst[1:] == "_infinity":
                 dst = f"{self.node_prefix}&infin;"
 
             graph.add_edge(
                 pdp.Edge(
-                    src=src,
-                    dst=dst,
-                    label=full_label,
+                    src,
+                    dst,
+                    label=edge_details,
                     labelfontcolor='#009933',
                     fontsize='10.0',
                     color='black'
@@ -222,13 +237,17 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
         return graph
 
-    def create_figure(self, filename=None) -> Union[Image, None]:
+    def create_figure(
+        self, 
+        filename=None, 
+        edge_info: str ="probability"
+        ) -> Union[Image, None]:
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
-        graph = self.dot_graph
+        graph = self.dot_graph(edge_info=edge_info)
         if filename is None:
             logger.warn("No filename. Figure not saved.")
         else:

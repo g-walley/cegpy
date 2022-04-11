@@ -32,7 +32,6 @@ class TestEventTreeAPI():
             dataframe=self.df,
             sampling_zero_paths=szp)
 
-
 class TestEventTree():
     def setup(self):
         df_path = Path(__file__).resolve(
@@ -135,10 +134,26 @@ class TestEventTree():
             ) from err
         return None
 
+    def test_figure_with_wrong_edge_attribute(self, caplog: pytest.LogCaptureFixture) -> None:
+        """Ensures a warning is raised when a non-existent
+        attribute is passed for the edge_info argument"""
+        _ = self.et.create_figure(
+            filename=None, 
+            edge_info="probability"
+        )
+        msg = (
+            r"edge_info 'probability' does not exist for the "
+            r"EventTree class. Using the default of 'count' values "
+            r"on edges instead. For more information, see the "
+            r"documentation."
+        )
+        assert msg in caplog.text, "Expected log message not logged."
+
+
     def test_node_colours(self) -> None:
         """ Ensures that all nodes in the event tree dot graph object 
         are coloured in lightgrey """
-        dot_nodes = self.et.dot_event_graph.get_nodes()
+        dot_nodes = self.et.dot_event_graph().get_nodes()
         event_node_colours = [
             n.obj_dict['attributes']['fillcolor'] for n in dot_nodes
         ]

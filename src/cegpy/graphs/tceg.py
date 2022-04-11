@@ -5,6 +5,9 @@ from . import ChainEventGraph
 
 
 class TransporterChainEventGraph:
+
+    _path_list: List[List[Tuple[str]]]
+
     def __init__(self, ceg: ChainEventGraph):
         self._ceg = ceg
 
@@ -12,8 +15,7 @@ class TransporterChainEventGraph:
         self._uncertain_edges = []
         self._certain_nodes = set()
         self._uncertain_nodes = []
-
-        self._path_list = []
+        self._path_list = ceg.path_list
 
     def __repr__(self) -> str:
         return (
@@ -330,8 +332,8 @@ class TransporterChainEventGraph:
         self,
         graph: ChainEventGraph
     ) -> None:
-        sink = graph.sink_node
-        root = graph.root_node
+        sink = graph.sink
+        root = graph.root
         graph.nodes[sink]['emphasis'] = 1
         node_set = set([sink])
 
@@ -372,12 +374,14 @@ class TransporterChainEventGraph:
     def _create_reduced_graph(self) -> ChainEventGraph:
         self._update_path_list()
         self._update_edges_and_vertices()
+        subgraph_view = nx.subgraph_view(
+            G=self._ceg,
+            filter_node=self._filter_node,
+            filter_edge=self._filter_edge
+        )
         subgraph = ChainEventGraph(
-            nx.subgraph_view(
-                G=self._ceg,
-                filter_node=self._filter_node,
-                filter_edge=self._filter_edge
-            )
+            subgraph_view,
+            generate=False
         ).copy()
 
         self._propagate_reduced_graph_probabilities(subgraph)

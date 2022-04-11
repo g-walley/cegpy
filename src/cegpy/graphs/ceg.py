@@ -26,6 +26,10 @@ from ..trees.staged import StagedTree
 logger = logging.getLogger('cegpy.chain_event_graph')
 
 
+class CegAlreadyGenerated(Exception):
+    """Raised when a CEG is generated twice."""
+
+
 class ChainEventGraph(nx.MultiDiGraph):
     """
     Class: Chain Event Graph
@@ -34,14 +38,15 @@ class ChainEventGraph(nx.MultiDiGraph):
     Output: Chain event graphs
     """
     _edge_attributes: List = [
-        'count', 
-        'prior', 
+        'count',
+        'prior',
         'posterior',
-        'probability' 
+        'probability'
         ]
 
     sink_suffix: str = "&infin;"
     node_prefix: str
+    generated: bool = False
 
     def __init__(
         self,
@@ -50,21 +55,22 @@ class ChainEventGraph(nx.MultiDiGraph):
         generate: bool = True,
         **attr
     ):
-        self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", None))
+        self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", {}))
         super().__init__(staged_tree, **attr)
         self.node_prefix = node_prefix
         self._stages = {}
+        self.staged_root = staged_tree.root if staged_tree is not None else None
 
-        if generate:
+        if generate and staged_tree is not None:
             self.generate()
 
     @property
-    def sink_node(self) -> str:
+    def sink(self) -> str:
         """Sink node name as a string."""
         return f"{self.node_prefix}_infinity"
 
     @property
-    def root_node(self) -> str:
+    def root(self) -> str:
         """Root node name as a string."""
         return f"{self.node_prefix}0"
 
@@ -83,7 +89,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """All the paths through the CEG, as a list of edge tuples."""
         path_list: List[Tuple[str]] = [
             path
-            for path in nx.all_simple_edge_paths(self, self.root_node, self.sink_node)
+            for path in nx.all_simple_edge_paths(self, self.root, self.sink)
         ]
         return path_list
 
@@ -94,23 +100,30 @@ class ChainEventGraph(nx.MultiDiGraph):
         along with their edge labels and edge counts. Here we use the
         algorithm in our paper with the optimal stopping time.
         """
+        if self.generated:
+            raise CegAlreadyGenerated("CEG has already been generated.")
 
-        if self.ahc_output == {}:
-            raise ValueError("Run staged tree AHC transitions first.")
+        if self.ahc_output is None or self.ahc_output == {}:
+            raise ValueError(
+                "There is no AHC output in your StagedTree. "
+                "Run StagedTree.calculate_AHC_transitions() first."
+            )
+
         # rename root node:
-        nx.relabel_nodes(self, {'s0': self.root_node}, copy=False)
+        nx.relabel_nodes(self, {self.staged_root: self.root}, copy=False)
         self._trim_leaves_from_graph()
         self._update_distances_to_sink()
         self._backwards_construction(
             self._gen_nodes_with_increasing_distance(start=1)
         )
         self._relabel_nodes()
+        self.generated = True
 
     def _backwards_construction(self, node_generator: Iterable[str]) -> None:
         """Working backwards from the sink, the algorithm constructs the CEG."""
-        next_set_of_nodes = next(node_generator)
+        next_set_of_nodes: List = next(node_generator)
 
-        while next_set_of_nodes != [self.root_node]:
+        while next_set_of_nodes != [self.root]:
             nodes_to_merge = set()
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
@@ -123,7 +136,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 self._merge_nodes(nodes_to_merge)
 
             try:
-                next_set_of_nodes = next(node_generator)
+                next_set_of_nodes: List = next(node_generator)
             except StopIteration:
                 break
 
@@ -225,10 +238,10 @@ class ChainEventGraph(nx.MultiDiGraph):
         return graph
 
     def create_figure(
-        self, 
-        filename=None, 
-        edge_info: str ="probability"
-        ) -> Union[Image, None]:
+        self,
+        filename=None,
+        edge_info: str = "probability",
+    ) -> Union[Image, None]:
         """
         Draws the chain event graph representation of the stage tree,
         and saves it to "<filename>.filetype". Supports any filetype that
@@ -236,14 +249,14 @@ class ChainEventGraph(nx.MultiDiGraph):
         """
         graph = self.dot_graph(edge_info=edge_info)
         if filename is None:
-            logger.warn("No filename. Figure not saved.")
+            logger.warning("No filename. Figure not saved.")
         else:
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
             logger.info("--- writing " + filetype + " file ---")
             graph.write(str(filename), format=filetype)
 
-        if get_ipython is not None:
+        if get_ipython() is not None:
             logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())
         else:
@@ -255,13 +268,13 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Trims all the leaves from the graph, and points each incoming
         edge to the sink node."""
         # Create new CEG sink node
-        self.add_node(self.sink_node, colour='lightgrey')
+        self.add_node(self.sink, colour='lightgrey')
         outgoing_edges = deepcopy(self.succ).items()
         # Check to see if any nodes have no outgoing edges.
         mapping = {}
         for node, out_edges in outgoing_edges:
-            if not out_edges and node != self.sink_node:
-                mapping[node] = self.sink_node
+            if not out_edges and node != self.sink:
+                mapping[node] = self.sink
 
         nx.relabel_nodes(self, mapping, copy=False)
 
@@ -272,10 +285,10 @@ class ChainEventGraph(nx.MultiDiGraph):
         from that node to the sink node.
         """
         max_dist = "max_dist_to_sink"
-        self.nodes[self.sink_node][max_dist] = 0
-        node_queue = [self.sink_node]
+        self.nodes[self.sink][max_dist] = 0
+        node_queue = [self.sink]
 
-        while node_queue != [self.root_node]:
+        while node_queue != [self.root]:
             node = node_queue.pop(0)
             for pred in self.predecessors(node):
                 max_dist_to_sink = set()
@@ -308,14 +321,14 @@ class ChainEventGraph(nx.MultiDiGraph):
     def _relabel_nodes(self):
         """Relabels nodes whilst maintaining ordering."""
         num_iterator = it.count(1, 1)
-        nodes_to_rename = list(self.succ[self.root_node].keys())
+        nodes_to_rename = list(self.succ[self.root].keys())
         # first, relabel the successors of this node
         node_mapping = {}
         while nodes_to_rename:
             for node in nodes_to_rename.copy():
                 node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
                 for succ in self.succ[node].keys():
-                    if (succ != self.sink_node and succ not in nodes_to_rename):
+                    if (succ != self.sink and succ not in nodes_to_rename):
                         nodes_to_rename.append(succ)
                 nodes_to_rename.remove(node)
 
@@ -365,19 +378,15 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         if have_same_successor_nodes:
             have_same_outgoing_edges = True
-            v1_adj = self.succ[node_1]
-            for succ_node in list(v1_adj.keys()):
-                v1_edges = self.succ[node_1][succ_node]
-                v2_edges = self.succ[node_2][succ_node]
+            n1_adj = self.succ[node_1]
+            for succ_node in list(n1_adj.keys()):
+                n1_edges = self.succ[node_1][succ_node]
+                n2_edges = self.succ[node_2][succ_node]
 
-                if v1_edges is None or v2_edges is None:
-                    have_same_outgoing_edges &= False
-                    break
+                n2_edge_labels = list(n2_edges.keys())
 
-                v2_edge_labels = list(v2_edges.keys())
-
-                for label in v1_edges.keys():
-                    if label not in v2_edge_labels:
+                for label in n1_edges.keys():
+                    if label not in n2_edge_labels:
                         have_same_outgoing_edges &= False
                         break
                     have_same_outgoing_edges &= True

@@ -12,7 +12,7 @@ class TestTransporterCEG(object):
         G = nx.MultiDiGraph()
         self.init_nodes = [
             'w0', 'w1', 'w2', 'w3', 'w4',
-            'w5', 'w6', 'w7', 'w8', 'w&infin;'
+            'w5', 'w6', 'w7', 'w8', 'w_infinity'
         ]
         self.init_edges = [
             ('w0', 'w1', 'a'),
@@ -31,14 +31,18 @@ class TestTransporterCEG(object):
             ('w5', 'w7', 'n'),
             ('w6', 'w7', 'o'),
             ('w7', 'w8', 'p'),
-            ('w8', 'w&infin;', 'q'),
-            ('w4', 'w&infin;', 'r'),
+            ('w8', 'w_infinity', 'q'),
+            ('w4', 'w_infinity', 'r'),
             ('w0', 'w3', 's')
         ]
         G.add_nodes_from(self.init_nodes)
         G.add_edges_from(self.init_edges)
-        H = ChainEventGraph(G)
-        H._update_path_list()
+        G.root = "w0"
+        G.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        H = ChainEventGraph(G, generate=False)
         self.tceg = TransporterChainEventGraph(H)
 
         self.tceg._ceg.edges['w0', 'w1', 'a']['probability'] = 0.3
@@ -57,8 +61,8 @@ class TestTransporterCEG(object):
         self.tceg._ceg.edges['w5', 'w7', 'n']['probability'] = 0.4
         self.tceg._ceg.edges['w6', 'w7', 'o']['probability'] = 1
         self.tceg._ceg.edges['w7', 'w8', 'p']['probability'] = 1
-        self.tceg._ceg.edges['w8', 'w&infin;', 'q']['probability'] = 1
-        self.tceg._ceg.edges['w4', 'w&infin;', 'r']['probability'] = 0.1
+        self.tceg._ceg.edges['w8', 'w_infinity', 'q']['probability'] = 1
+        self.tceg._ceg.edges['w4', 'w_infinity', 'r']['probability'] = 0.1
         self.tceg._ceg.edges['w0', 'w3', 's']['probability'] = 0.1
 
         try:
@@ -191,7 +195,7 @@ class TestTransporterCEG(object):
 
     def test_add_and_remove_certain_nodes(self):
         # nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
-        #          'w5', 'w6', 'w7', 'w8', 'w&infin;']
+        #          'w5', 'w6', 'w7', 'w8', 'w_infinity']
         certain_nodes = {"w0", "w1", "w3"}
         for node in certain_nodes:
             self.tceg.add_certain_node(node)
@@ -316,8 +320,8 @@ class TestTransporterCEG(object):
         assert tceg_out.edges['w3', 'w4', 'g']['probability'] == 0.5
         assert tceg_out.edges['w3', 'w8', 'h']['probability'] == 0.5
         assert tceg_out.edges['w4', 'w8', 'i']['probability'] == 0.9
-        assert tceg_out.edges['w8', 'w&infin;', 'q']['probability'] == 1.0
-        assert tceg_out.edges['w4', 'w&infin;', 'r']['probability'] == 0.1
+        assert tceg_out.edges['w8', 'w_infinity', 'q']['probability'] == 1.0
+        assert tceg_out.edges['w4', 'w_infinity', 'r']['probability'] == 0.1
         try:
             tceg_out.create_figure("out/test_propagation_two.pdf")
         except InvocationException:
@@ -364,10 +368,10 @@ class TestTransporterCEG(object):
         assert tceg_out.edges['w7', 'w8', 'p']['probability'] == (
             pytest.approx(1.0, abs=0.01)
         )
-        assert tceg_out.edges['w8', 'w&infin;', 'q']['probability'] == (
+        assert tceg_out.edges['w8', 'w_infinity', 'q']['probability'] == (
             pytest.approx(1.0, abs=0.01)
         )
-        assert tceg_out.edges['w4', 'w&infin;', 'r']['probability'] == (
+        assert tceg_out.edges['w4', 'w_infinity', 'r']['probability'] == (
             pytest.approx(0.1, abs=0.01)
         )
         assert tceg_out.edges['w0', 'w3', 's']['probability'] == (
@@ -401,8 +405,8 @@ class TestTransporterCEG(object):
         assert tceg_out.edges['w3', 'w4', 'g']['probability'] == 0.5
         assert tceg_out.edges['w3', 'w8', 'h']['probability'] == 0.5
         assert tceg_out.edges['w4', 'w8', 'i']['probability'] == 0.9
-        assert tceg_out.edges['w8', 'w&infin;', 'q']['probability'] == 1.0
-        assert tceg_out.edges['w4', 'w&infin;', 'r']['probability'] == 0.1
+        assert tceg_out.edges['w8', 'w_infinity', 'q']['probability'] == 1.0
+        assert tceg_out.edges['w4', 'w_infinity', 'r']['probability'] == 0.1
         try:
             tceg_out.create_figure("out/test_propagation_four.pdf")
         except InvocationException:
@@ -458,7 +462,7 @@ class TestTransporterCEGTwo(object):
     def setup(self):
         G = nx.MultiDiGraph()
         self.init_nodes = ['w0', 'w1', 'w2', 'w3', 'w4',
-                           'w5', 'w6', 'w&infin;']
+                           'w5', 'w6', 'w_infinity']
         self.init_edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w2', 'b'),
@@ -469,17 +473,21 @@ class TestTransporterCEGTwo(object):
             ('w2', 'w5', 'g'),
             ('w2', 'w6', 'h'),
             ('w3', 'w6', 'i'),
-            ('w4', 'w&infin;', 'j'),
+            ('w4', 'w_infinity', 'j'),
             ('w4', 'w5', 'k'),
-            ('w5', 'w&infin;', 'l'),
-            ('w6', 'w&infin;', 'm'),
+            ('w5', 'w_infinity', 'l'),
+            ('w6', 'w_infinity', 'm'),
             ('w2', 'w3', 'n'),
             ('w5', 'w6', 'o'),
         ]
         G.add_nodes_from(self.init_nodes)
         G.add_edges_from(self.init_edges)
-        H = ChainEventGraph(G)
-        H._update_path_list()
+        G.root = "w0"
+        G.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        H = ChainEventGraph(G, generate=False)
         self.tceg = TransporterChainEventGraph(H)
         self.tceg._ceg.edges['w0', 'w1', 'a']['probability'] = 0.3
         self.tceg._ceg.edges['w0', 'w2', 'b']['probability'] = 0.4
@@ -490,10 +498,10 @@ class TestTransporterCEGTwo(object):
         self.tceg._ceg.edges['w2', 'w5', 'g']['probability'] = 0.5
         self.tceg._ceg.edges['w2', 'w6', 'h']['probability'] = 0.15
         self.tceg._ceg.edges['w3', 'w6', 'i']['probability'] = 1.0
-        self.tceg._ceg.edges['w4', 'w&infin;', 'j']['probability'] = 0.8
+        self.tceg._ceg.edges['w4', 'w_infinity', 'j']['probability'] = 0.8
         self.tceg._ceg.edges['w4', 'w5', 'k']['probability'] = 0.2
-        self.tceg._ceg.edges['w5', 'w&infin;', 'l']['probability'] = 0.7
-        self.tceg._ceg.edges['w6', 'w&infin;', 'm']['probability'] = 1.0
+        self.tceg._ceg.edges['w5', 'w_infinity', 'l']['probability'] = 0.7
+        self.tceg._ceg.edges['w6', 'w_infinity', 'm']['probability'] = 1.0
         self.tceg._ceg.edges['w2', 'w3', 'n']['probability'] = 0.1
         self.tceg._ceg.edges['w5', 'w6', 'o']['probability'] = 0.3
         try:
@@ -528,13 +536,13 @@ class TestTransporterCEGTwo(object):
         assert tceg_out.edges['w2', 'w5', 'g']['probability'] == (
             pytest.approx(0.71, abs=0.01)
         )
-        assert tceg_out.edges['w4', 'w&infin;', 'j']['probability'] == (
+        assert tceg_out.edges['w4', 'w_infinity', 'j']['probability'] == (
             pytest.approx(1.00, abs=0.01)
         )
-        assert tceg_out.edges['w5', 'w&infin;', 'l']['probability'] == (
+        assert tceg_out.edges['w5', 'w_infinity', 'l']['probability'] == (
             pytest.approx(0.70, abs=0.01)
         )
-        assert tceg_out.edges['w6', 'w&infin;', 'm']['probability'] == (
+        assert tceg_out.edges['w6', 'w_infinity', 'm']['probability'] == (
             pytest.approx(1.00, abs=0.01)
         )
         assert tceg_out.edges['w5', 'w6', 'o']['probability'] == (
@@ -581,10 +589,10 @@ class TestTransporterCEGTwo(object):
         assert tceg_out.edges['w4', 'w5', 'k']['probability'] == (
             pytest.approx(1.0, abs=0.01)
         )
-        assert tceg_out.edges['w5', 'w&infin;', 'l']['probability'] == (
+        assert tceg_out.edges['w5', 'w_infinity', 'l']['probability'] == (
             pytest.approx(1.0, abs=0.01)
         )
-        assert tceg_out.edges['w6', 'w&infin;', 'm']['probability'] == (
+        assert tceg_out.edges['w6', 'w_infinity', 'm']['probability'] == (
             pytest.approx(1.0, abs=0.01)
         )
         assert tceg_out.edges['w2', 'w3', 'n']['probability'] == (
@@ -593,13 +601,13 @@ class TestTransporterCEGTwo(object):
 
     def test_propagation_three(self):
         uncertain_edges = {
-            ("w4", "w5", "k"),
-            ("w5", "w&infin;", "l"),
+            ('w4', 'w5', 'k'),
+            ('w5', 'w_infinity', 'l'),
         }
 
         self.tceg.add_uncertain_edge_set(uncertain_edges)
         tceg_out = self.tceg.reduced
         try:
-            tceg_out.create_figure("out/prop_two_test_propagation_three.pdf")
+            tceg_out.create_figure('out/prop_two_test_propagation_three.pdf')
         except InvocationException:
             pass

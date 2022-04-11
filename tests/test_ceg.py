@@ -1,14 +1,14 @@
-import itertools
 import re
 from typing import Dict, Mapping
 import unittest
-import pytest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 import networkx as nx
 import pandas as pd
+import pytest
 import pytest_mock
 from src.cegpy import StagedTree, ChainEventGraph
 from src.cegpy.graphs.ceg import (
+    CegAlreadyGenerated,
     _merge_edge_data,
 )
 from pathlib import Path
@@ -64,6 +64,16 @@ class TestUnitCEG(unittest.TestCase):
         for node, stage in node_stage_mapping.items():
             self.assertIn(node, stages[stage])
 
+    def test_create_figure(self):
+        """.create_figure() called with no filename"""
+        ceg = ChainEventGraph(self.st, generate=False)
+        with self.assertLogs('cegpy', level='INFO') as cm:
+            assert ceg.create_figure() is None
+        self.assertEqual(
+            ['WARNING:cegpy.chain_event_graph:No filename. Figure not saved.'],
+            cm.output
+        )
+
 
 class TestCEGHelpersTestCases(unittest.TestCase):
     def setUp(self):
@@ -81,6 +91,7 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             ('w3', 'w_infinity', 'e'),
             ('w4', 'w_infinity', 'f'),
         ]
+        self.graph.root = 'w0'
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
         self.ceg = ChainEventGraph(self.graph, generate=False)
@@ -212,6 +223,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         self.init_nodes = [
             'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
         ]
+        self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
 
     def test_check_nodes_can_be_merged(self):
@@ -339,7 +351,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
             ('w5', 'w_infinity', 'g'),
         ]
         self.graph.add_edges_from(init_edges)
-        ceg = ChainEventGraph(self.graph)
+        ceg = ChainEventGraph(self.graph, generate=False)
 
         nodes_to_merge = {"w1", "w2", "w3"}
         ceg.nodes["w1"]["stage"] = 2
@@ -378,6 +390,7 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
             ('w2', 'w3', 'c'),
             ('w2', 'w4', 'd'),
         ]
+        self.graph.root = "w0"
         self.leaves = ["w3", "w4"]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -403,10 +416,10 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
         expected_edges = [
             ('w0', 'w1', 'a'),
             ('w0', 'w2', 'b'),
-            ('w1', self.ceg.sink_node, 'c'),
-            ('w1', self.ceg.sink_node, 'd'),
-            ('w2', self.ceg.sink_node, 'c'),
-            ('w2', self.ceg.sink_node, 'd'),
+            ('w1', self.ceg.sink, 'c'),
+            ('w1', self.ceg.sink, 'd'),
+            ('w2', self.ceg.sink, 'c'),
+            ('w2', self.ceg.sink, 'd'),
         ]
         for edge in expected_edges:
             self.assertIn(edge, list(self.ceg.edges)), f"Edge not found: {edge}"
@@ -435,9 +448,10 @@ class TestPathList:
             ('w4', 'w5', 'c'),
             ('w5', 'w_infinity', 'd'),
         ]
+        self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.ceg = ChainEventGraph(self.graph, generate=False)
         actual_path_list = self.ceg.path_list
         expected_paths = [
             [('w0', 'w1', 'a'), ('w1', 'w3', 'e'), ('w3', 'w_infinity', 'd')],
@@ -475,6 +489,7 @@ class TestDistanceToSink:
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
+        self.graph.root = "w0"
         self.ceg = ChainEventGraph(self.graph, generate=False)
 
     def test_update_distances_to_sink(self) -> None:
@@ -500,18 +515,18 @@ class TestDistanceToSink:
 
         # Add another edge to the dictionary, to show that the path is max,
         # and not min distance to sink
-        self.ceg.add_edge("w1", self.ceg.sink_node)
-        self.ceg.add_edge("w4", self.ceg.sink_node)
+        self.ceg.add_edge("w1", self.ceg.sink)
+        self.ceg.add_edge("w4", self.ceg.sink)
         self.ceg._update_distances_to_sink()
         check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
         expected_nodes = {
-            0: [self.ceg.sink_node],
+            0: [self.ceg.sink],
             1: ["w2", "w3", "w5"],
             2: ["w4"],
             3: ["w1"],
-            4: [self.ceg.root_node]
+            4: [self.ceg.root]
         }
         for dist, nodes in expected_nodes.items():
             for node in nodes:
@@ -537,7 +552,10 @@ class TestCEG():
             sampling_zero_paths=self.med_s_z_paths
         )
 
-    def test_figure_with_wrong_edge_attribute(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_figure_with_wrong_edge_attribute(
+        self,
+        caplog: pytest.LogCaptureFixture
+    ) -> None:
         """Ensures a warning is raised when a non-existent
         attribute is passed for the edge_info argument"""
         msg = (
@@ -548,14 +566,20 @@ class TestCEG():
         )
 
         # stratified medical dataset
-        ceg = ChainEventGraph(self.med_st)
+        ceg = ChainEventGraph(self.med_st, generate=False)
         _ = ceg.create_figure(
-            filename=None, 
+            filename=None,
             edge_info="prob"
         )
         assert msg in caplog.text, "Expected log message not logged."
 
-        
+
+@patch.object(ChainEventGraph, "_relabel_nodes")
+@patch.object(ChainEventGraph, "_gen_nodes_with_increasing_distance")
+@patch.object(ChainEventGraph, "_backwards_construction")
+@patch.object(ChainEventGraph, "_update_distances_to_sink")
+@patch.object(ChainEventGraph, "_trim_leaves_from_graph")
+@patch.object(nx, "relabel_nodes")
 class TestGenerate(unittest.TestCase):
     """Tests the .generate() method"""
     def setUp(self) -> None:
@@ -580,4 +604,145 @@ class TestGenerate(unittest.TestCase):
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph)
+        self.graph.root = "s0"
+        self.graph.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        self.ceg = ChainEventGraph(self.graph, generate=False)
+
+    def test_raises_exception_when_called_twice(self, *_):
+        """.generate() raises a CegAlreadyGenerated error when called twice"""
+        self.ceg.generate()
+        with self.assertRaises(CegAlreadyGenerated):
+            self.ceg.generate()
+
+    def test_raises_exception_when_there_is_no_ahc_output(self, *_):
+        """.generate() raises a ValueError when ahc_output doesn't exist"""
+        self.ceg.ahc_output = None
+        with self.assertRaises(
+            ValueError,
+            msg="There is no AHC output in your StagedTree."
+        ):
+            self.ceg.generate()
+
+    def test_calls_helper_functions_in_the_correct_order(
+        self,
+        nx_relabel: Mock,
+        trim_leaves: Mock,
+        update_distances: Mock,
+        backwards_construction: Mock,
+        gen_nodes: Mock,
+        relabel_nodes: Mock,
+    ):
+        """.generate() calls the helper functions"""
+        self.ceg.generate()
+        nx_relabel.assert_called_once_with(
+            self.ceg,
+            {self.ceg.staged_root: self.ceg.root},
+            copy=False
+        )
+        trim_leaves.assert_called_once_with()
+        update_distances.assert_called_once_with()
+        backwards_construction.assert_called_once_with(gen_nodes.return_value)
+        gen_nodes.assert_called_once_with(start=1)
+        relabel_nodes.assert_called_once_with()
+
+    def test_generated_flag_set(self, *_):
+        """The generated flag is set to True when .generate() is called"""
+        self.ceg.generate()
+        assert self.ceg.generated is True
+
+
+class TestBackwardsConstruction:
+    """Tests the ._backwards_construction() method"""
+    @staticmethod
+    def gen_sets_of_nodes():
+        nodes = [[f"w{i}", f"w{i+1}"] for i in range(5, 1, -1)]
+        for node in nodes:
+            yield node
+
+    def test_backwards_construction_always_ends(self):
+        """
+        ._backwards_construction() always ends, even if there are no
+        nodes to process
+        """
+        self.graph = nx.MultiDiGraph()
+        self.init_nodes = [
+            "w0", "w1", "w2", "w3", "w4", "w5", "w6",
+            "w7", "w8", "w9", "w10", "w11", "w12",
+        ]
+        self.init_edges = [
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w5", "e"),
+            ("w2", "w6", "f"),
+            ("w3", "w7", "g"),
+            ("w3", "w8", "h"),
+            ("w4", "w9", "i"),
+            ("w4", "w10", "j"),
+            ("w4", "w11", "k"),
+            ("w0", "w12", "l"),
+        ]
+        self.graph.add_nodes_from(self.init_nodes)
+        self.graph.add_edges_from(self.init_edges)
+        self.graph.root = "w0"
+        self.graph.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        ceg = ChainEventGraph(self.graph, generate=False)
+
+        ceg._backwards_construction(self.gen_sets_of_nodes())
+
+    def test_backwards_construction_produces_ceg(self):
+        """The backwards construction algorithm takes the staged tree and
+        makes the ceg."""
+        nodes = ["w0", "s1", "s2", "s3", "s4", "s5", "s11", "s12", "s13", "w_infinity"]
+        edges = [
+            ("w0", "s1", "hospital"),
+            ("w0", "s2", "community"),
+            ("s1", "s3", "test"),
+            ("s1", "s4", "no test"),
+            ("s2", "s11", "test"),
+            ("s2", "s12", "no test"),
+            ("s3", "s5", "positive"),
+            ("s3", "w_infinity", "negative"),
+            ("s4", "w_infinity", "death"),
+            ("s4", "w_infinity", "recovery"),
+            ("s5", "w_infinity", "death"),
+            ("s5", "w_infinity", "recovery"),
+            ("s11", "s13", "positive"),
+            ("s11", "w_infinity", "negative"),
+            ("s12", "w_infinity", "death"),
+            ("s12", "w_infinity", "recovery"),
+            ("s13", "w_infinity", "death"),
+            ("s13", "w_infinity", "recovery"),
+        ]
+        graph = nx.MultiDiGraph()
+        graph.add_nodes_from(nodes)
+        graph.add_edges_from(edges)
+        graph.root = "w0"
+        graph.nodes["w0"]["stage"] = 0
+        graph.nodes["s1"]["stage"] = 1
+        graph.nodes["s2"]["stage"] = 2
+        graph.nodes["s3"]["stage"] = 3
+        graph.nodes["s4"]["stage"] = 4
+        graph.nodes["s5"]["stage"] = 4
+        graph.nodes["s11"]["stage"] = 3
+        graph.nodes["s12"]["stage"] = 5
+        graph.nodes["s13"]["stage"] = 4
+
+        def gen_sets_of_nodes():
+            yield ["s4", "s5", "s12", "s13"]
+            yield ["s3", "s11"]
+            yield ["s1", "s2"]
+            yield ["w0"]
+
+        ceg = ChainEventGraph(graph, generate=False)
+        ceg._backwards_construction(gen_sets_of_nodes())
+        all_nodes = set(ceg.nodes)
+        assert len(all_nodes.intersection({"s5", "s4", "s13"})) == 1
+        assert len(all_nodes.intersection({"s11", "s3"})) == 1

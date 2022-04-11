@@ -37,8 +37,12 @@ class TestTransporterCEG(object):
         ]
         G.add_nodes_from(self.init_nodes)
         G.add_edges_from(self.init_edges)
-        H = ChainEventGraph(G)
-        H._update_path_list()
+        G.root = "w0"
+        G.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        H = ChainEventGraph(G, generate=False)
         self.tceg = TransporterChainEventGraph(H)
 
         self.tceg._ceg.edges['w0', 'w1', 'a']['probability'] = 0.3
@@ -478,8 +482,12 @@ class TestTransporterCEGTwo(object):
         ]
         G.add_nodes_from(self.init_nodes)
         G.add_edges_from(self.init_edges)
-        H = ChainEventGraph(G)
-        H._update_path_list()
+        G.root = "w0"
+        G.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        H = ChainEventGraph(G, generate=False)
         self.tceg = TransporterChainEventGraph(H)
         self.tceg._ceg.edges['w0', 'w1', 'a']['probability'] = 0.3
         self.tceg._ceg.edges['w0', 'w2', 'b']['probability'] = 0.4

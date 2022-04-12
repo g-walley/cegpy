@@ -1,3 +1,5 @@
+"""cegpy event tree."""
+
 from collections import defaultdict
 from typing import List, Mapping, Optional, Tuple
 import logging

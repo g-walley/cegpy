@@ -252,7 +252,7 @@ class EventTree(nx.MultiDiGraph):
             )
 
         categories_to_ignore = {"N/A", "NA", "n/a", "na", "NAN", "nan"}
-        self._catagories_per_variable = {}
+        catagories_per_variable = {}
         nans_filtered = False
 
         for var in self.variables:
@@ -265,12 +265,12 @@ class EventTree(nx.MultiDiGraph):
             if pd_filtered_categories != filtered_cats:
                 nans_filtered = True
 
-            self._catagories_per_variable[var] = len(filtered_cats)
+            catagories_per_variable[var] = len(filtered_cats)
 
         if nans_filtered:
             display_nan_warning()
 
-        return self._catagories_per_variable
+        return catagories_per_variable
 
     def dot_event_graph(self, edge_info: str = "count"):
         return self._generate_dot_graph(fill_colour="lightgrey", edge_info=edge_info)

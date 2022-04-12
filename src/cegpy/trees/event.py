@@ -1,6 +1,4 @@
-from ast import Str
 from collections import defaultdict
-import itertools
 from typing import List, Mapping, Optional, Tuple
 import numpy as np
 import pydotplus as pdp
@@ -93,9 +91,8 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
-    _stratified: Optional[bool]
     _sampling_zero_paths: Optional[List[Tuple]] = None
-    _sorted_paths: Mapping[Tuple[Str], int]
+    _sorted_paths: Mapping[Tuple[str], int]
     _edge_attributes: List = ['count']
 
     def __init__(
@@ -107,7 +104,6 @@ class EventTree(nx.MultiDiGraph):
         struct_missing_label=None,
         missing_label=None,
         complete_case=False,
-        stratified=False,
         **attr
     ) -> None:
         # Checking argument inputs are sensible
@@ -115,6 +111,8 @@ class EventTree(nx.MultiDiGraph):
             raise ValueError(
                 "The dataframe parameter must be a pandas.DataFrame"
             )
+        # Initialise Networkx DiGraph class
+        super().__init__(incoming_graph_data, **attr)
 
         if (
             struct_missing_label is not None
@@ -137,17 +135,7 @@ class EventTree(nx.MultiDiGraph):
                 "complete_case should be a boolean"
             )
 
-        if not isinstance(stratified, bool):
-            raise ValueError(
-                "stratified should be a boolean"
-            )
-
-        # Initialise Networkx DiGraph class
-        super().__init__(incoming_graph_data, **attr)
-
         self.sampling_zeros = sampling_zero_paths
-        self.complete_case = complete_case
-        self.stratified = stratified
 
         # Dealing with structural and non-structural...
         # ... missing value labels
@@ -233,29 +221,6 @@ class EventTree(nx.MultiDiGraph):
                     "Should be a list of tuples like so:\n"
                     "[('edge_1',), ('edge_1', 'edge_2'), ...]"
                 )
-
-    @property
-    def stratified(self) -> bool:
-        """Auto-stratification has taken place."""
-        return self._stratified
-
-    @stratified.setter
-    def stratified(self, stratified: bool):
-        if stratified and not self.complete_case:
-            raise ValueError(
-                "Under the current implementation, it is not possible to "
-                "automatically stratify the tree when non-structural "
-                "missing values are not removed (complete_case = False).\n"
-                "Please manually stratify the dataset by passing in the "
-                "additional paths required to do so through the "
-                "'sampling_zero_paths' parameter."
-            )
-        self._stratified = stratified
-        if self.sampling_zeros is not None:
-            logger.warning(
-                "User provided sampling_zero_paths, but these are being "
-                "ignored due to 'stratified' being enabled."
-            )
 
     @property
     def situations(self) -> list:
@@ -442,16 +407,9 @@ class EventTree(nx.MultiDiGraph):
         assuming they are structural zeroes'''
         unsorted_paths = self.__create_unsorted_paths_dict()
 
-        sampling_zeros = (
-            _paths_required_for_stratification(self.dataframe)
-            if self.stratified
-            else self.sampling_zeros
-        )
-
-        if sampling_zeros is not None:
+        if self.sampling_zeros is not None:
             unsorted_paths = Util.create_sampling_zeros(
-                sampling_zeros, unsorted_paths
-            )
+                self.sampling_zeros, unsorted_paths)
 
         depth = len(max(list(unsorted_paths.keys()), key=len))
         keys_of_list = list(unsorted_paths.keys())
@@ -519,34 +477,3 @@ class EventTree(nx.MultiDiGraph):
                     key=path[-1],
                     count=count
                 )
-
-
-def _paths_required_for_stratification(dataframe: pd.DataFrame) -> List[Tuple]:
-    """produces additional paths required to make the tree stratified."""
-    # TAKE CARE to ensure that missing values and empty cells
-    # are not considered as values of a variable.
-    unique_variable_values = [
-        dataframe[col].unique()
-        for col in dataframe.columns
-    ]
-    all_possible_paths = list(itertools.product(*unique_variable_values))
-    existing_paths = [
-        tuple(path)
-        for path in dataframe.drop_duplicates().values.tolist()
-    ]
-    max_path_length = len(all_possible_paths[0])
-    missing_paths = []
-
-    for col in range(max_path_length, 0, -1):
-        temp_paths = [path[:col] for path in existing_paths]
-        new_missing_paths = [
-            path[:col]
-            for path in all_possible_paths
-            if path[:col] not in temp_paths
-        ]
-        if new_missing_paths:
-            missing_paths = [*new_missing_paths, *missing_paths]
-        else:
-            break
-
-    return missing_paths

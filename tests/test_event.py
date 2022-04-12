@@ -1,4 +1,3 @@
-import unittest
 import pandas as pd
 import re
 import numpy as np
@@ -6,7 +5,6 @@ import pytest
 from collections import defaultdict
 from pathlib import Path
 from src.cegpy import EventTree
-from src.cegpy.trees.event import _paths_required_for_stratification
 from pydotplus.graphviz import InvocationException
 
 
@@ -31,6 +29,7 @@ class TestEventTreeAPI():
             EventTree,
             dataframe=self.df,
             sampling_zero_paths=szp)
+
 
 class TestEventTree():
     def setup(self):
@@ -134,11 +133,14 @@ class TestEventTree():
             ) from err
         return None
 
-    def test_figure_with_wrong_edge_attribute(self, caplog: pytest.LogCaptureFixture) -> None:
+    def test_figure_with_wrong_edge_attribute(
+        self,
+        caplog: pytest.LogCaptureFixture,
+    ) -> None:
         """Ensures a warning is raised when a non-existent
         attribute is passed for the edge_info argument"""
         _ = self.et.create_figure(
-            filename=None, 
+            filename=None,
             edge_info="probability"
         )
         msg = (
@@ -149,9 +151,8 @@ class TestEventTree():
         )
         assert msg in caplog.text, "Expected log message not logged."
 
-
     def test_node_colours(self) -> None:
-        """ Ensures that all nodes in the event tree dot graph object 
+        """ Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey """
         dot_nodes = self.et.dot_event_graph().get_nodes()
         event_node_colours = [
@@ -159,7 +160,7 @@ class TestEventTree():
         ]
         assert len(set(event_node_colours)) == 1
         assert event_node_colours[0] == 'lightgrey'
-        
+
 
 class TestIntegration():
     def setup(self):
@@ -342,89 +343,6 @@ class TestChangingDataFrame():
         assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
 
 
-class TestStratification(unittest.TestCase):
-    """Tests the stratification functionality of the EventTree"""
-
-    def test_stratified(self) -> None:
-        """stratified has the wrong type."""
-        with pytest.raises(ValueError):
-            _ = EventTree(
-                dataframe=pd.DataFrame(),
-                stratified=5
-            )
-
-    def test_value_error_for_not_complete_case(self):
-        """When stratified and not complete_case, ValueError raised"""
-        with pytest.raises(
-            ValueError,
-            match=(
-                r"Please manually stratify the dataset"
-            )
-        ):
-            _ = EventTree(
-                dataframe=pd.DataFrame(),
-                complete_case=False,
-                stratified=True,
-            )
-
-    def test_produces_paths_required_for_asym_data(self):
-        """For the asym.csv dataset, expected paths are produced"""
-        expected_paths = [
-            ("0", "1", "0", "1"),
-            ("0", "1", "1", "1"),
-            ("1", "0", "1", "1"),
-        ]
-        data = pd.read_csv("data/Asym.csv").astype(str)
-        actual_paths = _paths_required_for_stratification(data)
-        self.assertEqual(expected_paths, actual_paths)
-
-    def test_event_tree_stratifies(self):
-        """For the asym.csv dataset, all paths are created"""
-        expected_paths = [
-            ("0", "0", "0", "0"),
-            ("0", "0", "0", "1"),
-            ("0", "0", "1", "0"),
-            ("0", "0", "1", "1"),
-            ("0", "1", "0", "0"),
-            ("0", "1", "0", "1"),
-            ("0", "1", "1", "0"),
-            ("0", "1", "1", "1"),
-            ("1", "0", "0", "0"),
-            ("1", "0", "0", "1"),
-            ("1", "0", "1", "0"),
-            ("1", "0", "1", "1"),
-            ("1", "1", "0", "0"),
-            ("1", "1", "0", "1"),
-            ("1", "1", "1", "0"),
-            ("1", "1", "1", "1"),
-        ]
-        data = pd.read_csv("data/Asym.csv")
-        asym_et = EventTree(
-            dataframe=data,
-            stratified=True,
-            complete_case=True
-        )
-        all_paths = list(asym_et._sorted_paths)
-        for path in expected_paths:
-            self.assertIn(path, all_paths)
-
-    def test_warning_raised(self):
-        """Warning raised if sampling zeros are not none."""
-        data = pd.read_csv("data/Asym.csv")
-        with self.assertLogs("cegpy", level="WARN") as log_cm:
-            _ = EventTree(
-                dataframe=data,
-                sampling_zero_paths=[("1", "0", "1", "1")],
-                stratified=True,
-                complete_case=True,
-            )
-        self.assertIn(
-            "WARNING:cegpy.event_tree:User provided sampling_zero_paths, "
-            "but these are being ignored due to 'stratified' being enabled.",
-            log_cm.output
-        )
-
-
 class TestMissingLabels():
     def setup(self):
         array = [
@@ -484,15 +402,13 @@ class TestMissingLabels():
         self.df_with_both = pd.DataFrame(array_with_both)
 
     def test_structural_label_string(self) -> None:
-        """struct_missing_label has the wrong type."""
         with pytest.raises(ValueError):
-            _ = EventTree(
+            df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label=5
             )
 
     def test_structural_label_reduction(self) -> None:
-        """struct_missing_label values are reduced to '<empty string>'."""
         df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label="Struct"
@@ -516,15 +432,13 @@ class TestMissingLabels():
         )
 
     def test_missing_label_string(self) -> None:
-        """missing label not correct type."""
         with pytest.raises(ValueError):
-            _ = EventTree(
-                dataframe=self.df,
-                missing_label=15
-            )
+            df_et = EventTree(
+                    dataframe=self.df,
+                    missing_label=15
+                )
 
     def test_missing_label_reduction(self) -> None:
-        """missing label replaced with 'missing'."""
         df_et = EventTree(
             dataframe=self.df,
             missing_label="NotANum"
@@ -544,7 +458,6 @@ class TestMissingLabels():
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_struct_missing_label_reduction(self) -> None:
-        """missing_label and struct_missing_label both set."""
         df_et = EventTree(
             dataframe=self.df,
             struct_missing_label="Struct",
@@ -565,12 +478,11 @@ class TestMissingLabels():
         assert df_et.dataframe.equals(expected_df) is True
 
     def test_complete_case_bool(self) -> None:
-        """complete case wrong type"""
         with pytest.raises(ValueError):
-            _ = EventTree(
-                dataframe=self.df,
-                complete_case="Yes"
-            )
+            df_et = EventTree(
+                    dataframe=self.df,
+                    complete_case="Yes"
+                )
 
     def test_complete_case_missing_reduction(self) -> None:
         """complete case missing_label reduces"""
@@ -620,16 +532,16 @@ class TestMissingLabels():
             missing_label="NotANum",
             complete_case=True
         )
-        expected_df_with_na = pd.DataFrame(        
+        expected_df_with_na = pd.DataFrame(
             [
-            np.array(["2", "Struct", "Recover"]),
-            np.array(["2", "Struct", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
-            np.array(["1", "Trt1", np.nan]),
-        ]
+                np.array(["2", "Struct", "Recover"]),
+                np.array(["2", "Struct", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "Trt1", np.nan]),
+            ]
         )
         assert df_with_na.dataframe.equals(
             expected_df_with_na
@@ -641,24 +553,23 @@ class TestMissingLabels():
             missing_label="NotANum",
             complete_case=True
         )
-        expected_df_with_both = pd.DataFrame(   
-        [
-            np.array(["2", "Struct", "Recover"]),
-            np.array(["2", "Struct", "Dont Recover"]),
-            np.array(["1", "Trt1", "Recover"]),
-            np.array(["1", "Trt2", "Recover"]),
-            np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", "Trt1", "Dont Recover"]),
-            np.array(["1", "Trt1", np.nan]),
-            np.array(["", "Trt1", "Dont Recover"]),
-        ]
+        expected_df_with_both = pd.DataFrame(
+            [
+                np.array(["2", "Struct", "Recover"]),
+                np.array(["2", "Struct", "Dont Recover"]),
+                np.array(["1", "Trt1", "Recover"]),
+                np.array(["1", "Trt2", "Recover"]),
+                np.array(["1", "Trt2", "Dont Recover"]),
+                np.array(["1", "Trt1", "Dont Recover"]),
+                np.array(["1", "Trt1", np.nan]),
+                np.array(["", "Trt1", "Dont Recover"]),
+            ]
         )
         assert df_with_both.dataframe.equals(
             expected_df_with_both
             ) is True
 
     def test_complete_case_reduction(self) -> None:
-        """struct_missing_label reduces."""
         df_et = EventTree(
                 dataframe=self.df,
                 struct_missing_label="Struct",
@@ -676,6 +587,7 @@ class TestMissingLabels():
             ]
         )
         assert df_et.dataframe.equals(expected_df) is True
+
 
 class TestVariablesFiltered():
     def setup(self):
@@ -701,7 +613,7 @@ class TestVariablesFiltered():
         expected_categories = {
             0: 2, 1: 4, 2: 3
             }
-        
+
         assert df_et.categories_per_variable == expected_categories
 
     def test_pd_nans_filtered_with_missing(self) -> None:
@@ -716,8 +628,9 @@ class TestVariablesFiltered():
         expected_categories = {
             0: 2, 1: 3, 2: 2
             }
-        
+
         assert df_et.categories_per_variable == expected_categories
+
 
 class TestStageColours():
     def setup(self):
@@ -743,7 +656,7 @@ class TestStageColours():
         expected_categories = {
             0: 2, 1: 4, 2: 3
             }
-        
+
         assert df_et.categories_per_variable == expected_categories
 
     def test_pd_nans_filtered_with_missing(self) -> None:
@@ -758,5 +671,5 @@ class TestStageColours():
         expected_categories = {
             0: 2, 1: 3, 2: 2
             }
-        
+
         assert df_et.categories_per_variable == expected_categories

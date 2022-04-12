@@ -169,7 +169,7 @@ class EventTree(nx.MultiDiGraph):
             else dataframe.astype(str)
         )
 
-        self.__construct_event_tree()
+        self._construct_event_tree()
         logger.info("Initialisation complete!")
 
     @property
@@ -204,7 +204,7 @@ class EventTree(nx.MultiDiGraph):
             self._sampling_zero_paths = None
         else:
             # checkes if the user has inputted sz paths correctly
-            sz_paths = self.__check_sampling_zero_paths_param(sz_paths)
+            sz_paths = self._check_sampling_zero_paths_param(sz_paths)
 
             if sz_paths:
                 self._sampling_zero_paths = sz_paths
@@ -351,7 +351,7 @@ class EventTree(nx.MultiDiGraph):
         edge_info is not specified, the default is to use the 'count' attribute."""
         return self._create_figure(self.dot_event_graph(edge_info=edge_info), filename)
 
-    def __create_unsorted_paths_dict(self) -> defaultdict:
+    def _create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,
         in the order in which they are given."""
         unsorted_paths = defaultdict(int)
@@ -385,7 +385,7 @@ class EventTree(nx.MultiDiGraph):
 
         return unsorted_paths
 
-    def __create_path_dict_entries(self):
+    def _create_path_dict_entries(self):
         """Create path dict entries for each path, including the
         sampling zero paths if any.
         Each path is an ordered sequence of edge labels starting
@@ -395,7 +395,7 @@ class EventTree(nx.MultiDiGraph):
         manually added path format is correct.
         Added functionality to remove NaN/null edge labels
         assuming they are structural zeroes"""
-        unsorted_paths = self.__create_unsorted_paths_dict()
+        unsorted_paths = self._create_unsorted_paths_dict()
 
         if self.sampling_zeros is not None:
             unsorted_paths = Util.create_sampling_zeros(
@@ -412,10 +412,10 @@ class EventTree(nx.MultiDiGraph):
         for key in sorted_keys:
             self._sorted_paths[key] = unsorted_paths[key]
 
-        node_list = self.__create_node_list_from_paths(self._sorted_paths)
+        node_list = self._create_node_list_from_paths(self._sorted_paths)
         self.add_nodes_from(node_list)
 
-    def __check_sampling_zero_paths_param(self, sampling_zero_paths) -> List:
+    def _check_sampling_zero_paths_param(self, sampling_zero_paths) -> List:
         """Check param 'sampling_zero_paths' is in the correct format"""
         coerced_sampling_zero_paths = []
         for tup in sampling_zero_paths:
@@ -426,7 +426,7 @@ class EventTree(nx.MultiDiGraph):
 
         return coerced_sampling_zero_paths
 
-    def __create_node_list_from_paths(self, paths) -> list:
+    def _create_node_list_from_paths(self, paths) -> list:
         """Creates list of all nodes: includes root, situations, leaves"""
         node_list = [self.root]
 
@@ -435,12 +435,12 @@ class EventTree(nx.MultiDiGraph):
 
         return node_list
 
-    def __construct_event_tree(self):
+    def _construct_event_tree(self):
         """Constructs event_tree DiGraph.
         Takes the paths, and adds all the nodes and edges to the Graph"""
 
         logger.info("Starting construction of event tree")
-        self.__create_path_dict_entries()
+        self._create_path_dict_entries()
         # Taking a list of a networkx graph object (self) provides a list
         # of all the nodes
         node_list = list(self)

@@ -347,6 +347,8 @@ class EventTree(nx.MultiDiGraph):
         return graph_image
 
     def create_figure(self, filename=None, edge_info: str = "count"):
+        """Create event tree with given filename, and save the figure. If
+        edge_info is not specified, the default is to use the 'count' attribute."""
         return self._create_figure(self.dot_event_graph(edge_info=edge_info), filename)
 
     def __create_unsorted_paths_dict(self) -> defaultdict:

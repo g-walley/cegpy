@@ -283,10 +283,12 @@ class EventTree(nx.MultiDiGraph):
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
             logger.warning(
-                f"edge_info '{edge_info}' does not exist for the "
-                f"{self.__class__.__name__} class. Using the default of 'count' values "
+                "edge_info '%s' does not exist for the "
+                "%s class. Using the default of 'count' values "
                 "on edges instead. For more information, see the "
-                "documentation."
+                "documentation.",
+                edge_info,
+                self.__class__.__name__,
             )
             edge_info_dict = nx.get_edge_attributes(self, "count")
 
@@ -332,7 +334,7 @@ class EventTree(nx.MultiDiGraph):
         else:
             filename, filetype = Util.generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
-            logger.info("--- writing " + filetype + " file ---")
+            logger.info("--- writing %s file ---", filetype)
             graph.write(str(filename), format=filetype)
             graph_image = None
 

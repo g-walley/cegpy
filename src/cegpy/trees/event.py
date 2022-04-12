@@ -181,10 +181,10 @@ class EventTree(nx.MultiDiGraph):
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
-        vars = list(self.dataframe.columns)
+        variables = list(self.dataframe.columns)
         logger.info("Variables extracted from dataframe were:")
-        logger.info(vars)
-        return vars
+        logger.info(variables)
+        return variables
 
     @property
     def sampling_zeros(self):

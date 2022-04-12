@@ -1,16 +1,17 @@
 from collections import defaultdict
 from typing import List, Mapping, Optional, Tuple
+import logging
+import textwrap
 import numpy as np
 import pydotplus as pdp
-import logging
-from ..utilities.util import Util
 from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
-import textwrap
 import networkx as nx
+from ..utilities.util import Util
+
 # create logger object for this module
-logger = logging.getLogger('cegpy.event_tree')
+logger = logging.getLogger("cegpy.event_tree")
 
 
 class EventTree(nx.MultiDiGraph):
@@ -91,9 +92,10 @@ class EventTree(nx.MultiDiGraph):
     {'day': 'Friday'}
 
     """
+
     _sampling_zero_paths: Optional[List[Tuple]] = None
     _sorted_paths: Mapping[Tuple[str], int]
-    _edge_attributes: List = ['count']
+    _edge_attributes: List = ["count"]
 
     def __init__(
         self,
@@ -104,36 +106,24 @@ class EventTree(nx.MultiDiGraph):
         struct_missing_label=None,
         missing_label=None,
         complete_case=False,
-        **attr
+        **attr,
     ) -> None:
         # Checking argument inputs are sensible
         if not isinstance(dataframe, pd.DataFrame):
-            raise ValueError(
-                "The dataframe parameter must be a pandas.DataFrame"
-            )
+            raise ValueError("The dataframe parameter must be a pandas.DataFrame")
         # Initialise Networkx DiGraph class
         super().__init__(incoming_graph_data, **attr)
 
-        if (
-            struct_missing_label is not None
-            and not isinstance(struct_missing_label, str)
+        if struct_missing_label is not None and not isinstance(
+            struct_missing_label, str
         ):
-            raise ValueError(
-                "struct_missing_label should be a string"
-            )
+            raise ValueError("struct_missing_label should be a string")
 
-        if (
-            missing_label is not None
-            and not isinstance(missing_label, str)
-        ):
-            raise ValueError(
-                "missing_label should be a string"
-            )
+        if missing_label is not None and not isinstance(missing_label, str):
+            raise ValueError("missing_label should be a string")
 
         if not isinstance(complete_case, bool):
-            raise ValueError(
-                "complete_case should be a boolean"
-            )
+            raise ValueError("complete_case should be a boolean")
 
         self.sampling_zeros = sampling_zero_paths
 
@@ -153,12 +143,10 @@ class EventTree(nx.MultiDiGraph):
                     "missing",
                     inplace=True,
                 )
-                rows_to_delete = np.where(
-                    dataframe == "missing"
-                )[0].tolist()
+                rows_to_delete = np.where(dataframe == "missing")[0].tolist()
                 dataframe.drop(
                     rows_to_delete,
-                    axis = 0,
+                    axis=0,
                     inplace=True,
                 )
                 dataframe.reset_index(drop=True, inplace=True)
@@ -180,27 +168,29 @@ class EventTree(nx.MultiDiGraph):
         )
 
         self.__construct_event_tree()
-        logger.info('Initialisation complete!')
+        logger.info("Initialisation complete!")
 
     @property
     def root(self) -> str:
         """Root node of the event tree.
         Currently hard coded to 's0'"""
-        return 's0'
+        return "s0"
 
     @property
     def variables(self) -> list:
         """The column headers of the dataset"""
         vars = list(self.dataframe.columns)
-        logger.info('Variables extracted from dataframe were:')
+        logger.info("Variables extracted from dataframe were:")
         logger.info(vars)
         return vars
 
     @property
     def sampling_zeros(self):
         if self._sampling_zero_paths is None:
-            logger.info("EventTree.sampling_zero_paths \
-                    has not been set.")
+            logger.info(
+                "EventTree.sampling_zero_paths \
+                    has not been set."
+            )
         return self._sampling_zero_paths
 
     @sampling_zeros.setter
@@ -226,29 +216,24 @@ class EventTree(nx.MultiDiGraph):
     def situations(self) -> list:
         """List of situations of the tree.
         (non-leaf nodes)"""
-        return [
-            node for node, out_degree in self.out_degree
-            if out_degree != 0
-        ]
+        return [node for node, out_degree in self.out_degree if out_degree != 0]
 
     @property
     def leaves(self) -> list:
         """List of leaves of the tree."""
         # if not already generated, create self.leaves
-        return [
-            node for node, out_degree in self.out_degree
-            if out_degree == 0
-        ]
+        return [node for node, out_degree in self.out_degree if out_degree == 0]
 
     @property
     def edge_counts(self) -> dict:
-        '''list of counts along edges. Indexed same as edges and edge_labels'''
-        return nx.get_edge_attributes(self, 'count')
+        """list of counts along edges. Indexed same as edges and edge_labels"""
+        return nx.get_edge_attributes(self, "count")
 
     @property
     def categories_per_variable(self) -> dict:
-        '''list of number of unique categories/levels for each variable
-        (a column in the df)'''
+        """list of number of unique categories/levels for each variable
+        (a column in the df)"""
+
         def display_nan_warning():
             logger.warning(
                 textwrap.dedent(
@@ -285,14 +270,11 @@ class EventTree(nx.MultiDiGraph):
         return self._catagories_per_variable
 
     def dot_event_graph(self, edge_info: str = "count"):
-        return self._generate_dot_graph(
-            fill_colour='lightgrey',
-            edge_info=edge_info
-        )
+        return self._generate_dot_graph(fill_colour="lightgrey", edge_info=edge_info)
 
     def _generate_dot_graph(self, fill_colour=None, edge_info="count"):
         node_list = list(self)
-        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
+        graph = pdp.Dot(graph_type="digraph", rankdir="LR")
         if edge_info in self._edge_attributes:
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
@@ -302,11 +284,11 @@ class EventTree(nx.MultiDiGraph):
                 "on edges instead. For more information, see the "
                 "documentation."
             )
-            edge_info_dict = nx.get_edge_attributes(self, 'count')
+            edge_info_dict = nx.get_edge_attributes(self, "count")
 
         for edge, attribute in edge_info_dict.items():
             if edge_info == "count":
-                edge_details = str(edge[2]) + '\n' + str(attribute)
+                edge_details = str(edge[2]) + "\n" + str(attribute)
             else:
                 edge_details = f"{edge[2]}\n{float(attribute):.2f}"
 
@@ -317,31 +299,26 @@ class EventTree(nx.MultiDiGraph):
                     label=edge_details,
                     labelfontcolor="#009933",
                     fontsize="10.0",
-                    color="black"
+                    color="black",
                 )
             )
         for node in node_list:
             if fill_colour is None:
                 try:
-                    fill_node_colour = self.nodes[node]['colour']
+                    fill_node_colour = self.nodes[node]["colour"]
                 except KeyError:
-                    fill_node_colour = 'lightgrey'
+                    fill_node_colour = "lightgrey"
             else:
                 fill_node_colour = fill_colour
             label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
                 pdp.Node(
-                    name=node,
-                    label=label,
-                    style="filled",
-                    fillcolor=fill_node_colour))
+                    name=node, label=label, style="filled", fillcolor=fill_node_colour
+                )
+            )
         return graph
 
-    def _create_figure(
-        self,
-        graph: pdp.Dot,
-        filename: str
-    ):
+    def _create_figure(self, graph: pdp.Dot, filename: str):
         """Draws the event tree for the process described by the dataset,
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
@@ -364,10 +341,7 @@ class EventTree(nx.MultiDiGraph):
         return graph_image
 
     def create_figure(self, filename=None, edge_info: str = "count"):
-        return self._create_figure(
-            self.dot_event_graph(edge_info=edge_info),
-            filename
-        )
+        return self._create_figure(self.dot_event_graph(edge_info=edge_info), filename)
 
     def __create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,
@@ -376,27 +350,35 @@ class EventTree(nx.MultiDiGraph):
 
         for variable_number in range(0, len(self.variables)):
             dataframe_upto_variable = self.dataframe.loc[
-                :, self.variables[0:variable_number+1]]
+                :, self.variables[0 : variable_number + 1]
+            ]
 
             for row in dataframe_upto_variable.itertuples():
                 row = row[1:]
-                new_row = [edge_label for edge_label in row if
-                           edge_label != np.nan and
-                           str(edge_label) != 'NaN' and
-                           str(edge_label) != 'nan' and
-                           edge_label != '']
+                new_row = [
+                    edge_label
+                    for edge_label in row
+                    if edge_label != np.nan
+                    and str(edge_label) != "NaN"
+                    and str(edge_label) != "nan"
+                    and edge_label != ""
+                ]
                 new_row = tuple(new_row)
 
                 # checking if the last edge label in row was nan. That would
                 # result in double counting nan must be identified as string
-                if (row[-1] != np.nan and str(row[-1]) != 'NaN' and
-                   str(row[-1]) != 'nan' and row[-1] != ''):
+                if (
+                    row[-1] != np.nan
+                    and str(row[-1]) != "NaN"
+                    and str(row[-1]) != "nan"
+                    and row[-1] != ""
+                ):
                     unsorted_paths[new_row] += 1
 
         return unsorted_paths
 
     def __create_path_dict_entries(self):
-        '''Create path dict entries for each path, including the
+        """Create path dict entries for each path, including the
         sampling zero paths if any.
         Each path is an ordered sequence of edge labels starting
         from the root.
@@ -404,19 +386,19 @@ class EventTree(nx.MultiDiGraph):
         Also calls the method self._sampling_zeros to ensure
         manually added path format is correct.
         Added functionality to remove NaN/null edge labels
-        assuming they are structural zeroes'''
+        assuming they are structural zeroes"""
         unsorted_paths = self.__create_unsorted_paths_dict()
 
         if self.sampling_zeros is not None:
             unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zeros, unsorted_paths)
+                self.sampling_zeros, unsorted_paths
+            )
 
         depth = len(max(list(unsorted_paths.keys()), key=len))
         keys_of_list = list(unsorted_paths.keys())
         sorted_keys = []
         for deep in range(0, depth + 1):
-            unsorted_mini_list = [key for key in keys_of_list if
-                                  len(key) == deep]
+            unsorted_mini_list = [key for key in keys_of_list if len(key) == deep]
             sorted_keys = sorted_keys + sorted(unsorted_mini_list)
 
         for key in sorted_keys:
@@ -432,9 +414,7 @@ class EventTree(nx.MultiDiGraph):
             if not isinstance(tup, tuple):
                 return None
             else:
-                coerced_sampling_zero_paths.append(
-                    tuple([str(elem) for elem in tup])
-                )
+                coerced_sampling_zero_paths.append(tuple([str(elem) for elem in tup]))
 
         return coerced_sampling_zero_paths
 
@@ -443,7 +423,7 @@ class EventTree(nx.MultiDiGraph):
         node_list = [self.root]
 
         for vertex_number, _ in enumerate(list(paths.keys()), start=1):
-            node_list.append('s%d' % vertex_number)
+            node_list.append("s%d" % vertex_number)
 
         return node_list
 
@@ -451,14 +431,14 @@ class EventTree(nx.MultiDiGraph):
         """Constructs event_tree DiGraph.
         Takes the paths, and adds all the nodes and edges to the Graph"""
 
-        logger.info('Starting construction of event tree')
+        logger.info("Starting construction of event tree")
         self.__create_path_dict_entries()
         # Taking a list of a networkx graph object (self) provides a list
         # of all the nodes
         node_list = list(self)
 
         # Work through the sorted paths list to build the event tree.
-        edge_labels_list = ['root']
+        edge_labels_list = ["root"]
         for path, count in list(self._sorted_paths.items()):
             path = list(path)
             edge_labels_list.append(path)
@@ -468,12 +448,12 @@ class EventTree(nx.MultiDiGraph):
                     u_for_edge=node_list[path_edge_comes_from],
                     v_for_edge=node_list[edge_labels_list.index(path)],
                     key=path[-1],
-                    count=count
+                    count=count,
                 )
             else:
                 self.add_edge(
                     u_for_edge=node_list[0],
                     v_for_edge=node_list[edge_labels_list.index(path)],
                     key=path[-1],
-                    count=count
+                    count=count,
                 )

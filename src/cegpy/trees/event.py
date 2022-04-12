@@ -430,8 +430,8 @@ class EventTree(nx.MultiDiGraph):
         """Creates list of all nodes: includes root, situations, leaves"""
         node_list = [self.root]
 
-        for vertex_number, _ in enumerate(list(paths.keys()), start=1):
-            node_list.append("s%d" % vertex_number)
+        for node_number, _ in enumerate(list(paths.keys()), start=1):
+            node_list.append(f"s{node_number}")
 
         return node_list
 

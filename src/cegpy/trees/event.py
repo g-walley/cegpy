@@ -188,6 +188,7 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def sampling_zeros(self):
+        """Sampling zero paths provided by the user."""
         if self._sampling_zero_paths is None:
             logger.info(
                 "EventTree.sampling_zero_paths \

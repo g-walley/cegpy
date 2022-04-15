@@ -68,10 +68,6 @@ class EventTree(nx.MultiDiGraph):
     complete_case : If True, all entries (rows) with non-structural missing
         values are removed.
 
-    stratified : If True, the tree is assumed to be stratified, i.e. all
-        zero frequency paths are considered to be due to a sampling limitation.
-        This overwrites the sampling_zero_paths argument.
-
     attr : keyword arguments, optional (default= no attributes)
         Attributes to add to graph as key=value pairs.
 
@@ -82,16 +78,6 @@ class EventTree(nx.MultiDiGraph):
 
     Examples
     --------
-    >>> G = nx.Graph()  # or DiGraph, MultiGraph, MultiDiGraph, etc
-    >>> G = nx.Graph(name="my graph")
-    >>> e = [(1, 2), (2, 3), (3, 4)]  # list of edges
-    >>> G = nx.Graph(e)
-
-    Arbitrary graph attribute pairs (key=value) may be assigned
-
-    >>> G = nx.Graph(e, day="Friday")
-    >>> G.graph
-    {'day': 'Friday'}
 
     """
 

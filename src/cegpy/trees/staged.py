@@ -16,6 +16,59 @@ logger = logging.getLogger("cegpy.staged_tree")
 
 
 class StagedTree(EventTree):
+    """Representation of a Staged Tree.
+
+    A staged tree is a tree where each node is a situation, and each edge is a
+    transition from one situation to another. Each situation is given a 'stage'
+    which groups it with other situations which have the same outgoing edges,
+    with equivalent probabilities of occurring.
+
+    The class is an extension of EventTree, which in turn is a Networkx DiGraph.
+
+    Parameters
+    ----------
+    dataframe : Pandas dataframe (required)
+        Dataframe containing variables as column headers, with event
+        name strings in each cell. These event names will be used to
+        create the edges of the event tree. Counts of each event will
+        be extracted and attached to each edge.
+
+    sampling_zero_paths: list of tuples containing paths to sampling zeros.
+        Format is as follows: [('edge_1',), ('edge_1', 'edge_2'), ...]
+
+    incoming_graph_data : input graph (optional, default: None)
+        Data to initialize graph.  If None (default) an empty
+        graph is created.  The data can be an edge list, or any
+        NetworkX graph object.  If the corresponding optional Python
+        packages are installed the data can also be a NumPy matrix
+        or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+
+    var_order : ordered list of variable names. (optional, default order
+        of variables in the event tree adopted from the order of columns in
+        the dataframe).
+
+    struct_missing_label : observations which are structurally missing, i.e.
+        where a non-missing value is illogical for a subset of the individuals
+        in our sample.
+        E.g: Post operative health status is irrelevant for a dead patient.
+
+    missing_label : all missing values that are not structurally missing.
+
+    complete_case : If True, all entries (rows) with non-structural missing
+        values are removed.
+
+    attr : keyword arguments, optional (default= no attributes)
+        Attributes to add to graph as key=value pairs.
+
+    See Also
+    --------
+    EventTree \n
+    ChainEventGraph
+
+    Examples
+    --------
+
+    """
 
     _edge_attributes: List = ["count", "prior", "posterior", "probability"]
 
@@ -28,7 +81,6 @@ class StagedTree(EventTree):
         struct_missing_label=None,
         missing_label=None,
         complete_case=False,
-        stratified=False,
         **attr,
     ) -> None:
 
@@ -41,7 +93,6 @@ class StagedTree(EventTree):
             struct_missing_label=struct_missing_label,
             missing_label=missing_label,
             complete_case=complete_case,
-            stratified=stratified,
             **attr,
         )
 
@@ -54,6 +105,11 @@ class StagedTree(EventTree):
 
     @property
     def prior(self):
+        """Get edge priors from the graph.
+
+        ## Returns:
+        Dictionary of attributes keyed by edge. Where the keys are
+        3-tuples of the form: (src, dst, edge_label)."""
         return nx.get_edge_attributes(self, "prior")
 
     @prior.setter

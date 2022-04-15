@@ -15,6 +15,7 @@ from ..trees.event import EventTree
 logger = logging.getLogger("cegpy.staged_tree")
 
 
+# pylint: disable=too-many-instance-attributes
 class StagedTree(EventTree):
     """Representation of a Staged Tree.
 
@@ -72,6 +73,7 @@ class StagedTree(EventTree):
 
     _edge_attributes: List = ["count", "prior", "posterior", "probability"]
 
+    # pylint: disable=too-many-arguments
     def __init__(
         self,
         dataframe,

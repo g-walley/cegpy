@@ -106,7 +106,7 @@ class StagedTree(EventTree):
         logger.debug("Starting Staged Tree")
 
     @property
-    def prior(self) -> Dict[Tuple[str, str, str]]:
+    def prior(self) -> Dict[Tuple[str], List[Fraction]]:
         """Get edge priors from the graph.
 
         ## Returns:
@@ -115,7 +115,7 @@ class StagedTree(EventTree):
         return nx.get_edge_attributes(self, "prior")
 
     @prior.setter
-    def prior(self, prior: List[List[Union[float, Fraction]]]) -> None:
+    def prior(self, prior: List[List[Fraction]]) -> None:
         offset = 0
         for node_idx, node_priors in enumerate(prior):
             node_name = f"s{node_idx + offset}"
@@ -124,9 +124,9 @@ class StagedTree(EventTree):
                 node_name = f"s{node_idx + offset}"
             for edge_prior_idx, succ_key in enumerate(self.succ[node_name].keys()):
                 label = list(self.succ[node_name][succ_key])[0]
-                self.edges[(node_name, succ_key, label)]["prior"] = node_priors[
-                    edge_prior_idx
-                ]
+                self.edges[(node_name, succ_key, label)]["prior"] = Fraction(
+                    node_priors[edge_prior_idx]
+                )
 
     @property
     def prior_list(self) -> List[List[Fraction]]:

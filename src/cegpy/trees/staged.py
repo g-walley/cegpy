@@ -129,7 +129,7 @@ class StagedTree(EventTree):
                 ]
 
     @property
-    def prior_list(self):
+    def prior_list(self) -> List[List[Fraction]]:
         """Priors provided as a list of lists"""
         prior_list = []
         prev_node = list(self.prior)[0][0]

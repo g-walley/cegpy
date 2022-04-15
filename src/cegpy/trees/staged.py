@@ -652,10 +652,17 @@ class StagedTree(EventTree):
     def dot_staged_graph(self, edge_info: str = "count"):
         return self._generate_dot_graph(edge_info=edge_info)
 
+    def create_event_tree_figure(
+        self,
+        filename: Optional[str] = None,
+        edge_info: str = "count",
+    ):
+        """Creates a figure of the event tree."""
+        return super().create_figure(filename, edge_info=edge_info)
+
     def create_figure(
         self,
         filename: Optional[str] = None,
-        staged: bool = True,
         edge_info: str = "count",
     ) -> Union[Image, None]:
         """Draws the coloured staged tree for the process described by
@@ -663,20 +670,18 @@ class StagedTree(EventTree):
         any filetype that graphviz supports. e.g: "event_tree.png" or
         "event_tree.svg" etc.
         """
-        if staged:
-            try:
-                _ = self._ahc_output
-                graph = self.dot_staged_graph(edge_info)
-                graph_image = super()._create_figure(graph, filename)
+        try:
+            _ = self._ahc_output
+            graph = self.dot_staged_graph(edge_info)
+            graph_image = super()._create_figure(graph, filename)
 
-            except AttributeError:
-                logger.error(
-                    "----- PLEASE RUN AHC ALGORITHM before trying to"
-                    + " export a staged tree graph -----"
-                )
-                graph_image = None
-        else:
-            graph_image = super().create_figure(filename)
+        except AttributeError:
+            logger.error(
+                "----- PLEASE RUN AHC ALGORITHM before trying to"
+                " export a staged tree graph -----"
+            )
+            graph_image = None
+
         return graph_image
 
     def _apply_mean_posterior_probs(

@@ -1,13 +1,14 @@
 """cegpy Staged Tree"""
 from copy import deepcopy
 from fractions import Fraction
-from operator import add, sub, itemgetter
-from IPython.display import Image
 from itertools import combinations, chain
+import logging
+from operator import add, sub, itemgetter
 from typing import List, Optional, Tuple, Union
 import networkx as nx
 import scipy.special
-import logging
+from IPython.display import Image
+
 from ..utilities.util import Util
 from ..trees.event import EventTree
 

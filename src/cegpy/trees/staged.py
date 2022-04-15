@@ -178,7 +178,7 @@ class StagedTree(EventTree):
             succ_list.append(posterior)
             prev_node = node
 
-        if succ_list != []:
+        if succ_list:
             posterior_list.append(succ_list)
         return posterior_list
 

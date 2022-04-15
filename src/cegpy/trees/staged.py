@@ -165,7 +165,8 @@ class StagedTree(EventTree):
             return nx.get_edge_attributes(self, "posterior")
 
     @property
-    def posterior_list(self):
+    def posterior_list(self) -> List[List[Fraction]]:
+        """Posteriors of all edges provided as a list of lists."""
         posterior_list = []
         prev_node = list(self.posterior)[0][0]
         succ_list = []

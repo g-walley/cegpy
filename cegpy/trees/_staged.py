@@ -9,8 +9,8 @@ import networkx as nx
 import scipy.special
 from IPython.display import Image
 
-from ..utilities.util import Util
-from ..trees.event import EventTree
+
+from ._event import EventTree
 
 logger = logging.getLogger("cegpy.staged_tree")
 
@@ -63,7 +63,7 @@ class StagedTree(EventTree):
 
     See Also
     --------
-    EventTree \n
+    EventTree
     ChainEventGraph
 
     Examples

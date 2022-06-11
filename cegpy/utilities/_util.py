@@ -50,7 +50,7 @@ def generate_colours(number) -> list:
         Colour((low, low, high)),
     ]
     prim_colours = math.ceil(number / 2)
-    hex_colours += Util.generate_colour_run(prim_colours, starts, ends)
+    hex_colours += generate_colour_run(prim_colours, starts, ends)
     starts = [
         Colour((start, start, low)),
         Colour((low, start, start)),
@@ -62,12 +62,13 @@ def generate_colours(number) -> list:
         Colour((high, low, high)),
     ]
     sec_colours = math.floor(number / 2)
-    hex_colours += Util.generate_colour_run(sec_colours, starts, ends)
+    hex_colours += generate_colour_run(sec_colours, starts, ends)
 
     return hex_colours
 
 
 def generate_colour_run(number, starts, ends) -> list:
+    """Generates multiple colour runs with uniform distance between colours."""
     split = [0, 0, 0]
     for i in range(number):
         split[i % len(split)] += 1
@@ -78,13 +79,13 @@ def generate_colour_run(number, starts, ends) -> list:
 
     colours = []
 
-    for idx in range(len(ends)):
+    for idx, end in enumerate(ends):
         if jumps[idx] > 0:
             colours += colorutils.color_run(
-                starts[idx], ends[idx], jumps[idx], to_color=True
+                starts[idx], end, jumps[idx], to_color=True
             )
         else:
-            colours.append(ends[idx])
+            colours.append(end)
     hex_colours = []
     for colour in colours:
         hex_colours.append(colour.hex)

@@ -10,7 +10,7 @@ from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
 import networkx as nx
-from ..utilities.util import Util
+from ..utilities._util import Util
 
 # create logger object for this module
 logger = logging.getLogger("cegpy.event_tree")

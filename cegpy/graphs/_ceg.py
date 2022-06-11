@@ -20,10 +20,10 @@ import networkx as nx
 from IPython.display import Image
 from IPython import get_ipython
 
-from ..utilities.util import Util
-from ..trees.staged import StagedTree
+from ..utilities._util import Util
+from ..trees._staged import StagedTree
 
-logger = logging.getLogger('cegpy.chain_event_graph')
+logger = logging.getLogger("cegpy.chain_event_graph")
 
 
 class CegAlreadyGenerated(Exception):
@@ -37,12 +37,8 @@ class ChainEventGraph(nx.MultiDiGraph):
     Input: Staged tree object (StagedTree)
     Output: Chain event graphs
     """
-    _edge_attributes: List = [
-        'count',
-        'prior',
-        'posterior',
-        'probability'
-        ]
+
+    _edge_attributes: List = ["count", "prior", "posterior", "probability"]
 
     sink_suffix: str = "&infin;"
     node_prefix: str
@@ -53,7 +49,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         staged_tree: Optional[StagedTree] = None,
         node_prefix: str = "w",
         generate: bool = True,
-        **attr
+        **attr,
     ):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", {}))
         super().__init__(staged_tree, **attr)
@@ -77,7 +73,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     @property
     def stages(self) -> Mapping[str, Set[str]]:
         """Mapping of stages to constituent nodes."""
-        node_stages = dict(self.nodes(data='stage', default=None))
+        node_stages = dict(self.nodes(data="stage", default=None))
         stages = defaultdict(set)
         for node, stage in node_stages.items():
             stages[stage].add(node)
@@ -88,8 +84,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     def path_list(self) -> List[Tuple[str]]:
         """All the paths through the CEG, as a list of edge tuples."""
         path_list: List[Tuple[str]] = [
-            path
-            for path in nx.all_simple_edge_paths(self, self.root, self.sink)
+            path for path in nx.all_simple_edge_paths(self, self.root, self.sink)
         ]
         return path_list
 
@@ -113,9 +108,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         nx.relabel_nodes(self, {self.staged_root: self.root}, copy=False)
         self._trim_leaves_from_graph()
         self._update_distances_to_sink()
-        self._backwards_construction(
-            self._gen_nodes_with_increasing_distance(start=1)
-        )
+        self._backwards_construction(self._gen_nodes_with_increasing_distance(start=1))
         self._relabel_nodes()
         self.generated = True
 
@@ -142,16 +135,13 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def _merge_nodes(self, nodes_to_merge: Set):
         """nodes to merge should be a set of 2 element tuples"""
-        temp_1 = 'temp_1'
-        temp_2 = 'temp_2'
+        temp_1 = "temp_1"
+        temp_2 = "temp_2"
         while nodes_to_merge:
             nodes = nodes_to_merge.pop()
             new_node = nodes[0]
             # Copy nodes to temp nodes
-            node_map = {
-                nodes[0]: temp_1,
-                nodes[1]: temp_2
-            }
+            node_map = {nodes[0]: temp_1, nodes[1]: temp_2}
             nx.relabel_nodes(self, node_map, copy=False)
             self.add_node(new_node)
 
@@ -162,9 +152,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             )
             self.remove_edges_from(edges_to_remove)
             nx.relabel_nodes(
-                G=self,
-                mapping={temp_1: new_node, temp_2: new_node},
-                copy=False
+                G=self, mapping={temp_1: new_node, temp_2: new_node}, copy=False
             )
 
             # Some nodes have been removed, we need to update the
@@ -176,18 +164,18 @@ class ChainEventGraph(nx.MultiDiGraph):
                         # the other node of the pair
                         pair[pair.index(nodes[1]) - 1],
                         # the new node it will be merged to
-                        new_node
+                        new_node,
                     )
                     nodes_to_merge.remove(pair)
                     if new_pair[0] != new_pair[1]:
                         nodes_to_merge.add(new_pair)
 
-    def dot_graph(self, edge_info: str ="probability") -> pdp.Dot:
+    def dot_graph(self, edge_info: str = "probability") -> pdp.Dot:
         """Dot representation of the CEG."""
         return self._generate_dot_graph(edge_info=edge_info)
 
     def _generate_dot_graph(self, edge_info="probability"):
-        graph = pdp.Dot(graph_type='digraph', rankdir='LR')
+        graph = pdp.Dot(graph_type="digraph", rankdir="LR")
         if edge_info in self._edge_attributes:
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
@@ -197,11 +185,11 @@ class ChainEventGraph(nx.MultiDiGraph):
                 "on edges instead. For more information, see the "
                 "documentation."
             )
-            edge_info_dict = nx.get_edge_attributes(self, 'probability')
+            edge_info_dict = nx.get_edge_attributes(self, "probability")
 
         for (src, dst, label), attribute in edge_info_dict.items():
             if edge_info == "count":
-                edge_details = str(label) + '\n' + str(attribute)
+                edge_details = str(label) + "\n" + str(attribute)
             else:
                 edge_details = f"{label}\n{float(attribute):.2f}"
 
@@ -213,27 +201,22 @@ class ChainEventGraph(nx.MultiDiGraph):
                     src,
                     dst,
                     label=edge_details,
-                    labelfontcolor='#009933',
-                    fontsize='10.0',
-                    color='black'
+                    labelfontcolor="#009933",
+                    fontsize="10.0",
+                    color="black",
                 )
             )
         nodes = list(nx.topological_sort(self))
         for node in nodes:
             try:
-                fill_colour = self.nodes[node]['colour']
+                fill_colour = self.nodes[node]["colour"]
             except KeyError:
-                fill_colour = 'white'
+                fill_colour = "white"
             if node[1:] == "_infinity":
                 node = f"{self.node_prefix}&infin;"
             label = "<" + node[0] + "<SUB>" + node[1:] + "</SUB>" + ">"
             graph.add_node(
-                pdp.Node(
-                    name=node,
-                    label=label,
-                    style='filled',
-                    fillcolor=fill_colour
-                )
+                pdp.Node(name=node, label=label, style="filled", fillcolor=fill_colour)
             )
         return graph
 
@@ -268,7 +251,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         """Trims all the leaves from the graph, and points each incoming
         edge to the sink node."""
         # Create new CEG sink node
-        self.add_node(self.sink, colour='lightgrey')
+        self.add_node(self.sink, colour="lightgrey")
         outgoing_edges = deepcopy(self.succ).items()
         # Check to see if any nodes have no outgoing edges.
         mapping = {}
@@ -294,9 +277,7 @@ class ChainEventGraph(nx.MultiDiGraph):
                 max_dist_to_sink = set()
                 for succ in self.successors(pred):
                     try:
-                        max_dist_to_sink.add(
-                            self.nodes[succ][max_dist]
-                        )
+                        max_dist_to_sink.add(self.nodes[succ][max_dist])
                         self.nodes[pred][max_dist] = max(max_dist_to_sink) + 1
                     except KeyError:
                         break
@@ -307,7 +288,7 @@ class ChainEventGraph(nx.MultiDiGraph):
     def _gen_nodes_with_increasing_distance(self, start=0) -> list:
         """Generates nodes that are either the same or further
         from the sink node than the last node generated."""
-        max_dists = nx.get_node_attributes(self, 'max_dist_to_sink')
+        max_dists = nx.get_node_attributes(self, "max_dist_to_sink")
         distance_dict: Mapping[int, Iterable[str]] = {}
         for node, distance in max_dists.items():
             dist_list: List = distance_dict.setdefault(distance, [])
@@ -328,15 +309,11 @@ class ChainEventGraph(nx.MultiDiGraph):
             for node in nodes_to_rename.copy():
                 node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
                 for succ in self.succ[node].keys():
-                    if (succ != self.sink and succ not in nodes_to_rename):
+                    if succ != self.sink and succ not in nodes_to_rename:
                         nodes_to_rename.append(succ)
                 nodes_to_rename.remove(node)
 
-        nx.relabel_nodes(
-            self,
-            node_mapping,
-            copy=False
-        )
+        nx.relabel_nodes(self, node_mapping, copy=False)
 
     def _merge_and_add_edges(
         self,
@@ -372,8 +349,8 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def _check_nodes_can_be_merged(self, node_1, node_2) -> bool:
         """Determine if the two nodes are able to be merged."""
-        have_same_successor_nodes = (
-            set(self.adj[node_1].keys()) == set(self.adj[node_2].keys())
+        have_same_successor_nodes = set(self.adj[node_1].keys()) == set(
+            self.adj[node_2].keys()
         )
 
         if have_same_successor_nodes:
@@ -394,9 +371,7 @@ class ChainEventGraph(nx.MultiDiGraph):
             have_same_outgoing_edges = False
 
         try:
-            in_same_stage = (
-                self.nodes[node_1]['stage'] == self.nodes[node_2]['stage']
-            )
+            in_same_stage = self.nodes[node_1]["stage"] == self.nodes[node_2]["stage"]
         except KeyError:
             in_same_stage = False
 
@@ -416,7 +391,5 @@ def _merge_edge_data(
         if key == "probability":
             new_edge_data[key] = edge_1.get(key, 1)
         else:
-            new_edge_data[key] = (
-                edge_1.get(key, 0) + edge_2.get(key, 0)
-            )
+            new_edge_data[key] = edge_1.get(key, 0) + edge_2.get(key, 0)
     return new_edge_data

@@ -134,16 +134,3 @@ def create_sampling_zeros(sampling_zero_paths, path_dict) -> defaultdict:
             )
 
     return path_dict
-
-
-def create_path(filename, add_time=False, filetype="png"):
-    dt_string = ""
-    if add_time:
-        now = datetime.now()
-        dt_string = now.strftime("__%d-%m-%Y_%H-%M-%S")
-    fig_path = (
-        Path(__file__)
-        .resolve()
-        .parent.parent.parent.parent.joinpath(filename + dt_string + "." + filetype)
-    )
-    return fig_path

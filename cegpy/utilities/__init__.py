@@ -8,5 +8,4 @@ from cegpy.utilities._util import (
     generate_filename_and_mkdir,
     create_relative_path,
     create_sampling_zeros,
-    create_path,
 )

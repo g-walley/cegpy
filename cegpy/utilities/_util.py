@@ -5,6 +5,7 @@ from datetime import datetime
 import os
 from pathlib import Path
 import math
+from typing import Union
 import colorutils
 from colorutils import Color as Colour
 
@@ -81,9 +82,7 @@ def generate_colour_run(number, starts, ends) -> list:
 
     for idx, end in enumerate(ends):
         if jumps[idx] > 0:
-            colours += colorutils.color_run(
-                starts[idx], end, jumps[idx], to_color=True
-            )
+            colours += colorutils.color_run(starts[idx], end, jumps[idx], to_color=True)
         else:
             colours.append(end)
     hex_colours = []
@@ -93,7 +92,8 @@ def generate_colour_run(number, starts, ends) -> list:
     return hex_colours
 
 
-def generate_filename_and_mkdir(filename: str) -> str:
+def generate_filename_and_mkdir(filename: Union[str, Path]) -> str:
+    """Creates a filename."""
     if filename is not Path:
         filename = Path(filename)
 
@@ -147,10 +147,3 @@ def create_path(filename, add_time=False, filetype="png"):
         .parent.parent.parent.parent.joinpath(filename + dt_string + "." + filetype)
     )
     return fig_path
-
-
-def flatten_list_of_lists(list_of_lists) -> list:
-    flat_list = []
-    for sublist in list_of_lists:
-        flat_list = flat_list + sublist
-    return flat_list

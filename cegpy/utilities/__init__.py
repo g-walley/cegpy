@@ -9,5 +9,4 @@ from cegpy.utilities._util import (
     create_relative_path,
     create_sampling_zeros,
     create_path,
-    flatten_list_of_lists,
 )

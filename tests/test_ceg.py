@@ -2,7 +2,7 @@
 # pylint: disable=protected-access
 import re
 from pathlib import Path
-from typing import Dict, Mapping
+from typing import Dict, List, Mapping, Tuple
 import unittest
 from unittest.mock import Mock, patch
 import networkx as nx
@@ -141,17 +141,23 @@ class TestCEGHelpersTestCases(unittest.TestCase):
     def assert_edges_merged(self, new_edge: Dict, edge_1: Dict, edge_2: Dict):
         """Edges were merged successfully."""
 
-        assert set(new_edge.keys()) == set(edge_1.keys()).union(
-            set(edge_2.keys())
-        ), "Edges do not have the same keys."
+        self.assertSetEqual(
+            set(new_edge.keys()),
+            set(edge_1.keys()).union(set(edge_2.keys())),
+            msg="Edges do not have the same keys.",
+        )
 
         for key, value in new_edge.items():
             if key == "probability":
-                assert value == edge_1.get(key), "Probability shouldn't be summed."
+                self.assertEqual(
+                    value, edge_1.get(key), msg="Probability shouldn't be summed."
+                )
             else:
-                assert value == edge_1.get(key, 0) + edge_2.get(
-                    key, 0
-                ), f"{key} not merged. Merged value: {value}"
+                self.assertEqual(
+                    value,
+                    (edge_1.get(key, 0) + edge_2.get(key, 0)),
+                    msg=f"{key} not merged. Merged value: {value}",
+                )
 
     def test_relabel_nodes(self):
         """Relabel nodes successfully renames all the nodes."""
@@ -444,6 +450,9 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
 
 
 class TestPathList:
+    """Tests path list generation"""
+
+    # pylint: disable=too-few-public-methods
     graph = nx.MultiDiGraph()
 
     def test_path_list_generation(self):
@@ -483,8 +492,10 @@ class TestPathList:
         ), "Incorrect number of paths."
 
 
-class TestDistanceToSink:
-    def setup(self):
+class TestDistanceToSink(unittest.TestCase):
+    """Tests distance to sink calculation"""
+
+    def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w_infinity"]
         self.init_edges = [
@@ -530,6 +541,7 @@ class TestDistanceToSink:
         check_distances()
 
     def test_gen_nodes_with_increasing_distance(self) -> None:
+        """Tests generate_nodes_with_increasing_distance"""
         expected_nodes = {
             0: [self.ceg.sink],
             1: ["w2", "w3", "w5"],
@@ -543,14 +555,20 @@ class TestDistanceToSink:
 
         nodes_gen = self.ceg._gen_nodes_with_increasing_distance(start=0)
 
-        for nodes in range(len(expected_nodes)):
-            expected_node_list = expected_nodes[nodes]
+        for dist, nodes in expected_nodes.items():
             actual_node_list = next(nodes_gen)
-            assert actual_node_list.sort() == expected_node_list.sort()
+            self.assertEqual(actual_node_list.sort(), nodes.sort())
 
 
-class TestCEG:
+class TestEdgeInfoAttributes:
+    """Test edge_info argument."""
+
+    med_s_z_paths: List[Tuple]
+    med_df: pd.DataFrame
+    med_st: StagedTree
+
     def setup(self):
+        """Test Setup"""
         med_df_path = (
             Path(__file__)
             .resolve()
@@ -643,6 +661,7 @@ class TestGenerate(unittest.TestCase):
         ):
             self.ceg.generate()
 
+    # pylint: disable=too-many-arguments
     def test_calls_helper_functions_in_the_correct_order(
         self,
         nx_relabel: Mock,
@@ -669,11 +688,12 @@ class TestGenerate(unittest.TestCase):
         assert self.ceg.generated is True
 
 
-class TestBackwardsConstruction:
+class TestBackwardsConstruction(unittest.TestCase):
     """Tests the ._backwards_construction() method"""
 
     @staticmethod
     def gen_sets_of_nodes():
+        """Generates a set of nodes for backwards construction"""
         nodes = [[f"w{i}", f"w{i+1}"] for i in range(5, 1, -1)]
         for node in nodes:
             yield node
@@ -683,8 +703,8 @@ class TestBackwardsConstruction:
         ._backwards_construction() always ends, even if there are no
         nodes to process
         """
-        self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
+        graph = nx.MultiDiGraph()
+        init_nodes = [
             "w0",
             "w1",
             "w2",
@@ -699,7 +719,7 @@ class TestBackwardsConstruction:
             "w11",
             "w12",
         ]
-        self.init_edges = [
+        init_edges = [
             ("w0", "w1", "a"),
             ("w0", "w2", "b"),
             ("w1", "w3", "c"),
@@ -713,14 +733,14 @@ class TestBackwardsConstruction:
             ("w4", "w11", "k"),
             ("w0", "w12", "l"),
         ]
-        self.graph.add_nodes_from(self.init_nodes)
-        self.graph.add_edges_from(self.init_edges)
-        self.graph.root = "w0"
-        self.graph.ahc_output = {
+        graph.add_nodes_from(init_nodes)
+        graph.add_edges_from(init_edges)
+        graph.root = "w0"
+        graph.ahc_output = {
             "Merged Situations": [("s1", "s2")],
             "Loglikelihood": 1234.5678,
         }
-        ceg = ChainEventGraph(self.graph, generate=False)
+        ceg = ChainEventGraph(graph, generate=False)
 
         ceg._backwards_construction(self.gen_sets_of_nodes())
 
@@ -771,5 +791,5 @@ class TestBackwardsConstruction:
         ceg = ChainEventGraph(graph, generate=False)
         ceg._backwards_construction(gen_sets_of_nodes())
         all_nodes = set(ceg.nodes)
-        assert len(all_nodes.intersection({"s5", "s4", "s13"})) == 1
-        assert len(all_nodes.intersection({"s11", "s3"})) == 1
+        self.assertEqual(len(all_nodes.intersection({"s5", "s4", "s13"})), 1)
+        self.assertEqual(len(all_nodes.intersection({"s11", "s3"})), 1)

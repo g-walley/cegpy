@@ -1,4 +1,5 @@
 """Tests ChainEventGraph"""
+# pylint: disable=protected-access
 import re
 from pathlib import Path
 from typing import Dict, Mapping
@@ -44,6 +45,8 @@ class TestMockedCEGMethods:
 
 
 class TestUnitCEG(unittest.TestCase):
+    """More ChainEventGraph tests"""
+
     def setUp(self):
         self.node_prefix = "w"
         self.sink_suffix = "&infin;"
@@ -53,12 +56,14 @@ class TestUnitCEG(unittest.TestCase):
             .parent.parent.joinpath("data/medical_dm_modified.xlsx")
         )
 
-        self.st = StagedTree(dataframe=pd.read_excel(df_path), name="medical_staged")
-        self.st.calculate_AHC_transitions()
+        self.staged = StagedTree(
+            dataframe=pd.read_excel(df_path), name="medical_staged"
+        )
+        self.staged.calculate_AHC_transitions()
 
     def test_stages_property(self):
         """Stages is a mapping of stage names to lists of nodes"""
-        ceg = ChainEventGraph(self.st, generate=False)
+        ceg = ChainEventGraph(self.staged, generate=False)
         node_stage_mapping: Mapping = dict(ceg.nodes(data="stage", default=None))
         stages = ceg.stages
         self.assertEqual(len(ceg.nodes), sum(len(nodes) for nodes in stages.values()))
@@ -67,16 +72,18 @@ class TestUnitCEG(unittest.TestCase):
 
     def test_create_figure(self):
         """.create_figure() called with no filename"""
-        ceg = ChainEventGraph(self.st, generate=False)
-        with self.assertLogs("cegpy", level="INFO") as cm:
+        ceg = ChainEventGraph(self.staged, generate=False)
+        with self.assertLogs("cegpy", level="INFO") as log_cm:
             assert ceg.create_figure() is None
         self.assertEqual(
             ["WARNING:cegpy.chain_event_graph:No filename. Figure not saved."],
-            cm.output,
+            log_cm.output,
         )
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):
+    """Tests some of the CEG helper functions."""
+
     def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w_infinity"]
@@ -225,6 +232,8 @@ class TestCEGHelpersTestCases(unittest.TestCase):
 
 
 class TestNodesCanBeMerged(unittest.TestCase):
+    """Tests nodes_can_be_merged() function."""
+
     def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w_infinity"]
@@ -380,6 +389,8 @@ class TestNodesCanBeMerged(unittest.TestCase):
 
 
 class TestTrimLeavesFromGraph(unittest.TestCase):
+    """Tests trim_leaves_from_graph"""
+
     def setUp(self):
         self.graph = nx.MultiDiGraph()
         self.init_nodes = ["w0", "w1", "w2", "w3", "w4"]
@@ -401,16 +412,14 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
         """Leaves are trimmed from the graph."""
         self.ceg._trim_leaves_from_graph()
         for leaf in self.leaves:
-            try:
-                self.ceg.nodes[leaf]
-                leaf_removed = False
-            except KeyError:
-                leaf_removed = True
-
-            assert leaf_removed, "Leaf was not removed."
+            self.assertIsNone(self.ceg.nodes.get(leaf), "Leaf was not removed.")
 
             for edge_list_key in self.ceg.edges.keys():
-                assert edge_list_key[1] != leaf, f"Edge still pointing to leaf: {leaf}"
+                self.assertNotEqual(
+                    edge_list_key[1],
+                    leaf,
+                    msg=f"Edge still pointing to leaf: {leaf}",
+                )
 
         expected_edges = [
             ("w0", "w1", "a"),

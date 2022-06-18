@@ -1,4 +1,6 @@
+"""Tests ChainEventGraph"""
 import re
+from pathlib import Path
 from typing import Dict, Mapping
 import unittest
 from unittest.mock import Mock, patch
@@ -6,92 +8,89 @@ import networkx as nx
 import pandas as pd
 import pytest
 import pytest_mock
-from src.cegpy import StagedTree, ChainEventGraph
-from src.cegpy.graphs.ceg import (
+from cegpy import StagedTree, ChainEventGraph
+from cegpy.graphs._ceg import (
     CegAlreadyGenerated,
     _merge_edge_data,
 )
-from pathlib import Path
 
 
-class TestMockedCEGMethods():
+class TestMockedCEGMethods:
+    """Tests that Mock functions in ChainEventGraph"""
+
+    node_prefix = "w"
+    sink_suffix = "&infin;"
+    staged: StagedTree
+
     def setup(self):
-        self.node_prefix = 'w'
-        self.sink_suffix = '&infin;'
-        df_path = Path(__file__).resolve(
-            ).parent.parent.joinpath(
-            'data/medical_dm_modified.xlsx')
-
-        self.st = StagedTree(
-            dataframe=pd.read_excel(df_path),
-            name="medical_staged"
+        """Test setup"""
+        df_path = (
+            Path(__file__)
+            .resolve()
+            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
         )
-        self.st.calculate_AHC_transitions()
 
-    def test_generate_argument(self, mocker: pytest_mock.mocker):
+        self.staged = StagedTree(
+            dataframe=pd.read_excel(df_path), name="medical_staged"
+        )
+        self.staged.calculate_AHC_transitions()
+
+    def test_generate_argument(self, mocker: pytest_mock.MockerFixture):
         """When ChainEventGraph called with generate, the .generate()
         method is called."""
-        mocker.patch('src.cegpy.graphs.ceg.ChainEventGraph.generate')
-        ceg = ChainEventGraph(self.st, generate=True)
-        ceg.generate.assert_called_once()
+        mocker.patch("cegpy.graphs._ceg.ChainEventGraph.generate")
+        ceg = ChainEventGraph(self.staged, generate=True)
+        ceg.generate.assert_called_once()  # pylint: disable=no-member
 
 
 class TestUnitCEG(unittest.TestCase):
     def setUp(self):
-        self.node_prefix = 'w'
-        self.sink_suffix = '&infin;'
-        df_path = Path(__file__).resolve(
-            ).parent.parent.joinpath(
-            'data/medical_dm_modified.xlsx')
-
-        self.st = StagedTree(
-            dataframe=pd.read_excel(df_path),
-            name="medical_staged"
+        self.node_prefix = "w"
+        self.sink_suffix = "&infin;"
+        df_path = (
+            Path(__file__)
+            .resolve()
+            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
         )
+
+        self.st = StagedTree(dataframe=pd.read_excel(df_path), name="medical_staged")
         self.st.calculate_AHC_transitions()
 
     def test_stages_property(self):
         """Stages is a mapping of stage names to lists of nodes"""
         ceg = ChainEventGraph(self.st, generate=False)
-        node_stage_mapping: Mapping = (
-            dict(ceg.nodes(data='stage', default=None))
-        )
+        node_stage_mapping: Mapping = dict(ceg.nodes(data="stage", default=None))
         stages = ceg.stages
-        self.assertEqual(
-            len(ceg.nodes),
-            sum(len(nodes) for nodes in stages.values())
-        )
+        self.assertEqual(len(ceg.nodes), sum(len(nodes) for nodes in stages.values()))
         for node, stage in node_stage_mapping.items():
             self.assertIn(node, stages[stage])
 
     def test_create_figure(self):
         """.create_figure() called with no filename"""
         ceg = ChainEventGraph(self.st, generate=False)
-        with self.assertLogs('cegpy', level='INFO') as cm:
+        with self.assertLogs("cegpy", level="INFO") as cm:
             assert ceg.create_figure() is None
         self.assertEqual(
-            ['WARNING:cegpy.chain_event_graph:No filename. Figure not saved.'],
-            cm.output
+            ["WARNING:cegpy.chain_event_graph:No filename. Figure not saved."],
+            cm.output,
         )
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):
     def setUp(self):
         self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
-        ]
+        self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w_infinity"]
         self.init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'c'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "c"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
-        self.graph.root = 'w0'
+        self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
         self.ceg = ChainEventGraph(self.graph, generate=False)
@@ -100,13 +99,13 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         """Edges are merged"""
         edge_1 = dict(
             zip(
-                ['count', 'prior', 'posterior', 'probability'],
+                ["count", "prior", "posterior", "probability"],
                 [250, 0.5, 250, 0.8],
             )
         )
         edge_2 = dict(
             zip(
-                ['count', 'prior', 'posterior', 'probability'],
+                ["count", "prior", "posterior", "probability"],
                 [550, 25, 0.4, 0.9],
             )
         )
@@ -118,13 +117,13 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         """Edges are merged even when some data is missing in one edge."""
         edge_1 = dict(
             zip(
-                ['count', 'prior'],
+                ["count", "prior"],
                 [250, 0.5],
             )
         )
         edge_2 = dict(
             zip(
-                ['count', 'prior', 'posterior'],
+                ["count", "prior", "posterior"],
                 [550, 25, 0.4],
             )
         )
@@ -135,20 +134,16 @@ class TestCEGHelpersTestCases(unittest.TestCase):
     def assert_edges_merged(self, new_edge: Dict, edge_1: Dict, edge_2: Dict):
         """Edges were merged successfully."""
 
-        assert (
-            set(new_edge.keys()) == set(
-                edge_1.keys()
-            ).union(set(edge_2.keys()))
+        assert set(new_edge.keys()) == set(edge_1.keys()).union(
+            set(edge_2.keys())
         ), "Edges do not have the same keys."
 
         for key, value in new_edge.items():
             if key == "probability":
-                assert (
-                    value == edge_1.get(key)
-                ), "Probability shouldn't be summed."
+                assert value == edge_1.get(key), "Probability shouldn't be summed."
             else:
-                assert (
-                    value == edge_1.get(key, 0) + edge_2.get(key, 0)
+                assert value == edge_1.get(key, 0) + edge_2.get(
+                    key, 0
                 ), f"{key} not merged. Merged value: {value}"
 
     def test_relabel_nodes(self):
@@ -164,23 +159,39 @@ class TestCEGHelpersTestCases(unittest.TestCase):
         """Outgoing edges are merged."""
         edges_to_add = [
             {
-                "src": "s1", "dst": "s3", "key": "event_1",
-                "counts": 5, "priors": 0.2, "posteriors": 1,
+                "src": "s1",
+                "dst": "s3",
+                "key": "event_1",
+                "counts": 5,
+                "priors": 0.2,
+                "posteriors": 1,
                 "probability": 0.8,
             },
             {
-                "src": "s1", "dst": "s4", "key": "event_2",
-                "counts": 10, "priors": 0.3, "posteriors": 5,
+                "src": "s1",
+                "dst": "s4",
+                "key": "event_2",
+                "counts": 10,
+                "priors": 0.3,
+                "posteriors": 5,
                 "probability": 0.2,
             },
             {
-                "src": "s2", "dst": "s3", "key": "event_1",
-                "counts": 11, "priors": 0.5, "posteriors": 2,
+                "src": "s2",
+                "dst": "s3",
+                "key": "event_1",
+                "counts": 11,
+                "priors": 0.5,
+                "posteriors": 2,
                 "probability": 0.8,
             },
             {
-                "src": "s2", "dst": "s4", "key": "event_2",
-                "counts": 6, "priors": 0.9, "posteriors": 3,
+                "src": "s2",
+                "dst": "s4",
+                "key": "event_2",
+                "counts": 6,
+                "priors": 0.9,
+                "posteriors": 3,
                 "probability": 0.2,
             },
         ]
@@ -202,121 +213,113 @@ class TestCEGHelpersTestCases(unittest.TestCase):
             ]
         )
 
-        expected = [
-            (edge["src"], edge["dst"], edge["key"]) for edge in edges_to_add
-        ]
-        actual = (
-            self.ceg._merge_and_add_edges("s99", "s1", "s2")
-        )
+        expected = [(edge["src"], edge["dst"], edge["key"]) for edge in edges_to_add]
+        actual = self.ceg._merge_and_add_edges("s99", "s1", "s2")
         for edge in expected:
             assert (
                 edge in actual
             ), f"Expected {edge} in return value, but it was not found."
-        assert (
-            len(expected) == len(actual)
+        assert len(expected) == len(
+            actual
         ), "Actual number of edges does not match expected number of edges."
 
 
 class TestNodesCanBeMerged(unittest.TestCase):
     def setUp(self):
         self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w_infinity'
-        ]
+        self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w_infinity"]
         self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
 
     def test_check_nodes_can_be_merged(self):
         """Nodes can be merged."""
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'c'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "c"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
-        assert (
-            ceg._check_nodes_can_be_merged("w1", "w2")
-        ), "Nodes should be mergeable."
+        assert ceg._check_nodes_can_be_merged("w1", "w2"), "Nodes should be mergeable."
 
     def test_nodes_not_in_same_stage_cannot_be_merged(self):
         """Nodes not in same stage cannot be merged"""
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'c'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "c"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 1
         ceg.nodes["w2"]["stage"] = 2
-        assert (
-            not ceg._check_nodes_can_be_merged("w1", "w2")
+        assert not ceg._check_nodes_can_be_merged(
+            "w1", "w2"
         ), "Nodes should not be mergeable."
 
     def test_nodes_with_different_successor_nodes(self):
         """Nodes with different successor nodes won't be merged."""
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w_infinity', 'c'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w_infinity", "c"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
-        assert (
-            not ceg._check_nodes_can_be_merged("w1", "w2")
+        assert not ceg._check_nodes_can_be_merged(
+            "w1", "w2"
         ), "Nodes should not be mergeable."
 
     def test_nodes_with_different_outgoing_edges(self):
         """Nodes with different outgoing edges won't be merged."""
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'g'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "g"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
-        assert (
-            not ceg._check_nodes_can_be_merged("w1", "w2")
+        assert not ceg._check_nodes_can_be_merged(
+            "w1", "w2"
         ), "Nodes should not be mergeable."
 
     def test_merging_of_nodes(self):
         """The nodes are merged, and all edges are merged too."""
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'c'),
-            ('w2', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "c"),
+            ("w2", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
@@ -324,12 +327,12 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w2"]["stage"] = 2
         ceg._merge_nodes({("w1", "w2")})
         expected_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w1', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w3', 'w_infinity', 'e'),
-            ('w4', 'w_infinity', 'f'),
+            ("w0", "w1", "a"),
+            ("w0", "w1", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w3", "w_infinity", "e"),
+            ("w4", "w_infinity", "f"),
         ]
         for edge in expected_edges:
             self.assertIn(edge, list(ceg.edges))
@@ -338,17 +341,17 @@ class TestNodesCanBeMerged(unittest.TestCase):
         """The three nodes are merged, and all edges are merged too."""
         self.graph.add_node("w5")
         init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w0', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w1', 'w5', 'e'),
-            ('w2', 'w4', 'd'),
-            ('w2', 'w5', 'e'),
-            ('w3', 'w4', 'd'),
-            ('w3', 'w5', 'e'),
-            ('w4', 'w_infinity', 'f'),
-            ('w5', 'w_infinity', 'g'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w0", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w1", "w5", "e"),
+            ("w2", "w4", "d"),
+            ("w2", "w5", "e"),
+            ("w3", "w4", "d"),
+            ("w3", "w5", "e"),
+            ("w4", "w_infinity", "f"),
+            ("w5", "w_infinity", "g"),
         ]
         self.graph.add_edges_from(init_edges)
         ceg = ChainEventGraph(self.graph, generate=False)
@@ -361,13 +364,13 @@ class TestNodesCanBeMerged(unittest.TestCase):
         nodes_post_merge = set(ceg.nodes)
         merged_node = nodes_post_merge.intersection(nodes_to_merge).pop()
         expected_edges = [
-            ('w0', merged_node, 'a'),
-            ('w0', merged_node, 'b'),
-            ('w0', merged_node, 'c'),
-            (merged_node, 'w4', 'd'),
-            (merged_node, 'w5', 'e'),
-            ('w4', 'w_infinity', 'f'),
-            ('w5', 'w_infinity', 'g'),
+            ("w0", merged_node, "a"),
+            ("w0", merged_node, "b"),
+            ("w0", merged_node, "c"),
+            (merged_node, "w4", "d"),
+            (merged_node, "w5", "e"),
+            ("w4", "w_infinity", "f"),
+            ("w5", "w_infinity", "g"),
         ]
 
         for edge in expected_edges:
@@ -379,16 +382,14 @@ class TestNodesCanBeMerged(unittest.TestCase):
 class TestTrimLeavesFromGraph(unittest.TestCase):
     def setUp(self):
         self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4'
-        ]
+        self.init_nodes = ["w0", "w1", "w2", "w3", "w4"]
         self.init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'c'),
-            ('w1', 'w4', 'd'),
-            ('w2', 'w3', 'c'),
-            ('w2', 'w4', 'd'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "c"),
+            ("w1", "w4", "d"),
+            ("w2", "w3", "c"),
+            ("w2", "w4", "d"),
         ]
         self.graph.root = "w0"
         self.leaves = ["w3", "w4"]
@@ -409,17 +410,15 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
             assert leaf_removed, "Leaf was not removed."
 
             for edge_list_key in self.ceg.edges.keys():
-                assert (
-                    edge_list_key[1] != leaf
-                ), f"Edge still pointing to leaf: {leaf}"
+                assert edge_list_key[1] != leaf, f"Edge still pointing to leaf: {leaf}"
 
         expected_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', self.ceg.sink, 'c'),
-            ('w1', self.ceg.sink, 'd'),
-            ('w2', self.ceg.sink, 'c'),
-            ('w2', self.ceg.sink, 'd'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", self.ceg.sink, "c"),
+            ("w1", self.ceg.sink, "d"),
+            ("w2", self.ceg.sink, "c"),
+            ("w2", self.ceg.sink, "d"),
         ]
         for edge in expected_edges:
             self.assertIn(edge, list(self.ceg.edges)), f"Edge not found: {edge}"
@@ -435,18 +434,16 @@ class TestPathList:
     def test_path_list_generation(self):
         """Path list is generated correctly."""
         self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w_infinity'
-        ]
+        self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w_infinity"]
         self.init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'e'),
-            ('w1', 'w4', 'f'),
-            ('w2', 'w_infinity', 'c'),
-            ('w3', 'w_infinity', 'd'),
-            ('w4', 'w5', 'c'),
-            ('w5', 'w_infinity', 'd'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "e"),
+            ("w1", "w4", "f"),
+            ("w2", "w_infinity", "c"),
+            ("w3", "w_infinity", "d"),
+            ("w4", "w5", "c"),
+            ("w5", "w_infinity", "d"),
         ]
         self.graph.root = "w0"
         self.graph.add_nodes_from(self.init_nodes)
@@ -454,38 +451,36 @@ class TestPathList:
         self.ceg = ChainEventGraph(self.graph, generate=False)
         actual_path_list = self.ceg.path_list
         expected_paths = [
-            [('w0', 'w1', 'a'), ('w1', 'w3', 'e'), ('w3', 'w_infinity', 'd')],
+            [("w0", "w1", "a"), ("w1", "w3", "e"), ("w3", "w_infinity", "d")],
             [
-                ('w0', 'w1', 'a'),
-                ('w1', 'w4', 'f'),
-                ('w4', 'w5', 'c'),
-                ('w5', 'w_infinity', 'd')
+                ("w0", "w1", "a"),
+                ("w1", "w4", "f"),
+                ("w4", "w5", "c"),
+                ("w5", "w_infinity", "d"),
             ],
-            [('w0', 'w2', 'b'), ('w2', 'w_infinity', 'c')],
+            [("w0", "w2", "b"), ("w2", "w_infinity", "c")],
         ]
         for path in expected_paths:
             assert path in actual_path_list, f"Path not found: {path}"
 
-        assert len(actual_path_list) == len(expected_paths), (
-            "Incorrect number of paths."
-        )
+        assert len(actual_path_list) == len(
+            expected_paths
+        ), "Incorrect number of paths."
 
 
 class TestDistanceToSink:
     def setup(self):
         self.graph = nx.MultiDiGraph()
-        self.init_nodes = [
-            'w0', 'w1', 'w2', 'w3', 'w4', 'w5', 'w_infinity'
-        ]
+        self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w_infinity"]
         self.init_edges = [
-            ('w0', 'w1', 'a'),
-            ('w0', 'w2', 'b'),
-            ('w1', 'w3', 'e'),
-            ('w1', 'w4', 'f'),
-            ('w2', 'w_infinity', 'c'),
-            ('w3', 'w_infinity', 'd'),
-            ('w4', 'w5', 'c'),
-            ('w5', 'w_infinity', 'd'),
+            ("w0", "w1", "a"),
+            ("w0", "w2", "b"),
+            ("w1", "w3", "e"),
+            ("w1", "w4", "f"),
+            ("w2", "w_infinity", "c"),
+            ("w3", "w_infinity", "d"),
+            ("w4", "w5", "c"),
+            ("w5", "w_infinity", "d"),
         ]
         self.graph.add_nodes_from(self.init_nodes)
         self.graph.add_edges_from(self.init_edges)
@@ -494,10 +489,9 @@ class TestDistanceToSink:
 
     def test_update_distances_to_sink(self) -> None:
         """Distance to sink is always max length of paths to sink."""
+
         def check_distances():
-            actual_node_dists = (
-                nx.get_node_attributes(self.ceg, 'max_dist_to_sink')
-            )
+            actual_node_dists = nx.get_node_attributes(self.ceg, "max_dist_to_sink")
             for node, distance in actual_node_dists.items():
                 assert distance == expected_node_dists[node]
 
@@ -508,7 +502,7 @@ class TestDistanceToSink:
             "w3": 1,
             "w4": 2,
             "w5": 1,
-            "w_infinity": 0
+            "w_infinity": 0,
         }
         self.ceg._update_distances_to_sink()
         check_distances()
@@ -526,7 +520,7 @@ class TestDistanceToSink:
             1: ["w2", "w3", "w5"],
             2: ["w4"],
             3: ["w1"],
-            4: [self.ceg.root]
+            4: [self.ceg.root],
         }
         for dist, nodes in expected_nodes.items():
             for node in nodes:
@@ -540,21 +534,21 @@ class TestDistanceToSink:
             assert actual_node_list.sort() == expected_node_list.sort()
 
 
-class TestCEG():
+class TestCEG:
     def setup(self):
-        med_df_path = Path(__file__).resolve(
-            ).parent.parent.joinpath(
-            'data/medical_dm_modified.xlsx')
+        med_df_path = (
+            Path(__file__)
+            .resolve()
+            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+        )
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
         self.med_st = StagedTree(
-            dataframe=self.med_df,
-            sampling_zero_paths=self.med_s_z_paths
+            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
         )
 
     def test_figure_with_wrong_edge_attribute(
-        self,
-        caplog: pytest.LogCaptureFixture
+        self, caplog: pytest.LogCaptureFixture
     ) -> None:
         """Ensures a warning is raised when a non-existent
         attribute is passed for the edge_info argument"""
@@ -567,10 +561,7 @@ class TestCEG():
 
         # stratified medical dataset
         ceg = ChainEventGraph(self.med_st, generate=False)
-        _ = ceg.create_figure(
-            filename=None,
-            edge_info="prob"
-        )
+        _ = ceg.create_figure(filename=None, edge_info="prob")
         assert msg in caplog.text, "Expected log message not logged."
 
 
@@ -582,11 +573,23 @@ class TestCEG():
 @patch.object(nx, "relabel_nodes")
 class TestGenerate(unittest.TestCase):
     """Tests the .generate() method"""
+
     def setUp(self) -> None:
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            "s0", "s1", "s2", "s3", "s4", "s5", "s6",
-            "s7", "s8", "s9", "s10", "s11", "s12"
+            "s0",
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9",
+            "s10",
+            "s11",
+            "s12",
         ]
         self.init_edges = [
             ("s0", "s1", "a"),
@@ -621,8 +624,7 @@ class TestGenerate(unittest.TestCase):
         """.generate() raises a ValueError when ahc_output doesn't exist"""
         self.ceg.ahc_output = None
         with self.assertRaises(
-            ValueError,
-            msg="There is no AHC output in your StagedTree."
+            ValueError, msg="There is no AHC output in your StagedTree."
         ):
             self.ceg.generate()
 
@@ -638,9 +640,7 @@ class TestGenerate(unittest.TestCase):
         """.generate() calls the helper functions"""
         self.ceg.generate()
         nx_relabel.assert_called_once_with(
-            self.ceg,
-            {self.ceg.staged_root: self.ceg.root},
-            copy=False
+            self.ceg, {self.ceg.staged_root: self.ceg.root}, copy=False
         )
         trim_leaves.assert_called_once_with()
         update_distances.assert_called_once_with()
@@ -656,6 +656,7 @@ class TestGenerate(unittest.TestCase):
 
 class TestBackwardsConstruction:
     """Tests the ._backwards_construction() method"""
+
     @staticmethod
     def gen_sets_of_nodes():
         nodes = [[f"w{i}", f"w{i+1}"] for i in range(5, 1, -1)]
@@ -669,8 +670,19 @@ class TestBackwardsConstruction:
         """
         self.graph = nx.MultiDiGraph()
         self.init_nodes = [
-            "w0", "w1", "w2", "w3", "w4", "w5", "w6",
-            "w7", "w8", "w9", "w10", "w11", "w12",
+            "w0",
+            "w1",
+            "w2",
+            "w3",
+            "w4",
+            "w5",
+            "w6",
+            "w7",
+            "w8",
+            "w9",
+            "w10",
+            "w11",
+            "w12",
         ]
         self.init_edges = [
             ("w0", "w1", "a"),

@@ -430,7 +430,11 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
             ("w2", self.ceg.sink, "d"),
         ]
         for edge in expected_edges:
-            self.assertIn(edge, list(self.ceg.edges)), f"Edge not found: {edge}"
+            self.assertIn(
+                edge,
+                list(self.ceg.edges),
+                msg=f"Edge not found: {edge}",
+            )
 
         self.assertEqual(
             len(list(self.ceg.edges)),
@@ -440,11 +444,13 @@ class TestTrimLeavesFromGraph(unittest.TestCase):
 
 
 class TestPathList:
+    graph = nx.MultiDiGraph()
+
     def test_path_list_generation(self):
         """Path list is generated correctly."""
-        self.graph = nx.MultiDiGraph()
-        self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w_infinity"]
-        self.init_edges = [
+
+        init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w_infinity"]
+        init_edges = [
             ("w0", "w1", "a"),
             ("w0", "w2", "b"),
             ("w1", "w3", "e"),
@@ -455,10 +461,10 @@ class TestPathList:
             ("w5", "w_infinity", "d"),
         ]
         self.graph.root = "w0"
-        self.graph.add_nodes_from(self.init_nodes)
-        self.graph.add_edges_from(self.init_edges)
-        self.ceg = ChainEventGraph(self.graph, generate=False)
-        actual_path_list = self.ceg.path_list
+        self.graph.add_nodes_from(init_nodes)
+        self.graph.add_edges_from(init_edges)
+        ceg = ChainEventGraph(self.graph, generate=False)
+        actual_path_list = ceg.path_list
         expected_paths = [
             [("w0", "w1", "a"), ("w1", "w3", "e"), ("w3", "w_infinity", "d")],
             [

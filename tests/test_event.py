@@ -1,32 +1,41 @@
-import pandas as pd
+"""Tests cegpy.EventTree"""
+import unittest
+from collections import defaultdict
 import re
+from pathlib import Path
 import numpy as np
 import pytest
-from collections import defaultdict
-from pathlib import Path
-from src.cegpy import EventTree
+import pandas as pd
 from pydotplus.graphviz import InvocationException
+from cegpy import EventTree
 
 
-class TestEventTreeAPI:
-    def setup(self):
+class TestEventTreeAPI(unittest.TestCase):
+    """Tests API of EventTree"""
+
+    def setUp(self):
         df_path = (
             Path(__file__)
             .resolve()
             .parent.parent.joinpath("data/medical_dm_modified.xlsx")
         )
-        self.df = pd.read_excel(df_path)
+        self.dataframe = pd.read_excel(df_path)
 
     def test_required_argument_missing_fails(self):
-        pytest.raises(TypeError, EventTree)
+        """No arguments raises TypeError"""
+        self.assertRaises(TypeError, EventTree)
 
     def test_required_argument_wrong_type_fails(self):
+        """Wrong argument type raises ValueError"""
         dataframe = 5
-        pytest.raises(ValueError, EventTree, dataframe=dataframe)
+        self.assertRaises(ValueError, EventTree, dataframe=dataframe)
 
     def test_incorrect_sampling_zero_fails(self):
+        """Incorrect Sampling Zero argument fails with ValueError"""
         szp = [("edge_1"), ("edge_1", "edge_2")]
-        pytest.raises(ValueError, EventTree, dataframe=self.df, sampling_zero_paths=szp)
+        self.assertRaises(
+            ValueError, EventTree, dataframe=self.dataframe, sampling_zero_paths=szp
+        )
 
 
 class TestEventTree:

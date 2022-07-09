@@ -9,8 +9,8 @@ import networkx as nx
 import scipy.special
 from IPython.display import Image
 
-
-from ._event import EventTree
+from cegpy.trees._event import EventTree
+from cegpy.utilities._util import generate_colours
 
 logger = logging.getLogger("cegpy.staged_tree")
 
@@ -607,7 +607,7 @@ class StagedTree(EventTree):
         """Colours each stage of the tree with an individual colour"""
         num_colours = len([m for m in merged_situations if len(m) > 1])
         if colour_list is None:
-            stage_colours = Util.generate_colours(num_colours)
+            stage_colours = generate_colours(num_colours)
         else:
             stage_colours = colour_list
             if len(colour_list) < num_colours:

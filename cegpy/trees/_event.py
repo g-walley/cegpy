@@ -10,7 +10,10 @@ from IPython.display import Image
 from IPython import get_ipython
 import pandas as pd
 import networkx as nx
-from ..utilities._util import Util
+from cegpy.utilities._util import (
+    generate_filename_and_mkdir,
+    create_sampling_zeros,
+)
 
 # create logger object for this module
 logger = logging.getLogger("cegpy.event_tree")
@@ -318,7 +321,7 @@ class EventTree(nx.MultiDiGraph):
         if filename is None:
             logger.warning("No filename. Figure not saved.")
         else:
-            filename, filetype = Util.generate_filename_and_mkdir(filename)
+            filename, filetype = generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
             logger.info("--- writing %s file ---", filetype)
             graph.write(str(filename), format=filetype)
@@ -384,9 +387,7 @@ class EventTree(nx.MultiDiGraph):
         unsorted_paths = self._create_unsorted_paths_dict()
 
         if self.sampling_zeros is not None:
-            unsorted_paths = Util.create_sampling_zeros(
-                self.sampling_zeros, unsorted_paths
-            )
+            unsorted_paths = create_sampling_zeros(self.sampling_zeros, unsorted_paths)
 
         depth = len(max(list(unsorted_paths.keys()), key=len))
         keys_of_list = list(unsorted_paths.keys())

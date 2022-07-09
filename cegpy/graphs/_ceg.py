@@ -20,8 +20,8 @@ import networkx as nx
 from IPython.display import Image
 from IPython import get_ipython
 
-from ..utilities._util import Util
-from ..trees._staged import StagedTree
+from cegpy.utilities._util import generate_filename_and_mkdir
+from cegpy.trees._staged import StagedTree
 
 logger = logging.getLogger("cegpy.chain_event_graph")
 
@@ -83,9 +83,9 @@ class ChainEventGraph(nx.MultiDiGraph):
     @property
     def path_list(self) -> List[Tuple[str]]:
         """All the paths through the CEG, as a list of edge tuples."""
-        path_list: List[Tuple[str]] = [
-            path for path in nx.all_simple_edge_paths(self, self.root, self.sink)
-        ]
+        path_list: List[Tuple[str]] = list(
+            nx.all_simple_edge_paths(self, self.root, self.sink)
+        )
         return path_list
 
     def generate(self):
@@ -180,10 +180,12 @@ class ChainEventGraph(nx.MultiDiGraph):
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
             logger.warning(
-                f"edge_info '{edge_info}' does not exist for the "
-                f"{self.__class__.__name__} class. Using the default of 'probability' values "
+                "edge_info '%s' does not exist for the %s class. "
+                "Using the default of 'probability' values "
                 "on edges instead. For more information, see the "
-                "documentation."
+                "documentation.",
+                edge_info,
+                self.__class__.__name__,
             )
             edge_info_dict = nx.get_edge_attributes(self, "probability")
 
@@ -234,14 +236,14 @@ class ChainEventGraph(nx.MultiDiGraph):
         if filename is None:
             logger.warning("No filename. Figure not saved.")
         else:
-            filename, filetype = Util.generate_filename_and_mkdir(filename)
+            filename, filetype = generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
-            logger.info("--- writing " + filetype + " file ---")
+            logger.info("--- writing %s file ---", filetype)
             graph.write(str(filename), format=filetype)
 
         if get_ipython() is not None:
             logger.info("--- Exporting graph to notebook ---")
-            graph_image = Image(graph.create_png())
+            graph_image = Image(graph.create_png())  # pylint: disable=no-member
         else:
             graph_image = None
 

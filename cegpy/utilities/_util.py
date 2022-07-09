@@ -1,7 +1,6 @@
 """Utilities for use throughout the package."""
 
 from collections import defaultdict
-from datetime import datetime
 import os
 from pathlib import Path
 import math

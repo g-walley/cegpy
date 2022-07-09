@@ -1,7 +1,8 @@
 from copy import deepcopy
-import networkx as nx
 from typing import List, Set, Tuple
-from . import ChainEventGraph
+import networkx as nx
+
+from cegpy.graphs._ceg import ChainEventGraph
 
 
 class TransporterChainEventGraph:
@@ -27,37 +28,30 @@ class TransporterChainEventGraph:
 
     def __str__(self) -> str:
         """Returns human readable version of the evidence you've provided."""
+
         def evidence_str(base_str, edges, nodes):
             if edges == []:
-                base_str += '   Edges = []\n'
+                base_str += "   Edges = []\n"
             else:
-                base_str += '   Edges = [\n'
+                base_str += "   Edges = [\n"
                 for edge in edges:
-                    base_str += '     %s,\n' % (str(edge))
-                base_str += '   ]\n'
+                    base_str += "     %s,\n" % (str(edge))
+                base_str += "   ]\n"
 
             if nodes == set():
-                base_str += '   Nodes = {}\n'
+                base_str += "   Nodes = {}\n"
             else:
-                base_str += '   Nodes = {\n'
+                base_str += "   Nodes = {\n"
                 for node in nodes:
                     base_str += "     '%s',\n" % (str(node))
-                base_str += '   }\n\n'
+                base_str += "   }\n\n"
             return base_str
 
-        base_str = 'The evidence you have given is as follows:\n'
-        base_str += ' Evidence you are certain of:\n'
-        base_str = evidence_str(
-            base_str,
-            self.certain_edges,
-            self.certain_nodes
-        )
-        base_str += ' Evidence you are uncertain of:\n'
-        base_str = evidence_str(
-            base_str,
-            self.uncertain_edges,
-            self.uncertain_nodes
-        )
+        base_str = "The evidence you have given is as follows:\n"
+        base_str += " Evidence you are certain of:\n"
+        base_str = evidence_str(base_str, self.certain_edges, self.certain_nodes)
+        base_str += " Evidence you are uncertain of:\n"
+        base_str = evidence_str(base_str, self.uncertain_edges, self.uncertain_nodes)
         return base_str
 
     @property
@@ -96,8 +90,7 @@ class TransporterChainEventGraph:
         edge = (u, v, label)
         if edge not in self._ceg.edges:
             raise ValueError(
-                f"This edge {edge}, does not exist"
-                f" in the Chain Event Graph."
+                f"This edge {edge}, does not exist" f" in the Chain Event Graph."
             )
         self._certain_edges.append(edge)
 
@@ -108,8 +101,7 @@ class TransporterChainEventGraph:
             self._certain_edges.remove(edge)
         except ValueError:
             raise ValueError(
-                f"Edge {(u, v, label)} not found in the certain "
-                f"edge list."
+                f"Edge {(u, v, label)} not found in the certain " f"edge list."
             )
 
     def add_certain_edge_list(self, edges: List[Tuple[str]]):
@@ -135,8 +127,7 @@ class TransporterChainEventGraph:
         for edge in edge_set:
             if edge not in self._ceg.edges:
                 raise ValueError(
-                    f"The edge {edge}, does not exist"
-                    f" in the Chain Event Graph."
+                    f"The edge {edge}, does not exist" f" in the Chain Event Graph."
                 )
 
         self._uncertain_edges.append(edge_set)
@@ -146,9 +137,7 @@ class TransporterChainEventGraph:
         try:
             self._uncertain_edges.remove(edge_set)
         except ValueError:
-            raise ValueError(
-                f"{edge_set} not found in the uncertain edge list."
-            )
+            raise ValueError(f"{edge_set} not found in the uncertain edge list.")
 
     def add_uncertain_edge_set_list(self, edge_sets: List[Set[Tuple[str]]]):
         """Specify a list of sets of edges where one of the edges has
@@ -174,9 +163,7 @@ class TransporterChainEventGraph:
         try:
             self._certain_nodes.remove(node)
         except KeyError:
-            raise ValueError(
-                f"Node {node} not found in the set of certain nodes."
-            )
+            raise ValueError(f"Node {node} not found in the set of certain nodes.")
 
     def add_certain_node_set(self, nodes: Set[str]):
         """Specify a set of nodes that have been observed."""
@@ -195,8 +182,7 @@ class TransporterChainEventGraph:
         for node in node_set:
             if node not in self._ceg.nodes:
                 raise ValueError(
-                    f"The node {node}, does not exist"
-                    f" in the Chain Event Graph."
+                    f"The node {node}, does not exist" f" in the Chain Event Graph."
                 )
 
         self._uncertain_nodes.append(node_set)
@@ -207,9 +193,7 @@ class TransporterChainEventGraph:
         try:
             self._uncertain_nodes.remove(node_set)
         except ValueError:
-            raise ValueError(
-                f"{node_set} not found in the uncertain node list."
-            )
+            raise ValueError(f"{node_set} not found in the uncertain node list.")
 
     def add_uncertain_node_set_list(self, node_sets: List[Set[str]]):
         """Specify a list of sets of nodes where in each set, one of
@@ -274,7 +258,7 @@ class TransporterChainEventGraph:
             for path in paths:
                 node_found = False
                 for (u, v, _) in path:
-                    if (u in node_set):
+                    if u in node_set:
                         if node_found:
                             if path not in to_remove:
                                 to_remove.append(path)
@@ -328,13 +312,10 @@ class TransporterChainEventGraph:
         else:
             return False
 
-    def _propagate_reduced_graph_probabilities(
-        self,
-        graph: ChainEventGraph
-    ) -> None:
+    def _propagate_reduced_graph_probabilities(self, graph: ChainEventGraph) -> None:
         sink = graph.sink
         root = graph.root
-        graph.nodes[sink]['emphasis'] = 1
+        graph.nodes[sink]["emphasis"] = 1
         node_set = set([sink])
 
         while node_set != {root}:
@@ -342,49 +323,44 @@ class TransporterChainEventGraph:
                 v_node = node_set.pop()
             except KeyError:
                 raise KeyError(
-                    "Graph has more than one root..."
-                    "Propagation cannot continue.")
+                    "Graph has more than one root..." "Propagation cannot continue."
+                )
 
             for u_node, edges in graph.pred[v_node].items():
                 for edge_label, data in edges.items():
                     edge = (u_node, v_node, edge_label)
-                    emph = graph.nodes[v_node]['emphasis']
-                    prob = data['probability']
-                    graph.edges[edge]['potential'] = \
-                        prob * emph
+                    emph = graph.nodes[v_node]["emphasis"]
+                    prob = data["probability"]
+                    graph.edges[edge]["potential"] = prob * emph
                 successors = graph.succ[u_node]
 
                 try:
                     emphasis = 0
                     for _, edges in successors.items():
                         for edge_label, data in edges.items():
-                            emphasis += data['potential']
+                            emphasis += data["potential"]
 
-                    graph.nodes[u_node]['emphasis'] = emphasis
+                    graph.nodes[u_node]["emphasis"] = emphasis
                     node_set.add(u_node)
                 except KeyError:
                     pass
 
         for (u, v, k) in list(graph.edges):
-            edge_potential = graph.edges[(u, v, k)]['potential']
-            pred_node_emphasis = graph.nodes[u]['emphasis']
+            edge_potential = graph.edges[(u, v, k)]["potential"]
+            pred_node_emphasis = graph.nodes[u]["emphasis"]
             probability = edge_potential / pred_node_emphasis
-            graph.edges[(u, v, k)]['probability'] = probability
+            graph.edges[(u, v, k)]["probability"] = probability
 
     def _create_reduced_graph(self) -> ChainEventGraph:
         self._update_path_list()
         self._update_edges_and_vertices()
         subgraph_view = nx.subgraph_view(
-            G=self._ceg,
-            filter_node=self._filter_node,
-            filter_edge=self._filter_edge
+            G=self._ceg, filter_node=self._filter_node, filter_edge=self._filter_edge
         )
-        subgraph = ChainEventGraph(
-            subgraph_view,
-            generate=False
-        ).copy()
+        subgraph = ChainEventGraph(subgraph_view, generate=False).copy()
 
         self._propagate_reduced_graph_probabilities(subgraph)
 
         return subgraph
+
     # Deal with uncertain edges that are in the same path

@@ -477,8 +477,8 @@ class TestStagedTrees(unittest.TestCase):
 
         try:
             self.med_st._check_hyperstages(med_hyperstage_noerror)
-        except Exception as exc:
-            assert False, f"'check_hyperstages' raised an exception {exc}"
+        except ValueError as exc:
+            self.fail(f"'check_hyperstages' raised an exception {exc}")
 
         # non-stratified falls dataset
         fall_hyperstage_noerror = [
@@ -506,8 +506,8 @@ class TestStagedTrees(unittest.TestCase):
 
         try:
             self.fall_st._check_hyperstages(fall_hyperstage_noerror)
-        except Exception as exc:
-            assert False, f"'check_hyperstages' raised an exception {exc}"
+        except ValueError as exc:
+            self.fail(f"'check_hyperstages' raised an exception {exc}")
 
     def test_create_default_prior(self) -> None:
         # stratified medical dataset
@@ -952,23 +952,27 @@ class TestChangingDataFrame(unittest.TestCase):
         assert first_set.issubset(second_set)
 
 
-class TestWithDynamicDataset:
-    def setup(self):
-        self.df = pd.read_excel("data/Falls_Dynamic_Data.xlsx")
+class TestWithDynamicDataset(unittest.TestCase):
+    """Dynamic test set test"""
+
+    def setUp(self):
+        self.dataframe = pd.read_excel("data/Falls_Dynamic_Data.xlsx")
 
     def test_single_floret_stages(self):
         """Single floret stages are marked as same stage"""
-        df = self.df[["Residence", "Risk", "Treatment", "Fall", "Outcome"]]
-        st = StagedTree(df)
-        ahc_out = st.calculate_AHC_transitions()
-        ms = [set(merged_sits) for merged_sits in ahc_out["Merged Situations"]]
-        assert {"s9", "s13", "s14"} in ms
+        dataframe = self.dataframe[
+            ["Residence", "Risk", "Treatment", "Fall", "Outcome"]
+        ]
+        s_tree = StagedTree(dataframe)
+        ahc_out = s_tree.calculate_AHC_transitions()
+        merged_sits = [set(merged_sits) for merged_sits in ahc_out["Merged Situations"]]
+        assert {"s9", "s13", "s14"} in merged_sits
 
 
-class TestNumericalDataset:
+class TestNumericalDataset(unittest.TestCase):
     """Test case for purely numerical dataset."""
 
-    def setup(self):
+    def setUp(self):
         """setup for tests"""
         self.data = pd.read_csv("data/Asym.csv")
 
@@ -981,16 +985,18 @@ class TestNumericalDataset:
         ]
         try:
             _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
+        # pylint: disable=broad-except
         except Exception as err:
-            pytest.fail(f"There was an error when using string missing_paths:\n{err}")
+            self.fail(f"There was an error when using string missing_paths:\n{err}")
 
     def test_numerical_missing_paths(self):
         """Missing paths are provided as numerical data, there's no error."""
         missing_paths = [(0, 1, 1, 1), (1, 0, 1, 1), (0, 1, 0, 1)]
         try:
             _ = StagedTree(self.data, sampling_zero_paths=missing_paths)
+        # pylint: disable=broad-except
         except Exception as err:
-            pytest.fail(f"There was an error when using string missing_paths:\n{err}")
+            self.fail(f"There was an error when using string missing_paths:\n{err}")
 
 
 class TestPosteriorProbabilityCalculations(unittest.TestCase):

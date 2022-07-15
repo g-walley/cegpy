@@ -647,6 +647,7 @@ class StagedTree(EventTree):
         return self.ahc_output
 
     def dot_staged_graph(self, edge_info: str = "count"):
+        """Returns the dot graph of the staged tree."""
         return self._generate_dot_graph(edge_info=edge_info)
 
     def create_event_tree_figure(

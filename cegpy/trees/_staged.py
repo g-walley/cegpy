@@ -468,8 +468,7 @@ class StagedTree(EventTree):
                 if all(posteriors[sit_idx]) != 0:
                     stage_probs = posteriors[sit_idx]
                     break
-                else:
-                    stage_probs = []
+                stage_probs = []
 
             total = sum(stage_probs)
             mean_posterior_probs.append(

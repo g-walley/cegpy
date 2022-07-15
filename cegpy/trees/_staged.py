@@ -234,14 +234,14 @@ class StagedTree(EventTree):
                         "must have the same number of outgoing edges."
                     )
 
-    def _check_prior(self, node_prior) -> None:
-        if len(node_prior) != len(self.edge_countset):
+    def _check_prior(self, node_priors_list) -> None:
+        if len(node_priors_list) != len(self.edge_countset):
             raise ValueError(
                 "Number of sub-lists in the list of priors "
                 "must agree with the number of situations."
             )
 
-        for node_idx, node_priors in enumerate(node_prior):
+        for node_idx, node_priors in enumerate(node_priors_list):
             if len(node_priors) != len(self.edge_countset[node_idx]):
                 raise ValueError(
                     "The length of each sub-list in the list of priors "
@@ -308,7 +308,7 @@ class StagedTree(EventTree):
         # Root node is assigned phantom sample (alpha)
         if isinstance(alpha, float):
             alpha = Fraction.from_float(alpha)
-        elif isinstance(alpha, int) or isinstance(alpha, str):
+        elif isinstance(alpha, (int, str)):
             alpha = Fraction.from_float(float(alpha))
         else:
             raise TypeError(

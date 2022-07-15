@@ -1,3 +1,5 @@
+"""Reduced Chain Event Graph"""
+
 from copy import deepcopy
 from typing import List, Set, Tuple
 import networkx as nx
@@ -5,17 +7,23 @@ import networkx as nx
 from cegpy.graphs._ceg import ChainEventGraph
 
 
-class TransporterChainEventGraph:
+class ReducedChainEventGraph:
+    """
+    Class: Reduced Chain Event Graph
+
+    Input: Chain Event Graph object (ChainEventGraph)
+    Output: Provided Certain/Uncertain Nodes/Edges, provides
+    a reduced view of the ChainEventGraph
+    """
 
     _path_list: List[List[Tuple[str]]]
+    _certain_edges = []
+    _uncertain_edges = []
+    _certain_nodes = set()
+    _uncertain_nodes = []
 
     def __init__(self, ceg: ChainEventGraph):
         self._ceg = ceg
-
-        self._certain_edges = []
-        self._uncertain_edges = []
-        self._certain_nodes = set()
-        self._uncertain_nodes = []
         self._path_list = ceg.path_list
 
     def __repr__(self) -> str:

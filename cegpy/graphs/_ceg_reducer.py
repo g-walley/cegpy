@@ -16,6 +16,8 @@ class ChainEventGraphReducer:
     a reduced view of the ChainEventGraph
     """
 
+    # pylint: disable=too-many-instance-attributes
+
     _path_list: List[List[Tuple[str]]]
 
     def __init__(self, ceg: ChainEventGraph):
@@ -67,13 +69,11 @@ class ChainEventGraphReducer:
         """A list of all edges of the ChainEventGraph that have been observed.
 
         `certain_edges` is a list of edge tuples of the form:
-        `[`
-            `certain_edge_1, certain_edge_2`
-        `]`
+        `[edge_1, edge_2, ... edge_n]`
 
         Each edge tuple takes the form:
 
-        ("source_node_name", "destination_node_name", "edge_label")
+        `("source_node_name", "destination_node_name", "edge_label")`
         """
         return self._certain_edges
 
@@ -86,20 +86,29 @@ class ChainEventGraphReducer:
 
         Each edge tuple takes the form:
 
-        ("source_node_name", "destination_node_name", "edge_label")
+        `("source_node_name", "destination_node_name", "edge_label")`
         """
         return self._uncertain_edges
 
     @property
     def certain_nodes(self) -> Set[str]:
+        """A set of all nodes of the ChainEventGraph that have been observed.
+
+        `certain_nodes` is a set of nodes of the form:
+        `{"node_1", "node_2", "node_3", ... "node_n"}`"""
         return self._certain_nodes
 
     @property
     def uncertain_nodes(self) -> List[Set[str]]:
+        """A list of sets of nodes of the ChainEventGraph where there is uncertainty
+        which of the nodes in each set happened.
+        `uncertain_nodes` is a list of sets of nodes of the form:
+        `[{"node_1", "node_2"}, {"node_3", "node_4"}, ...]`"""
         return self._uncertain_nodes
 
     @property
-    def paths(self):
+    def paths(self) -> List:
+        """A list of all paths through the ChainEventGraph"""
         return self._path_list
 
     @property
@@ -118,29 +127,29 @@ class ChainEventGraphReducer:
 
     def clear_all_evidence(self):
         """Clears all evidence provided."""
-        self.certain_edges = []
-        self.uncertain_edges = []
-        self.certain_nodes = set()
-        self.uncertain_nodes = []
+        self._certain_edges = []
+        self._uncertain_edges = []
+        self._certain_nodes = set()
+        self._uncertain_nodes = []
 
-    def add_certain_edge(self, u: str, v: str, label: str):
+    def add_certain_edge(self, src: str, dst: str, label: str):
         """Specify an edge that has been observed."""
-        edge = (u, v, label)
+        edge = (src, dst, label)
         if edge not in self._ceg.edges:
             raise ValueError(
                 f"This edge {edge}, does not exist" f" in the Chain Event Graph."
             )
         self._certain_edges.append(edge)
 
-    def remove_certain_edge(self, u: str, v: str, label: str):
+    def remove_certain_edge(self, src: str, dst: str, label: str):
         """Specify an edge to remove from the certain edges."""
         try:
-            edge = (u, v, label)
+            edge = (src, dst, label)
             self._certain_edges.remove(edge)
-        except ValueError:
+        except ValueError as err:
             raise ValueError(
-                f"Edge {(u, v, label)} not found in the certain " f"edge list."
-            )
+                f"Edge {(src, dst, label)} not found in the certain " f"edge list."
+            ) from err
 
     def add_certain_edge_list(self, edges: List[Tuple[str]]):
         """Specify a list of edges that have all been observed.
@@ -174,8 +183,10 @@ class ChainEventGraphReducer:
         """Specify a set of edges to remove from the uncertain edges."""
         try:
             self._uncertain_edges.remove(edge_set)
-        except ValueError:
-            raise ValueError(f"{edge_set} not found in the uncertain edge list.")
+        except ValueError as err:
+            raise ValueError(
+                f"{edge_set} not found in the uncertain edge list."
+            ) from err
 
     def add_uncertain_edge_set_list(self, edge_sets: List[Set[Tuple[str]]]):
         """Specify a list of sets of edges where one of the edges has
@@ -200,8 +211,10 @@ class ChainEventGraphReducer:
         """Specify a node to be removed from the certain nodes list."""
         try:
             self._certain_nodes.remove(node)
-        except KeyError:
-            raise ValueError(f"Node {node} not found in the set of certain nodes.")
+        except KeyError as err:
+            raise ValueError(
+                f"Node {node} not found in the set of certain nodes."
+            ) from err
 
     def add_certain_node_set(self, nodes: Set[str]):
         """Specify a set of nodes that have been observed."""
@@ -230,8 +243,10 @@ class ChainEventGraphReducer:
         nodes set list."""
         try:
             self._uncertain_nodes.remove(node_set)
-        except ValueError:
-            raise ValueError(f"{node_set} not found in the uncertain node list.")
+        except ValueError as err:
+            raise ValueError(
+                f"{node_set} not found in the uncertain node list."
+            ) from err
 
     def add_uncertain_node_set_list(self, node_sets: List[Set[str]]):
         """Specify a list of sets of nodes where in each set, one of

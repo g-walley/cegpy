@@ -234,22 +234,22 @@ class StagedTree(EventTree):
                         "must have the same number of outgoing edges."
                     )
 
-    def _check_prior(self, prior) -> None:
-        if len(prior) != len(self.edge_countset):
+    def _check_prior(self, node_prior) -> None:
+        if len(node_prior) != len(self.edge_countset):
             raise ValueError(
                 "Number of sub-lists in the list of priors "
                 "must agree with the number of situations."
             )
 
-        for node_idx, node_priors in enumerate(prior):
+        for node_idx, node_priors in enumerate(node_prior):
             if len(node_priors) != len(self.edge_countset[node_idx]):
                 raise ValueError(
                     "The length of each sub-list in the list of priors "
                     "must agree with the number of edges emanating from "
                     "its corresponding situation."
                 )
-            for p in node_priors:
-                if p < 0:
+            for node_prior in node_priors:
+                if node_prior < 0:
                     raise ValueError("All priors must be non-negative.")
 
     def _store_params(self, prior, alpha, hyperstage) -> None:

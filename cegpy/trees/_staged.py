@@ -435,16 +435,13 @@ class StagedTree(EventTree):
     def _sort_list(self, list_of_tuples) -> list:
         """function to sort a list of lists to remove repetitions"""
 
-        for l1_idx in range(0, len(list_of_tuples)):
-            for l2_idx in range(l1_idx + 1, len(list_of_tuples)):
-                tup_1 = list_of_tuples[l1_idx]
-                tup_2 = list_of_tuples[l2_idx]
+        for idx_1, tup_1 in enumerate(list_of_tuples):
+            for idx_2, tup_2 in enumerate(list_of_tuples):
                 tups_intersect = set(tup_1) & set(tup_2)
-
                 if tups_intersect:
                     union = tuple(set(tup_1) | set(tup_2))
-                    list_of_tuples[l1_idx] = []
-                    list_of_tuples[l2_idx] = union
+                    list_of_tuples[idx_1] = []
+                    list_of_tuples[idx_2] = union
 
         new_list_of_tuples = [elem for elem in list_of_tuples if elem != []]
 

@@ -408,8 +408,7 @@ class EventTree(nx.MultiDiGraph):
         for tup in sampling_zero_paths:
             if not isinstance(tup, tuple):
                 return None
-            else:
-                coerced_sampling_zero_paths.append(tuple([str(elem) for elem in tup]))
+            coerced_sampling_zero_paths.append(tuple([str(elem) for elem in tup]))
 
         return coerced_sampling_zero_paths
 

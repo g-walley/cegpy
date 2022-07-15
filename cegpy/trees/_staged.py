@@ -303,7 +303,7 @@ class StagedTree(EventTree):
 
         logger.info("Generating default prior")
         default_prior = [0] * len(self.situations)
-        sample_size_at_node = dict()
+        sample_size_at_node = {}
 
         # Root node is assigned phantom sample (alpha)
         if isinstance(alpha, float):

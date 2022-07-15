@@ -496,7 +496,7 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
-    def _execute_AHC(self, hyperstage=None) -> Tuple[List, float, List]:
+    def _execute_ahc(self, hyperstage=None) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:
             hyperstage = deepcopy(self.hyperstage)
@@ -634,7 +634,7 @@ class StagedTree(EventTree):
 
         self._store_params(prior, alpha, hyperstage)
 
-        loglikelihood, merged_situations = self._execute_AHC()
+        loglikelihood, merged_situations = self._execute_ahc()
 
         self._mark_nodes_with_stage_number(merged_situations)
 

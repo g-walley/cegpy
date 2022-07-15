@@ -354,13 +354,10 @@ class ChainEventGraphReducer:
         self.vertices = vertices
 
     def _filter_edge(self, src, dst, label) -> bool:
-        if (src, dst, label) in self.edges:
-            return True
-        else:
-            return False
+        return bool((src, dst, label) in self.edges)
 
     def _filter_node(self, node) -> bool:
-        return True if node in self.vertices else False
+        return bool(node in self.vertices)
 
     def _propagate_reduced_graph_probabilities(self, graph: ChainEventGraph) -> None:
         sink = graph.sink

@@ -23,7 +23,7 @@ class TestLogging:
         med_df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
@@ -33,7 +33,7 @@ class TestLogging:
 
         # non-stratified dataset
         fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
+            Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
         )
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
@@ -82,7 +82,7 @@ class TestStagedTrees(unittest.TestCase):
         med_df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
@@ -92,7 +92,7 @@ class TestStagedTrees(unittest.TestCase):
 
         # non-stratified dataset
         fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
+            Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
         )
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
@@ -870,7 +870,7 @@ class TestChangingDataFrame(unittest.TestCase):
         med_df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)
@@ -880,7 +880,7 @@ class TestChangingDataFrame(unittest.TestCase):
         self.med_st.calculate_AHC_transitions()
         # non-stratified dataset
         fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
+            Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
         )
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)

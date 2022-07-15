@@ -28,7 +28,7 @@ class TestMockedCEGMethods:
         df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
 
         self.staged = StagedTree(
@@ -53,7 +53,7 @@ class TestUnitCEG(unittest.TestCase):
         df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
 
         self.staged = StagedTree(
@@ -572,7 +572,7 @@ class TestEdgeInfoAttributes:
         med_df_path = (
             Path(__file__)
             .resolve()
-            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
         self.med_s_z_paths = None
         self.med_df = pd.read_excel(med_df_path)

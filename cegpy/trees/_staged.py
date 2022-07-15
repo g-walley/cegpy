@@ -450,8 +450,8 @@ class StagedTree(EventTree):
 
         if new_list_of_tuples == list_of_tuples:
             return new_list_of_tuples
-        else:
-            return self._sort_list(new_list_of_tuples)
+
+        return self._sort_list(new_list_of_tuples)
 
     def _calculate_mean_posterior_probs(
         self,

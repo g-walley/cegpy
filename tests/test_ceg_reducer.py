@@ -282,7 +282,7 @@ class TestCEGReducer(unittest.TestCase):
         certain_nodes = {"w1"}
         self.rceg.add_uncertain_edge_set(uncertain_edges)
         self.rceg.add_certain_node_set(certain_nodes)
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
 
         try:
             rceg_out.create_figure("out/test_propagation_after.pdf")
@@ -297,7 +297,7 @@ class TestCEGReducer(unittest.TestCase):
         }
         self.rceg.add_uncertain_edge_set(uncertain_edges)
         self.rceg.add_certain_node("w1")
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         assert rceg_out.edges["w0", "w1", "a"]["probability"] == 0.5
         assert rceg_out.edges["w0", "w1", "b"]["probability"] == 0.5
         assert rceg_out.edges["w1", "w2", "c"]["probability"] == (
@@ -320,7 +320,7 @@ class TestCEGReducer(unittest.TestCase):
     def test_propagation_three(self) -> None:
         uncertain_nodes = {"w3", "w6"}
         self.rceg.add_uncertain_node_set(uncertain_nodes)
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         try:
             rceg_out.create_figure("out/test_propagation_three.pdf")
         except InvocationException:
@@ -382,7 +382,7 @@ class TestCEGReducer(unittest.TestCase):
         ]
         self.rceg.add_uncertain_edge_set_list(uncertain_edges)
 
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         assert rceg_out.edges["w0", "w1", "a"]["probability"] == 0.5
         assert rceg_out.edges["w0", "w1", "b"]["probability"] == 0.5
         assert rceg_out.edges["w1", "w2", "c"]["probability"] == (
@@ -502,7 +502,7 @@ class TestReducedCEGTwo(object):
         uncertain_nodes = {"w4", "w5"}
         self.rceg.add_uncertain_node_set(uncertain_nodes)
 
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         try:
             rceg_out.create_figure("out/prop_two_test_propagation_one.pdf")
         except InvocationException:
@@ -545,7 +545,7 @@ class TestReducedCEGTwo(object):
         ]
 
         self.rceg.add_uncertain_node_set_list(uncertain_nodes)
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         try:
             rceg_out.create_figure("out/prop_two_test_propagation_two.pdf")
         except InvocationException:
@@ -595,7 +595,7 @@ class TestReducedCEGTwo(object):
         }
 
         self.rceg.add_uncertain_edge_set(uncertain_edges)
-        rceg_out = self.rceg.reduced
+        rceg_out = self.rceg.graph
         try:
             rceg_out.create_figure("out/prop_two_test_propagation_three.pdf")
         except InvocationException:

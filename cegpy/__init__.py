@@ -11,7 +11,7 @@ See documentation of more information.
 import logging
 
 from cegpy.graphs._ceg import ChainEventGraph
-from cegpy.graphs._reduced_ceg import ReducedChainEventGraph
+from cegpy.graphs._ceg_reducer import ChainEventGraphReducer
 from cegpy.trees._event import EventTree
 from cegpy.trees._staged import StagedTree
 

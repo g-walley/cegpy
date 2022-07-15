@@ -2,10 +2,10 @@ import unittest
 import networkx as nx
 import pytest
 from pydotplus.graphviz import InvocationException
-from cegpy import ChainEventGraph, ReducedChainEventGraph
+from cegpy import ChainEventGraph, ChainEventGraphReducer
 
 
-class TestReducedCEG(unittest.TestCase):
+class TestCEGReducer(unittest.TestCase):
     def setUp(self):
         G = nx.MultiDiGraph()
         self.init_nodes = [
@@ -49,7 +49,7 @@ class TestReducedCEG(unittest.TestCase):
             "Loglikelihood": 1234.5678,
         }
         H = ChainEventGraph(G, generate=False)
-        self.rceg = ReducedChainEventGraph(H)
+        self.rceg = ChainEventGraphReducer(H)
 
         self.rceg._ceg.edges["w0", "w1", "a"]["probability"] = 0.3
         self.rceg._ceg.edges["w0", "w1", "b"]["probability"] = 0.3
@@ -477,7 +477,7 @@ class TestReducedCEGTwo(object):
             "Loglikelihood": 1234.5678,
         }
         H = ChainEventGraph(G, generate=False)
-        self.rceg = ReducedChainEventGraph(H)
+        self.rceg = ChainEventGraphReducer(H)
         self.rceg._ceg.edges["w0", "w1", "a"]["probability"] = 0.3
         self.rceg._ceg.edges["w0", "w2", "b"]["probability"] = 0.4
         self.rceg._ceg.edges["w0", "w3", "c"]["probability"] = 0.3

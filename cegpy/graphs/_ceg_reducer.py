@@ -7,7 +7,7 @@ import networkx as nx
 from cegpy.graphs._ceg import ChainEventGraph
 
 
-class ReducedChainEventGraph:
+class ChainEventGraphReducer:
     """
     Class: Reduced Chain Event Graph
 
@@ -17,14 +17,14 @@ class ReducedChainEventGraph:
     """
 
     _path_list: List[List[Tuple[str]]]
-    _certain_edges = []
-    _uncertain_edges = []
-    _certain_nodes = set()
-    _uncertain_nodes = []
 
     def __init__(self, ceg: ChainEventGraph):
         self._ceg = ceg
         self._path_list = ceg.path_list
+        self._certain_edges = []
+        self._uncertain_edges = []
+        self._certain_nodes = set()
+        self._uncertain_nodes = []
 
     def __repr__(self) -> str:
         return (
@@ -43,7 +43,7 @@ class ReducedChainEventGraph:
             else:
                 base_str += "   Edges = [\n"
                 for edge in edges:
-                    base_str += "     %s,\n" % (str(edge))
+                    base_str += f"     {str(edge)},\n"
                 base_str += "   ]\n"
 
             if nodes == set():
@@ -51,7 +51,7 @@ class ReducedChainEventGraph:
             else:
                 base_str += "   Nodes = {\n"
                 for node in nodes:
-                    base_str += "     '%s',\n" % (str(node))
+                    base_str += f"     {str(node)},\n"
                 base_str += "   }\n\n"
             return base_str
 
@@ -64,10 +64,30 @@ class ReducedChainEventGraph:
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
+        """A list of all edges of the ChainEventGraph that have been observed.
+
+        `certain_edges` is a list of edge tuples of the form:
+        `[`
+            `certain_edge_1, certain_edge_2`
+        `]`
+
+        Each edge tuple takes the form:
+
+        ("source_node_name", "destination_node_name", "edge_label")
+        """
         return self._certain_edges
 
     @property
     def uncertain_edges(self) -> List[Tuple[str]]:
+        """A list of sets of edges of the ChainEventGraph which might have occured.
+        `uncertain_edges` is a list of sets of edge tuples of the form:
+
+        `[{(a, b, label), (a, c, label)}, {(x, y, label), (x, z, label)}]`
+
+        Each edge tuple takes the form:
+
+        ("source_node_name", "destination_node_name", "edge_label")
+        """
         return self._uncertain_edges
 
     @property
@@ -83,15 +103,25 @@ class ReducedChainEventGraph:
         return self._path_list
 
     @property
-    def reduced(self):
-        return self._create_reduced_graph()
+    def graph(self) -> ChainEventGraph:
+        """Returns the reduced ChainEventGraph where the"""
+        self._update_path_list()
+        self._update_edges_and_vertices()
+        subgraph_view = nx.subgraph_view(
+            G=self._ceg, filter_node=self._filter_node, filter_edge=self._filter_edge
+        )
+        reduced_graph = ChainEventGraph(subgraph_view, generate=False).copy()
+
+        self._propagate_reduced_graph_probabilities(reduced_graph)
+
+        return reduced_graph
 
     def clear_all_evidence(self):
         """Clears all evidence provided."""
-        self._certain_edges = []
-        self._uncertain_edges = []
-        self._certain_nodes = set()
-        self._uncertain_nodes = []
+        self.certain_edges = []
+        self.uncertain_edges = []
+        self.certain_nodes = set()
+        self.uncertain_nodes = []
 
     def add_certain_edge(self, u: str, v: str, label: str):
         """Specify an edge that has been observed."""
@@ -358,17 +388,5 @@ class ReducedChainEventGraph:
             pred_node_emphasis = graph.nodes[u]["emphasis"]
             probability = edge_potential / pred_node_emphasis
             graph.edges[(u, v, k)]["probability"] = probability
-
-    def _create_reduced_graph(self) -> ChainEventGraph:
-        self._update_path_list()
-        self._update_edges_and_vertices()
-        subgraph_view = nx.subgraph_view(
-            G=self._ceg, filter_node=self._filter_node, filter_edge=self._filter_edge
-        )
-        subgraph = ChainEventGraph(subgraph_view, generate=False).copy()
-
-        self._propagate_reduced_graph_probabilities(subgraph)
-
-        return subgraph
 
     # Deal with uncertain edges that are in the same path

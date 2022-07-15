@@ -478,20 +478,20 @@ class StagedTree(EventTree):
         return mean_posterior_probs
 
     def _independent_hyperstage_generator(
-        self, hyperstage: List[List]
+        self, hyperstages: List[List]
     ) -> List[List[List]]:
         """Spit out the next hyperstage that can be dealt with
         independently."""
-        new_hyperstages = [[hyperstage[0]]]
+        new_hyperstages = [[hyperstages[0]]]
 
-        for sublist in hyperstage[1:]:
+        for sublist in hyperstages[1:]:
             hs_to_add = [sublist]
 
-            for hs in new_hyperstages.copy():
-                for other_sublist in hs:
+            for hyperstage in new_hyperstages.copy():
+                for other_sublist in hyperstage:
                     if not set(other_sublist).isdisjoint(set(sublist)):
-                        hs_to_add.extend(hs)
-                        new_hyperstages.remove(hs)
+                        hs_to_add.extend(hyperstage)
+                        new_hyperstages.remove(hyperstage)
 
             new_hyperstages.append(hs_to_add)
 

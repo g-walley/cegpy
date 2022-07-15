@@ -816,7 +816,7 @@ class TestStagedTrees(unittest.TestCase):
 
         actual_hyperstages = set()
         for hyperstage in self.fall_st._independent_hyperstage_generator(
-            hyperstage=example_hyperstage
+            hyperstages=example_hyperstage
         ):
             actual_hyperstages.add(
                 frozenset([frozenset(sublist) for sublist in hyperstage])

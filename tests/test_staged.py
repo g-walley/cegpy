@@ -64,7 +64,7 @@ class TestLogging:
         _ = self.fall_st.create_figure(filename=None, edge_info="prob")
         assert msg in caplog.text, "Expected log message not logged."
 
-    def test_run_AHC_before_figure(self, caplog) -> None:
+    def test_run_ahc_before_figure(self, caplog) -> None:
         """Tests expected error message is in the log when running without
         running AHC"""
         try:

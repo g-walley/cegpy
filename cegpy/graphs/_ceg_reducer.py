@@ -278,8 +278,8 @@ class ChainEventGraphReducer:
         to_remove = []
         for node in self.certain_nodes:
             for path in paths:
-                for (u, v, _) in path:
-                    if node == u or node == v:
+                for (src, dst, _) in path:
+                    if node in (src, dst):
                         break
                 else:
                     if path not in to_remove:
@@ -310,8 +310,8 @@ class ChainEventGraphReducer:
         for node_set in self.uncertain_nodes:
             for path in paths:
                 node_found = False
-                for (u, v, _) in path:
-                    if u in node_set:
+                for (src, _, _) in path:
+                    if src in node_set:
                         if node_found:
                             if path not in to_remove:
                                 to_remove.append(path)
@@ -345,25 +345,22 @@ class ChainEventGraphReducer:
         vertices = set()
 
         for path in self.paths:
-            for (u, v, k) in path:
-                edges.add((u, v, k))
-                vertices.add(u)
-                vertices.add(v)
+            for (src, dst, label) in path:
+                edges.add((src, dst, label))
+                vertices.add(src)
+                vertices.add(dst)
 
         self.edges = edges
         self.vertices = vertices
 
-    def _filter_edge(self, u, v, k) -> bool:
-        if (u, v, k) in self.edges:
+    def _filter_edge(self, src, dst, label) -> bool:
+        if (src, dst, label) in self.edges:
             return True
         else:
             return False
 
-    def _filter_node(self, n) -> bool:
-        if n in self.vertices:
-            return True
-        else:
-            return False
+    def _filter_node(self, node) -> bool:
+        return True if node in self.vertices else False
 
     def _propagate_reduced_graph_probabilities(self, graph: ChainEventGraph) -> None:
         sink = graph.sink

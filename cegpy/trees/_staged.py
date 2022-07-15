@@ -155,8 +155,7 @@ class StagedTree(EventTree):
             posterior = nx.get_edge_attributes(self, "posterior")
             if posterior == {}:
                 raise AttributeError("Posterior not yet set.")
-            else:
-                return posterior
+            return posterior
         except AttributeError:
             for edge in self.edges:
                 edge_dict = self.edges[edge]

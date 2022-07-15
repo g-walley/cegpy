@@ -383,12 +383,14 @@ class StagedTree(EventTree):
             )
         return edge_countset
 
-    def _calculate_lg_of_sum(self, array) -> float:
+    @staticmethod
+    def _calculate_lg_of_sum(array) -> float:
         """function to calculate log gamma of the sum of an array"""
         array = [float(x) for x in array]
         return scipy.special.gammaln(sum(array))
 
-    def _calculate_sum_of_lg(self, array) -> float:
+    @staticmethod
+    def _calculate_sum_of_lg(array) -> float:
         """function to calculate log gamma of each element of an array"""
         return sum([scipy.special.gammaln(float(x)) for x in array])
 

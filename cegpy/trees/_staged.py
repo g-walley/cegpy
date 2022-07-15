@@ -477,9 +477,8 @@ class StagedTree(EventTree):
 
         return mean_posterior_probs
 
-    def _independent_hyperstage_generator(
-        self, hyperstages: List[List]
-    ) -> List[List[List]]:
+    @staticmethod
+    def _independent_hyperstage_generator(hyperstages: List[List]) -> List[List[List]]:
         """Spit out the next hyperstage that can be dealt with
         independently."""
         new_hyperstages = [[hyperstages[0]]]

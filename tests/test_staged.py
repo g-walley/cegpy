@@ -13,10 +13,12 @@ from cegpy import StagedTree
 from cegpy.trees._staged import _calculate_mean_posterior_probs
 
 
-class TestStagedTrees(unittest.TestCase):
-    """Tests for staged trees with a stratified and non stratified dataset"""
+class TestLogging:
+    """Tests logging in stagedtree"""
 
-    def setUp(self):
+    def setup(self):
+        """Test setup"""
+        # pylint: disable=attribute-defined-outside-init
         # stratified dataset
         med_df_path = (
             Path(__file__)
@@ -61,6 +63,43 @@ class TestStagedTrees(unittest.TestCase):
         self.fall_st.calculate_AHC_transitions()
         _ = self.fall_st.create_figure(filename=None, edge_info="prob")
         assert msg in caplog.text, "Expected log message not logged."
+
+    def test_run_AHC_before_figure(self, caplog) -> None:
+        """Tests expected error message is in the log when running without
+        running AHC"""
+        try:
+            self.med_st.create_figure()
+            assert "PLEASE RUN AHC" in caplog.text
+        except InvocationException:
+            pass
+
+
+class TestStagedTrees(unittest.TestCase):
+    """Tests for staged trees with a stratified and non stratified dataset"""
+
+    def setUp(self):
+        # stratified dataset
+        med_df_path = (
+            Path(__file__)
+            .resolve()
+            .parent.parent.joinpath("data/medical_dm_modified.xlsx")
+        )
+        self.med_s_z_paths = None
+        self.med_df = pd.read_excel(med_df_path)
+        self.med_st = StagedTree(
+            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
+        )
+
+        # non-stratified dataset
+        fall_df_path = (
+            Path(__file__).resolve().parent.parent.joinpath("data/Falls_Data.xlsx")
+        )
+        self.fall_s_z_paths = None
+        self.fall_df = pd.read_excel(fall_df_path)
+        self.fall_st = StagedTree(
+            dataframe=self.fall_df,
+            sampling_zero_paths=self.fall_s_z_paths,
+        )
 
     def test_check_hyperstage(self) -> None:
         # stratified medical dataset
@@ -821,13 +860,6 @@ class TestStagedTrees(unittest.TestCase):
         colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072"]
         with pytest.raises(IndexError):
             self.fall_st.calculate_AHC_transitions(colour_list=colours)
-
-    def test_run_AHC_before_figure(self, caplog) -> None:
-        try:
-            self.med_st.create_figure()
-            assert "PLEASE RUN AHC" in caplog.text
-        except InvocationException:
-            pass
 
 
 class TestChangingDataFrame(unittest.TestCase):

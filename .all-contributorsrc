@@ -1,0 +1,62 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "g-walley",
+      "name": "Gareth Walley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83537018?v=4",
+      "profile": "https://github.com/g-walley",
+      "contributions": [
+        "code",
+        "doc",
+        "design",
+        "test",
+        "maintenance"
+      ]
+    },
+    {
+      "login": "peterrhysstrong",
+      "name": "Peter Strong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43751009?v=4",
+      "profile": "https://github.com/peterrhysstrong",
+      "contributions": [
+        "code",
+        "bug",
+        "example",
+        "test"
+      ]
+    },
+    {
+      "login": "Kaasiak",
+      "name": "Kasia Kobalczyk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62558622?v=4",
+      "profile": "https://github.com/Kaasiak",
+      "contributions": [
+        "code",
+        "bug",
+        "test"
+      ]
+    },
+    {      "login": "ashenvi10",
+      "name": "Aditi Shenvi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39489147?v=4",
+      "profile": "https://ashenvi10.github.io/",
+      "contributions": [
+        "code",
+        "test",
+        "bug",
+        "projectManagement"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "cegpy",
+  "projectOwner": "g-walley",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

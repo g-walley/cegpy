@@ -1,6 +1,8 @@
 # Move old distribution to the old folder.
-mkdir --parents .dist_old/; mv dist/* $_
+mv dist/* .dist_old/
+
 # build the package
-python -m build
+python3 -m build
+
 # Upload new package
-python -m twine upload --repository testpypi dist/*
+python3 -m twine upload --repository testpypi dist/*

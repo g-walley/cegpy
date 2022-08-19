@@ -32,4 +32,3 @@ data/tic-tac-toe.xlsx
 .tox/
 .coverage
 .coverage.*
-cegpy-binder

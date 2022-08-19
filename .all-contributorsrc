@@ -31,7 +31,17 @@
       ]
     },
     {
-      "login": "ashenvi10",
+      "login": "Kaasiak",
+      "name": "Kasia Kobalczyk",
+      "avatar_url": "https://avatars.githubusercontent.com/u/62558622?v=4",
+      "profile": "https://github.com/Kaasiak",
+      "contributions": [
+        "code",
+        "bug",
+        "test"
+      ]
+    },
+    {      "login": "ashenvi10",
       "name": "Aditi Shenvi",
       "avatar_url": "https://avatars.githubusercontent.com/u/39489147?v=4",
       "profile": "https://ashenvi10.github.io/",

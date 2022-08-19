@@ -17,6 +17,18 @@
         "test",
         "maintenance"
       ]
+    },
+    {
+      "login": "peterrhysstrong",
+      "name": "Peter Strong",
+      "avatar_url": "https://avatars.githubusercontent.com/u/43751009?v=4",
+      "profile": "https://github.com/peterrhysstrong",
+      "contributions": [
+        "code",
+        "bug",
+        "example",
+        "test"
+      ]
     }
   ],
   "contributorsPerLine": 7,

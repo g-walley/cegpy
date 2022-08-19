@@ -29,6 +29,18 @@
         "example",
         "test"
       ]
+    },
+    {
+      "login": "ashenvi10",
+      "name": "Aditi Shenvi",
+      "avatar_url": "https://avatars.githubusercontent.com/u/39489147?v=4",
+      "profile": "https://ashenvi10.github.io/",
+      "contributions": [
+        "code",
+        "test",
+        "bug",
+        "projectManagement"
+      ]
     }
   ],
   "contributorsPerLine": 7,

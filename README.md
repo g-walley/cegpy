@@ -8,6 +8,16 @@ Cegpy (/segpaɪ/) is a Python package for working with Chain Event Graphs. It su
 
 It is built on top of the Python network modelling package NetworkX.
 
+## Documentation
+Documentation is hosted on [read the docs](https://cegpy.readthedocs.io/en/latest/).
+
+## Example Binder
+Use cases have been demonstrated in a [binder](https://github.com/peterrhysstrong/cegpy-binder).
+
+The following image is an example of a chain event graph that is produced by this pacakge:
+
+![Image](Example_CEG.png)
+
 ## Contributors ✨
 
 Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):

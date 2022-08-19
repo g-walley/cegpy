@@ -1,6 +1,6 @@
 # cegpy
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 
@@ -18,6 +18,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <table>
   <tr>
     <td align="center"><a href="https://github.com/g-walley"><img src="https://avatars.githubusercontent.com/u/83537018?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Gareth Walley</b></sub></a><br /><a href="https://github.com/g-walley/cegpy/commits?author=g-walley" title="Code">💻</a> <a href="https://github.com/g-walley/cegpy/commits?author=g-walley" title="Documentation">📖</a> <a href="#design-g-walley" title="Design">🎨</a> <a href="https://github.com/g-walley/cegpy/commits?author=g-walley" title="Tests">⚠️</a> <a href="#maintenance-g-walley" title="Maintenance">🚧</a></td>
+    <td align="center"><a href="https://github.com/peterrhysstrong"><img src="https://avatars.githubusercontent.com/u/43751009?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Peter Strong</b></sub></a><br /><a href="https://github.com/g-walley/cegpy/commits?author=peterrhysstrong" title="Code">💻</a> <a href="https://github.com/g-walley/cegpy/issues?q=author%3Apeterrhysstrong" title="Bug reports">🐛</a> <a href="#example-peterrhysstrong" title="Examples">💡</a> <a href="https://github.com/g-walley/cegpy/commits?author=peterrhysstrong" title="Tests">⚠️</a></td>
   </tr>
 </table>
 

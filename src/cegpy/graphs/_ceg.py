@@ -32,10 +32,22 @@ class CegAlreadyGenerated(Exception):
 
 class ChainEventGraph(nx.MultiDiGraph):
     """
-    Class: Chain Event Graph
+    Representation of a Chain Event Graph.
 
-    Input: Staged tree object (StagedTree)
-    Output: Chain event graphs
+    A Chain Event Graph reduces a staged tree.
+
+    The class is an extension of NetworkX MultiDiGraph.
+
+    :param staged_tree: A staged tree object where the stages have been calculated.
+    :type staged_tree: StagedTree
+
+    :param node_prefix: The prefix that is used for the nodes in the Chain Event Graph.
+        Default = "w"
+    :type node_prefix: str
+
+    :param generate: Automatically generate the Chain Event Graph upon creation of the
+        object. Default = True.
+    :type generate: bool
     """
 
     _edge_attributes: List = ["count", "prior", "posterior", "probability"]
@@ -49,10 +61,9 @@ class ChainEventGraph(nx.MultiDiGraph):
         staged_tree: Optional[StagedTree] = None,
         node_prefix: str = "w",
         generate: bool = True,
-        **attr,
     ):
         self.ahc_output = deepcopy(getattr(staged_tree, "ahc_output", {}))
-        super().__init__(staged_tree, **attr)
+        super().__init__(staged_tree, attr={})
         self.node_prefix = node_prefix
         self._stages = {}
         self.staged_root = staged_tree.root if staged_tree is not None else None
@@ -62,17 +73,26 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     @property
     def sink(self) -> str:
-        """Sink node name as a string."""
+        """
+        :return: Sink node name
+        :rtype: str
+        """
         return f"{self.node_prefix}_infinity"
 
     @property
     def root(self) -> str:
-        """Root node name as a string."""
+        """
+        :return: Root node name
+        :rtype: str
+        """
         return f"{self.node_prefix}0"
 
     @property
     def stages(self) -> Mapping[str, Set[str]]:
-        """Mapping of stages to constituent nodes."""
+        """
+        :return: Mapping of stages to constituent nodes.
+        :rtype: Mapping[str, Set[str]]
+        """
         node_stages = dict(self.nodes(data="stage", default=None))
         stages = defaultdict(set)
         for node, stage in node_stages.items():
@@ -81,19 +101,20 @@ class ChainEventGraph(nx.MultiDiGraph):
         return stages
 
     @property
-    def path_list(self) -> List[Tuple[str]]:
-        """All the paths through the CEG, as a list of edge tuples."""
+    def path_list(self) -> List[List[Tuple[str]]]:
+        """
+        :return: All the paths through the CEG, as a list of lists of edge tuples.
+        :rtype: List[List[Tuple[str]]]"""
         path_list: List[Tuple[str]] = list(
             nx.all_simple_edge_paths(self, self.root, self.sink)
         )
         return path_list
 
-    def generate(self):
+    def generate(self) -> None:
         """
-        Given the output of the AHC algorithm, this function identifies
-        the positions i.e. the vertices of the CEG and the edges of the CEG
+        Identifies the positions i.e. the nodes of the CEG and the edges of the CEG
         along with their edge labels and edge counts. Here we use the
-        algorithm in our paper with the optimal stopping time.
+        algorithm from our paper with the optimal stopping time.
         """
         if self.generated:
             raise CegAlreadyGenerated("CEG has already been generated.")
@@ -171,7 +192,14 @@ class ChainEventGraph(nx.MultiDiGraph):
                         nodes_to_merge.add(new_pair)
 
     def dot_graph(self, edge_info: str = "probability") -> pdp.Dot:
-        """Dot representation of the CEG."""
+        """Returns Dot graph representation of the CEG.
+        :param edge_info: Optional - Chooses which summary measure to be displayed
+        on edges. Defaults to "count".
+        Options: ["count", "prior", "posterior", "probability"]
+
+        :type edge_info: str
+        :return: A graphviz Dot representation of the graph.
+        :rtype: pydotplus.Dot"""
         return self._generate_dot_graph(edge_info=edge_info)
 
     def _generate_dot_graph(self, edge_info="probability"):
@@ -227,10 +255,26 @@ class ChainEventGraph(nx.MultiDiGraph):
         filename=None,
         edge_info: str = "probability",
     ) -> Union[Image, None]:
-        """
-        Draws the chain event graph representation of the stage tree,
-        and saves it to "<filename>.filetype". Supports any filetype that
-        graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
+        """Draws the coloured chain event graph for the staged_tree.
+
+        :param filename: Optional - When provided, file is saved to the filename,
+            local to the current working directory.
+            e.g. if filename = "output/ceg.svg", the file will be saved to:
+            cwd/output/ceg.svg
+            Otherwise, if function is called inside an interactive notebook, image
+            will be displayed in the notebook, even if filename is omitted.
+
+            Supports any filetype that graphviz supports. e.g: "ceg.png" or
+            "ceg.svg" etc.
+
+        :type filename: str
+
+        :param edge_info: Optional - Chooses which summary measure to be displayed on
+            edges. Value can take: "count", "prior", "posterior", "probability"
+        :type edge_info: str
+
+        :return: The event tree Image object.
+        :rtype: IPython.display.Image or None
         """
         graph = self.dot_graph(edge_info=edge_info)
         if filename is None:

@@ -1,17 +1,26 @@
 .. cegpy documentation master file, created by
-   sphinx-quickstart on Sat Oct  2 17:20:26 2021.
+   sphinx-quickstart on Tue Aug 16 07:45:48 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to cegpy's documentation!
+Welcome to Cegpy's documentation!
 =================================
+**Cegpy** (/segpaɪ/) is a Python package for working with Chain Event Graphs. It supports learning the graphical structure of a Chain Event Graph from data, encoding of parametric and structural priors, estimating its parameters, and performing inference.
+
+It is built on top of the Python network modelling package NetworkX.
+
+.. note::
+
+   Check out the :doc:`usage` section for further information, including how to :ref:`install <installation>` the project.
+
+.. note::
+
+   After a year of development, we are releasing v1.0!
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
-
-
+   usage
+   api
 
 Indices and tables
 ==================
@@ -19,24 +28,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-=================
-Event Tree Class
-=================
-
-.. automodule:: cegpy.trees.event
-   :members:
-
-=================
-Staged Tree Class
-=================
-
-.. automodule:: cegpy.trees.staged
-   :members:
-
-=======================
-Chain Event Graph Class
-=======================
-
-.. automodule:: cegpy.graphs.ceg
-   :members:

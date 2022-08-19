@@ -8,13 +8,14 @@ Chain Event Graphs.
 See documentation of more information.
 
 """
-from .utilities.util import *
-from .trees.event import *
-from .trees.staged import *
-from .graphs.ceg import *
 import logging
-# from graphs import ctceg
 
+from cegpy.graphs._ceg import ChainEventGraph
+from cegpy.graphs._ceg_reducer import ChainEventGraphReducer
+from cegpy.trees._event import EventTree
+from cegpy.trees._staged import StagedTree
 
 logging.basicConfig(level=logging.ERROR)
-logger = logging.getLogger('cegpy')
+logger = logging.getLogger("cegpy")
+
+__version__ = "1.0.0"

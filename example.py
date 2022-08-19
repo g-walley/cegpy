@@ -28,12 +28,13 @@ df = pd.read_excel(df_path)
 med_et = EventTree(dataframe=df)
 med_st = StagedTree(dataframe=df)
 
-et_fig_path = create_path('out/medical_dm_event_tree', True, 'pdf')
-st_fig_path = create_path('out/medical_dm_staged_tree', True, 'pdf')
+et_fig_path = create_path('out/medical_dm_event_tree', False, 'pdf')
+st_fig_path = create_path('out/medical_dm_staged_tree', False, 'pdf')
+et_from_st_fig_path = create_path('out/medical_dm_event_tree_from_staged', False, 'pdf')
 med_et.create_figure(et_fig_path)
 med_st.calculate_AHC_transitions()
 med_st.create_figure(st_fig_path)
-
+med_st.create_figure(et_from_st_fig_path, staged=False)
 
 # FALLS
 df_path = Path(__file__).resolve().parent.joinpath(
@@ -46,14 +47,16 @@ colours = [
     '#8dd3c7', '#ffffb3', '#bebada', '#fb8072',
     '#80b1d3', '#fdb462', '#b3de69', '#fccde5'
 ]
-et_fig_path = create_path('out/falls_event_tree', True, 'pdf')
-st_fig_path = create_path('out/falls_staged_tree', True, 'pdf')
+et_fig_path = create_path('out/falls_event_tree', False, 'pdf')
+st_fig_path = create_path('out/falls_staged_tree', False, 'pdf')
+et_from_st_fig_path = create_path('out/falls_event_tree_from_staged', False, 'pdf')
 falls_et.create_figure(et_fig_path)
 falls_st.calculate_AHC_transitions(colour_list=colours)
 falls_st.create_figure(st_fig_path)
+falls_st.create_figure(et_from_st_fig_path, staged=False)
 
-# get the dot graph
-falls_st_dot = falls_st.dot_graph
+# get the dot staged tree graph
+falls_st_dot = falls_st.dot_staged_graph
 # modify nodes and edges
 falls_st_dot.get_edge("s1", "s5")[0].set_style("dotted")
 falls_st_dot.get_edge("s1", "s6")[0].set_style("dotted")

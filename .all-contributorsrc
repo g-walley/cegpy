@@ -1,0 +1,28 @@
+{
+  "files": [
+    "README.md"
+  ],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [
+    {
+      "login": "g-walley",
+      "name": "Gareth Walley",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83537018?v=4",
+      "profile": "https://github.com/g-walley",
+      "contributions": [
+        "code",
+        "doc",
+        "design",
+        "test",
+        "maintenance"
+      ]
+    }
+  ],
+  "contributorsPerLine": 7,
+  "projectName": "cegpy",
+  "projectOwner": "g-walley",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "skipCi": true
+}

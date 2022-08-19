@@ -1,7 +1,7 @@
 """cegpy event tree."""
 
 from collections import defaultdict
-from typing import List, Mapping, Optional, Tuple
+from typing import Dict, List, Mapping, Optional, Tuple, Union
 import logging
 import textwrap
 import numpy as np
@@ -32,8 +32,8 @@ class EventTree(nx.MultiDiGraph):
 
     :param sampling_zero_paths: Optional - Paths to sampling
         zeros.
-        Format is as follows: \
-            [('edge_1',), ('edge_1', 'edge_2'), ...]
+
+        Format is as follows: [('edge_1',), ('edge_1', 'edge_2'), ...]
 
         If no paths are specified, default setting is that no sampling zero paths
         are created.
@@ -142,21 +142,33 @@ class EventTree(nx.MultiDiGraph):
 
     @property
     def root(self) -> str:
-        """Root node of the event tree.
-        Currently hard coded to 's0'"""
+        """
+        :return: The name of the root node of the event tree, currently hard coded to 's0'.
+        :rtype: str
+        """
         return "s0"
 
     @property
-    def variables(self) -> list:
-        """The column headers of the dataset"""
+    def variables(self) -> List:
+        """
+        :return: The column headers of the dataset.
+        :rtype: List[str]
+        """
         variables = list(self.dataframe.columns)
         logger.info("Variables extracted from dataframe were:")
         logger.info(variables)
         return variables
 
     @property
-    def sampling_zeros(self):
-        """Sampling zero paths provided by the user."""
+    def sampling_zeros(self) -> Union[List[Tuple[str]], None]:
+        """
+        Setting this property will apply sampling zero paths to the tree.
+        If different to previous value, the event tree will be regenerated.
+
+        :return: Sampling zero paths provided by the user.
+
+        :rtype: List[Tuple[str]] or None
+        """
         if self._sampling_zero_paths is None:
             logger.info(
                 "EventTree.sampling_zero_paths \
@@ -166,8 +178,6 @@ class EventTree(nx.MultiDiGraph):
 
     @sampling_zeros.setter
     def sampling_zeros(self, sz_paths):
-        """Use this function to set the sampling zero paths.
-        If different to previous value, will re-generate the event tree."""
         if sz_paths is None:
             self._sampling_zero_paths = None
         else:
@@ -184,26 +194,42 @@ class EventTree(nx.MultiDiGraph):
                 )
 
     @property
-    def situations(self) -> list:
-        """List of situations of the tree.
-        (non-leaf nodes)"""
+    def situations(self) -> List[str]:
+        """
+        :return: The situations of the tree (non-leaf nodes).
+        :rtype: List[str]
+        """
         return [node for node, out_degree in self.out_degree if out_degree != 0]
 
     @property
-    def leaves(self) -> list:
-        """List of leaves of the tree."""
-        # if not already generated, create self.leaves
+    def leaves(self) -> List[str]:
+        """
+        :return: The leaves of the tree.
+        :rtype: List[str]
+        """
         return [node for node, out_degree in self.out_degree if out_degree == 0]
 
     @property
-    def edge_counts(self) -> dict:
-        """list of counts along edges. Indexed same as edges and edge_labels"""
+    def edge_counts(self) -> Dict:
+        """
+        The counts along edges all edges in the tree, where edges are a
+        Tuple like so: ("source_node", "destination_node", "edge_label").
+
+        :return: A mapping of edges to their counts.
+
+        :rtype: Dict[Tuple[str], Int]
+        """
         return nx.get_edge_attributes(self, "count")
 
     @property
-    def categories_per_variable(self) -> dict:
-        """list of number of unique categories/levels for each variable
-        (a column in the df)"""
+    def categories_per_variable(self) -> Dict:
+        """
+        The number of unique categories/levels for each variable
+        (column headings in dataframe).
+
+        :return: A mapping of variables to the number of unique categories/levels.
+        :rtype: Dict[str, Int]
+        """
 
         def display_nan_warning():
             logger.warning(
@@ -240,8 +266,15 @@ class EventTree(nx.MultiDiGraph):
 
         return catagories_per_variable
 
-    def dot_event_graph(self, edge_info: str = "count"):
-        """Dot graph representation of the event tree."""
+    def dot_event_graph(self, edge_info: str = "count") -> pdp.Dot:
+        """Returns Dot graph representation of the event tree.
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
+        In event trees, only "count" can be displayed, so this can be omitted.
+
+        :type edge_info: str
+        :return: A graphviz Dot representation of the graph.
+        :rtype: pydotplus.Dot
+        """
         return self._generate_dot_graph(fill_colour="lightgrey", edge_info=edge_info)
 
     def _generate_dot_graph(self, fill_colour=None, edge_info="count"):
@@ -314,9 +347,26 @@ class EventTree(nx.MultiDiGraph):
 
         return graph_image
 
-    def create_figure(self, filename=None, edge_info: str = "count"):
-        """Create event tree with given filename, and save the figure. If
-        edge_info is not specified, the default is to use the 'count' attribute."""
+    def create_figure(
+        self, filename=None, edge_info: str = "count"
+    ) -> Union[Image, None]:
+        """Creates event tree from the dataframe.
+
+        :param filename: Optional - When provided, file is saved to the filename,
+            local to the current working directory.
+            e.g. if filename = "output/event_tree.svg", the file will be saved to:
+            cwd/output/event_tree.svg
+            Otherwise, if function is called inside an interactive notebook, image
+            will be displayed in the notebook, even if filename is omitted.
+        :type filename: str
+
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
+            In event trees, only "count" can be displayed, so this can be omitted.
+        :type edge_info: str
+
+        :return: The event tree Image object.
+        :rtype: IPython.display.Image or None
+        """
         return self._create_figure(self.dot_event_graph(edge_info=edge_info), filename)
 
     def _create_unsorted_paths_dict(self) -> defaultdict:

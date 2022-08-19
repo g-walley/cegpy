@@ -716,8 +716,8 @@ class StagedTree(EventTree):
 
         :type filename: str
 
-        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
-            In event trees, only "count" can be displayed, so this can be omitted.
+        :param edge_info: Optional - Chooses which summary measure to be displayed on
+            edges. Value can take: "count", "prior", "posterior", "probability"
         :type edge_info: str
 
         :return: The event tree Image object.

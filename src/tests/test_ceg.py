@@ -31,9 +31,7 @@ class TestMockedCEGMethods:
             .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
 
-        self.staged = StagedTree(
-            dataframe=pd.read_excel(df_path), name="medical_staged"
-        )
+        self.staged = StagedTree(dataframe=pd.read_excel(df_path))
         self.staged.calculate_AHC_transitions()
 
     def test_generate_argument(self, mocker: pytest_mock.MockerFixture):
@@ -56,9 +54,7 @@ class TestUnitCEG(unittest.TestCase):
             .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
 
-        self.staged = StagedTree(
-            dataframe=pd.read_excel(df_path), name="medical_staged"
-        )
+        self.staged = StagedTree(dataframe=pd.read_excel(df_path))
         self.staged.calculate_AHC_transitions()
 
     def test_stages_property(self):

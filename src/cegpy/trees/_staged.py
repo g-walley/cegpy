@@ -24,7 +24,7 @@ class StagedTree(EventTree):
     which groups it with other situations which have the same outgoing edges,
     with equivalent probabilities of occurring.
 
-    The class is an extension of EventTree, which in turn is a Networkx DiGraph.
+    The class is an extension of EventTree.
 
     Parameters
     ----------
@@ -60,15 +60,6 @@ class StagedTree(EventTree):
 
     attr : keyword arguments, optional (default= no attributes)
         Attributes to add to graph as key=value pairs.
-
-    See Also
-    --------
-    EventTree
-    ChainEventGraph
-
-    Examples
-    --------
-
     """
 
     _edge_attributes: List = ["count", "prior", "posterior", "probability"]
@@ -78,24 +69,19 @@ class StagedTree(EventTree):
         self,
         dataframe,
         sampling_zero_paths=None,
-        incoming_graph_data=None,
         var_order=None,
         struct_missing_label=None,
         missing_label=None,
         complete_case=False,
-        **attr,
     ) -> None:
-
         # Call event tree init to generate event tree
         super().__init__(
             dataframe=dataframe,
             sampling_zero_paths=sampling_zero_paths,
-            incoming_graph_data=incoming_graph_data,
             var_order=var_order,
             struct_missing_label=struct_missing_label,
             missing_label=missing_label,
             complete_case=complete_case,
-            **attr,
         )
 
         self._mean_posterior_probs = []

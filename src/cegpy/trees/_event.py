@@ -21,67 +21,46 @@ logger = logging.getLogger("cegpy.event_tree")
 
 class EventTree(nx.MultiDiGraph):
     """
-    Class for event trees.
+    This class extends the NetworkX MultiDiGraph class to allow the creation
+    of event tree representations of data.
 
-    This class extends the networkx DiGraph class to allow the creation
-    of event trees from data provided in a pandas dataframe.
-
-    A DiGraph stores nodes and edges with optional data, or attributes.
-
-    DiGraphs hold directed edges.  Self loops are allowed but multiple
-    (parallel) edges are not.
-
-    Nodes can be arbitrary (hashable) Python objects with optional
-    key/value attributes. By convention `None` is not used as a node.
-
-    Edges are represented as links between nodes with optional
-    key/value attributes.
-
-    Parameters
-    ----------
-    dataframe : Pandas dataframe (required)
-        Dataframe containing variables as column headers, with event
-        name strings in each cell. These event names will be used to
+    :param dataframe: Required - DataFrame containing variables as column headers,
+        with event name strings in each cell. These event names will be used to
         create the edges of the event tree. Counts of each event will
         be extracted and attached to each edge.
+    :type dataframe: pandas.DataFrame
 
-    sampling_zero_paths: list of tuples containing paths to sampling
+    :param sampling_zero_paths: Optional - Paths to sampling
         zeros.
         Format is as follows: \
             [('edge_1',), ('edge_1', 'edge_2'), ...]
 
-    incoming_graph_data : input graph (optional, default: None)
-        Data to initialize graph.  If None (default) an empty
-        graph is created.  The data can be an edge list, or any
-        NetworkX graph object.  If the corresponding optional Python
-        packages are installed the data can also be a NumPy matrix
-        or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+        If no paths are specified, default setting is that no sampling zero paths
+        are created.
+    :type sampling_zero_paths: List[Tuple[str]] or None
 
-    var_order : ordered list of variable names. (optional, default order
-        of variables in the event tree adopted from the order of columns in
-        the dataframe).
+    :param var_order: Optional - Specifies the ordering of variables to be adopted
+        in the event tree.
+        Default var_order is obtained from the order of columns in dataframe.
+        String labels in the list should match the column names in dataframe.
+    :type var_order: List[str] or None
 
-    struct_missing_label : observations which are structurally missing, i.e.
-        where a non-missing value is illogical for a subset of the individuals
-        in our sample.
-        E.g: Post operative health status is irrelevant for a dead patient.
+    :param struct_missing_label: Optional - Label in the dataframe for observations
+        which are structurally missing; e.g: Post operative health status is
+        irrelevant for a dead patient.
+        Label example: "struct".
+    :type struct_missing_label: str or None
 
-    missing_label : all missing values that are not structurally missing.
+    :param missing_label: Optional - Label in the dataframe for observations which are
+        missing values that are not structurally missing.
+        e.g: Missing height for some individuals in the sample.
+        Label example: "miss"
+        Whatever label is provided will be renamed in the event tree to "missing".
+    :type missing_label: str or None
 
-    complete_case : If True, all entries (rows) with non-structural missing
-        values are removed.
-
-    attr : keyword arguments, optional (default= no attributes)
-        Attributes to add to graph as key=value pairs.
-
-    See Also
-    --------
-    StagedTrees \n
-    ChainEventGraph
-
-    Examples
-    --------
-
+    :param complete_case: Optional - If True, all entries (rows) with non-structural
+        missing values are removed. Default setting: False.
+    :type complete_case: bool
     """
 
     _sampling_zero_paths: Optional[List[Tuple]] = None
@@ -92,17 +71,17 @@ class EventTree(nx.MultiDiGraph):
         self,
         dataframe: pd.DataFrame,
         sampling_zero_paths=None,
-        incoming_graph_data=None,
         var_order=None,
         struct_missing_label=None,
         missing_label=None,
         complete_case=False,
-        **attr,
     ) -> None:
         # Checking argument inputs are sensible
         if not isinstance(dataframe, pd.DataFrame):
             raise ValueError("The dataframe parameter must be a pandas.DataFrame")
         # Initialise Networkx DiGraph class
+        incoming_graph_data = None
+        attr = dict()
         super().__init__(incoming_graph_data, **attr)
 
         if struct_missing_label is not None and not isinstance(

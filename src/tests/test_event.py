@@ -184,7 +184,7 @@ class TestIntegration:
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
         self.fall_et = EventTree(
-            dataframe=self.fall_df, sampling_zero_path=self.fall_s_z_paths
+            dataframe=self.fall_df, sampling_zero_paths=self.fall_s_z_paths
         )
 
     def test_categories_per_variable(self) -> None:
@@ -267,7 +267,7 @@ class TestChangingDataFrame:
         self.fall_s_z_paths = None
         self.fall_df = pd.read_excel(fall_df_path)
         self.fall_et = EventTree(
-            dataframe=self.fall_df, sampling_zero_path=self.fall_s_z_paths
+            dataframe=self.fall_df, sampling_zero_paths=self.fall_s_z_paths
         )
 
     def test_add_empty_column(self) -> None:

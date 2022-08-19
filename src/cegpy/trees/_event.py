@@ -358,6 +358,9 @@ class EventTree(nx.MultiDiGraph):
             cwd/output/event_tree.svg
             Otherwise, if function is called inside an interactive notebook, image
             will be displayed in the notebook, even if filename is omitted.
+            Supports any filetype that graphviz supports. e.g: "event_tree.png" or
+            "event_tree.svg" etc.
+
         :type filename: str
 
         :param edge_info: Optional - Chooses which summary measure to be displayed on edges.

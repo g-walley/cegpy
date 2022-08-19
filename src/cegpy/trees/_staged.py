@@ -26,40 +26,43 @@ class StagedTree(EventTree):
 
     The class is an extension of EventTree.
 
-    Parameters
-    ----------
-    dataframe : Pandas dataframe (required)
-        Dataframe containing variables as column headers, with event
-        name strings in each cell. These event names will be used to
+    :param dataframe: Required - DataFrame containing variables as column headers,
+        with event name strings in each cell. These event names will be used to
         create the edges of the event tree. Counts of each event will
         be extracted and attached to each edge.
+    :type dataframe: pandas.DataFrame
 
-    sampling_zero_paths: list of tuples containing paths to sampling zeros.
+    :param sampling_zero_paths: Optional - Paths to sampling
+        zeros.
+
         Format is as follows: [('edge_1',), ('edge_1', 'edge_2'), ...]
 
-    incoming_graph_data : input graph (optional, default: None)
-        Data to initialize graph.  If None (default) an empty
-        graph is created.  The data can be an edge list, or any
-        NetworkX graph object.  If the corresponding optional Python
-        packages are installed the data can also be a NumPy matrix
-        or 2d ndarray, a SciPy sparse matrix, or a PyGraphviz graph.
+        If no paths are specified, default setting is that no sampling zero paths
+        are created.
+    :type sampling_zero_paths: List[Tuple[str]] or None
 
-    var_order : ordered list of variable names. (optional, default order
-        of variables in the event tree adopted from the order of columns in
-        the dataframe).
+    :param var_order: Optional - Specifies the ordering of variables to be adopted
+        in the event tree.
+        Default var_order is obtained from the order of columns in dataframe.
+        String labels in the list should match the column names in dataframe.
+    :type var_order: List[str] or None
 
-    struct_missing_label : observations which are structurally missing, i.e.
-        where a non-missing value is illogical for a subset of the individuals
-        in our sample.
-        E.g: Post operative health status is irrelevant for a dead patient.
+    :param struct_missing_label: Optional - Label in the dataframe for observations
+        which are structurally missing; e.g: Post operative health status is
+        irrelevant for a dead patient.
+        Label example: "struct".
+    :type struct_missing_label: str or None
 
-    missing_label : all missing values that are not structurally missing.
+    :param missing_label: Optional - Label in the dataframe for observations which are
+        missing values that are not structurally missing.
+        e.g: Missing height for some individuals in the sample.
+        Label example: "miss"
+        Whatever label is provided will be renamed in the event tree to "missing".
+    :type missing_label: str or None
 
-    complete_case : If True, all entries (rows) with non-structural missing
-        values are removed.
-
-    attr : keyword arguments, optional (default= no attributes)
-        Attributes to add to graph as key=value pairs.
+    :param complete_case: Optional - If True, all entries (rows) with non-structural
+        missing values are removed. Default setting: False.
+    :type complete_case: bool
     """
 
     _edge_attributes: List = ["count", "prior", "posterior", "probability"]
@@ -89,15 +92,17 @@ class StagedTree(EventTree):
         self._stage_colours = []
         self._sort_count = 0
         self._colours_for_situations = []
+        self._ahc_output = {}
         logger.debug("Starting Staged Tree")
 
     @property
     def prior(self) -> Dict[Tuple[str], List[Fraction]]:
-        """Get edge priors from the graph.
+        """A mapping of priors keyed by edge. Keys are
+        3-tuples of the form: (src, dst, edge_label).
 
-        ## Returns:
-        Dictionary of attributes keyed by edge. Where the keys are
-        3-tuples of the form: (src, dst, edge_label)."""
+        :return: A mapping edge -> priors.
+        :rtype: Dict[Tuple[str], List[Fraction]]
+        """
         return nx.get_edge_attributes(self, "prior")
 
     @prior.setter
@@ -116,7 +121,11 @@ class StagedTree(EventTree):
 
     @property
     def prior_list(self) -> List[List[Fraction]]:
-        """Priors provided as a list of lists"""
+        """
+        :return: Priors in the form of a list of lists.
+        :rtype: List[List[Fraction]]
+        """
+
         prior_list = []
         prev_node = list(self.prior)[0][0]
         succ_list = []
@@ -134,9 +143,14 @@ class StagedTree(EventTree):
         return prior_list
 
     @property
-    def posterior(self):
-        """Posterior is calculated such that the edge count is added
-        to the prior for each edge."""
+    def posterior(self) -> Dict[Tuple[str], List[Fraction]]:
+        """Posteriors along each edge, calculated by adding edge count to the prior for
+        each edge.
+        Keys are 3-tuples of the form: (src, dst, edge_label).
+
+        :return: Mapping of edge -> edge_count + prior
+        :rtype: Dict[Tuple[str], List[Fraction]]
+        """
         try:
             posterior = nx.get_edge_attributes(self, "posterior")
             if posterior == {}:
@@ -151,7 +165,10 @@ class StagedTree(EventTree):
 
     @property
     def posterior_list(self) -> List[List[Fraction]]:
-        """Posteriors of all edges provided as a list of lists."""
+        """
+        :return: Posteriors in the form of a list of lists.
+        :rtype: List[List[Fraction]]
+        """
         posterior_list = []
         prev_node = list(self.posterior)[0][0]
         succ_list = []
@@ -169,7 +186,14 @@ class StagedTree(EventTree):
         return posterior_list
 
     @property
-    def alpha(self):
+    def alpha(self) -> float:
+        """
+        The equivalent sample size set for the root node which is then uniformly
+        propagated through the tree.
+
+        :return: The value of Alpha.
+        :rtype: float
+        """
         return self._alpha
 
     @alpha.setter
@@ -177,7 +201,14 @@ class StagedTree(EventTree):
         self._alpha = value
 
     @property
-    def hyperstage(self):
+    def hyperstage(self) -> List[List[str]]:
+        """
+        Indication of which nodes are allowed to be in the same stage. Each
+        list is a list of node names e.g. "s0".
+
+        :return: The List of all hyperstages.
+        :rtype: List[List[str]]
+        """
         return self._hyperstage
 
     @hyperstage.setter
@@ -185,16 +216,24 @@ class StagedTree(EventTree):
         self._hyperstage = value
 
     @property
-    def edge_countset(self):
+    def edge_countset(self) -> List[List]:
+        """
+        Indexed the same as situations.
+        :return: Edge counts emination from each node of the tree.
+        :rtype: List[List]
+        """
         return self._create_edge_countset()
 
     @property
-    def ahc_output(self):
-        return self._ahc_output
+    def ahc_output(self) -> Dict:
+        """
+        Contains a List of Lists containing all the situations that were merged,
+        and the log likelihood.
 
-    @ahc_output.setter
-    def ahc_output(self, value):
-        self._ahc_output = value
+        :return: The output from the AHC algorithm.
+        :rtype: Dict
+        """
+        return self._ahc_output
 
     def _check_hyperstages(self, hyperstage) -> None:
         hyper_situations = chain(*hyperstage)
@@ -608,14 +647,30 @@ class StagedTree(EventTree):
 
     def calculate_AHC_transitions(
         self, prior=None, alpha=None, hyperstage=None, colour_list=None
-    ):
+    ) -> Dict:
         """Bayesian Agglommerative Hierarchical Clustering algorithm
         implementation. It returns a list of lists of the situations which
-        have been merged together, the likelihood of the final model and
-        the mean posterior conditional probabilities of the stages.
+        have been merged together, the likelihood of the final model.
 
-        User can specify a list of colours to be used for stages. Otherwise,
-        colours evenly spaced around the colour spectrum are used."""
+        :param prior: Optional - A mapping of priors keyed by edge. Keys are
+            3-tuples of the form: (src, dst, edge_label).
+        :type prior: Dict[Tuple[str], List[Fraction]]
+
+        :param alpha: Optional - The equivalent sample size set for the root node
+            which is then uniformly propagated through the tree.
+        :type alpha: float
+
+        :param hyperstage: Optional - Indication of which nodes are allowed to be
+            in the same stage. Each list is a list of node names e.g. "s0".
+        :type hyperstage: List[List[str]]
+
+        :param colour_list: Optional - a list of hex colours to be used for stages.
+            Otherwise, colours evenly spaced around the colour spectrum are used.
+        :type colour_list: List[str]
+
+        :return: The output from the AHC algorithm, specified above.
+        :rtype: Dict
+        """
         logger.info("\n\n --- Starting AHC Algorithm ---")
 
         self._store_params(prior, alpha, hyperstage)
@@ -626,22 +681,48 @@ class StagedTree(EventTree):
 
         self._generate_colours_for_situations(merged_situations, colour_list)
 
-        self.ahc_output = {
+        self._ahc_output = {
             "Merged Situations": merged_situations,
-            "Loglikelihood": loglikelihood,
+            "Log Likelihood": loglikelihood,
         }
         return self.ahc_output
 
     def dot_staged_graph(self, edge_info: str = "count"):
-        """Returns the dot graph of the staged tree."""
+        """Returns Dot graph representation of the staged tree.
+        :param edge_info: Optional - Chooses which summary measure to be displayed
+        on edges. Defaults to "count".
+        Options: ["count", "prior", "posterior", "probability"]
+
+        :type edge_info: str
+        :return: A graphviz Dot representation of the graph.
+        :rtype: pydotplus.Dot"""
         return self._generate_dot_graph(edge_info=edge_info)
 
     def create_event_tree_figure(
         self,
         filename: Optional[str] = None,
         edge_info: str = "count",
-    ):
-        """Creates a figure of the event tree."""
+    ) -> Union[Image, None]:
+        """Creates event tree from the dataframe.
+
+        :param filename: Optional - When provided, file is saved to the filename,
+            local to the current working directory.
+            e.g. if filename = "output/event_tree.svg", the file will be saved to:
+            cwd/output/event_tree.svg
+            Otherwise, if function is called inside an interactive notebook, image
+            will be displayed in the notebook, even if filename is omitted.
+            Supports any filetype that graphviz supports. e.g: "event_tree.png" or
+            "event_tree.svg" etc.
+
+        :type filename: str
+
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
+            In event trees, only "count" can be displayed, so this can be omitted.
+        :type edge_info: str
+
+        :return: The event tree Image object.
+        :rtype: IPython.display.Image or None
+        """
         return super().create_figure(filename, edge_info=edge_info)
 
     def create_figure(
@@ -650,12 +731,31 @@ class StagedTree(EventTree):
         edge_info: str = "count",
     ) -> Union[Image, None]:
         """Draws the coloured staged tree for the process described by
-        the dataset, and saves it to "<filename>.filetype". Supports
-        any filetype that graphviz supports. e.g: "event_tree.png" or
-        "event_tree.svg" etc.
+        the dataset.
+
+        :param filename: Optional - When provided, file is saved to the filename,
+            local to the current working directory.
+            e.g. if filename = "output/event_tree.svg", the file will be saved to:
+            cwd/output/staged_tree.svg
+            Otherwise, if function is called inside an interactive notebook, image
+            will be displayed in the notebook, even if filename is omitted.
+
+            Supports any filetype that graphviz supports. e.g: "staged_tree.png" or
+            "staged_tree.svg" etc.
+
+        :type filename: str
+
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
+            In event trees, only "count" can be displayed, so this can be omitted.
+        :type edge_info: str
+
+        :return: The event tree Image object.
+        :rtype: IPython.display.Image or None
         """
         try:
-            _ = self._ahc_output
+            if not self._ahc_output:
+                raise AttributeError
+
             graph = self.dot_staged_graph(edge_info)
             graph_image = super()._create_figure(graph, filename)
 

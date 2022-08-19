@@ -4,7 +4,7 @@ from collections import defaultdict
 import os
 from pathlib import Path
 import math
-from typing import Union
+from typing import List, Union
 import colorutils
 from colorutils import Color as Colour
 
@@ -77,7 +77,7 @@ def generate_colour_run(number, starts, ends) -> list:
     for val in split:
         jumps.append(max(val - 1, 0))
 
-    colours = []
+    colours: List[Colour] = []
 
     for idx, end in enumerate(ends):
         if jumps[idx] > 0:

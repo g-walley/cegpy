@@ -1,5 +1,6 @@
 # cegpy
+[![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
 
-Python Library for creating and manipulating Chain Event Graphs from panda dataframes.
+Cegpy (/segpaɪ/) is a Python package for working with Chain Event Graphs. It supports learning the graphical structure of a Chain Event Graph from data, encoding of parametric and structural priors, estimating its parameters, and performing inference.
 
-Currently in development, documentation to be updated once first version is completed.
+It is built on top of the Python network modelling package NetworkX.

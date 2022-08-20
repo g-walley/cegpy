@@ -9,6 +9,7 @@ import networkx as nx
 import pandas as pd
 import pytest
 import pytest_mock
+import matplotlib.pyplot as plt
 from cegpy import StagedTree, ChainEventGraph
 from cegpy.graphs._ceg import (
     CegAlreadyGenerated,
@@ -336,7 +337,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg = ChainEventGraph(self.graph, generate=False)
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
-        ceg._merge_nodes({("w1", "w2")})
+        ceg._merge_nodes([("w1", "w2")])
         expected_edges = [
             ("w0", "w1", "a"),
             ("w0", "w1", "b"),
@@ -371,7 +372,7 @@ class TestNodesCanBeMerged(unittest.TestCase):
         ceg.nodes["w1"]["stage"] = 2
         ceg.nodes["w2"]["stage"] = 2
         ceg.nodes["w3"]["stage"] = 2
-        ceg._merge_nodes({("w1", "w2"), ("w2", "w3"), ("w1", "w3")})
+        ceg._merge_nodes([("w1", "w2"), ("w1", "w3"), ("w2", "w3")])
         nodes_post_merge = set(ceg.nodes)
         merged_node = nodes_post_merge.intersection(nodes_to_merge).pop()
         expected_edges = [
@@ -789,3 +790,87 @@ class TestBackwardsConstruction(unittest.TestCase):
         all_nodes = set(ceg.nodes)
         self.assertEqual(len(all_nodes.intersection({"s5", "s4", "s13"})), 1)
         self.assertEqual(len(all_nodes.intersection({"s11", "s3"})), 1)
+
+
+class TestConsistentNodeNaming(unittest.TestCase):
+    def setUp(self) -> None:
+        graph = nx.MultiDiGraph()
+
+        nodes = [
+            "s0",
+            "s1",
+            "s2",
+            "s3",
+            "s4",
+            "s5",
+            "s6",
+            "s7",
+            "s8",
+            "s9",
+            "s10",
+            "s11",
+            "s12",
+            "s13",
+            "s14",
+            "s15",
+            "s16",
+            "s17",
+            "s18",
+            "s19",
+            "s20",
+            "s21",
+        ]
+
+        edges = [
+            {"src": "s0", "dst": "s1", "key": "a", "probability": 0.8},
+            {"src": "s0", "dst": "s2", "key": "b", "probability": 0.8},
+            {"src": "s0", "dst": "s3", "key": "c", "probability": 0.8},
+            {"src": "s1", "dst": "s4", "key": "a", "probability": 0.8},
+            {"src": "s1", "dst": "s5", "key": "b", "probability": 0.8},
+            {"src": "s2", "dst": "s6", "key": "a", "probability": 0.8},
+            {"src": "s2", "dst": "s7", "key": "b", "probability": 0.8},
+            {"src": "s3", "dst": "s8", "key": "a", "probability": 0.8},
+            {"src": "s3", "dst": "s9", "key": "b", "probability": 0.8},
+            {"src": "s4", "dst": "s10", "key": "a", "probability": 0.8},
+            {"src": "s4", "dst": "s11", "key": "b", "probability": 0.8},
+            {"src": "s5", "dst": "s12", "key": "a", "probability": 0.8},
+            {"src": "s5", "dst": "s13", "key": "b", "probability": 0.8},
+            {"src": "s6", "dst": "s14", "key": "a", "probability": 0.8},
+            {"src": "s6", "dst": "s15", "key": "b", "probability": 0.8},
+            {"src": "s7", "dst": "s16", "key": "a", "probability": 0.8},
+            {"src": "s7", "dst": "s17", "key": "b", "probability": 0.8},
+            {"src": "s8", "dst": "s18", "key": "a", "probability": 0.8},
+            {"src": "s8", "dst": "s19", "key": "b", "probability": 0.8},
+            {"src": "s9", "dst": "s20", "key": "a", "probability": 0.8},
+            {"src": "s9", "dst": "s21", "key": "b", "probability": 0.8},
+        ]
+
+        graph.add_nodes_from(nodes)
+        for edge in edges:
+            graph.add_edge(
+                u_for_edge=edge["src"],
+                v_for_edge=edge["dst"],
+                key=edge["key"],
+                probability=edge["probability"],
+            )
+        graph.root = "s0"
+        graph.ahc_output = {
+            "Merged Situations": [("s1", "s2")],
+            "Loglikelihood": 1234.5678,
+        }
+        graph.nodes["s0"]["stage"] = 0
+        graph.nodes["s1"]["stage"] = 1
+        graph.nodes["s2"]["stage"] = 1
+        graph.nodes["s3"]["stage"] = 2
+        graph.nodes["s4"]["stage"] = 3
+        graph.nodes["s5"]["stage"] = 4
+        graph.nodes["s6"]["stage"] = 5
+        graph.nodes["s7"]["stage"] = 3
+        graph.nodes["s8"]["stage"] = 6
+        graph.nodes["s9"]["stage"] = 3
+
+        self.ceg = ChainEventGraph(graph)
+
+    def test_one(self):
+
+        self.ceg.create_figure("out/consistent_naming.pdf")

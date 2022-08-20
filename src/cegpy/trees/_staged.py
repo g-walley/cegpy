@@ -475,6 +475,18 @@ class StagedTree(EventTree):
 
         return self._sort_list(new_list_of_tuples)
 
+    def _sort_merged_sit_tuples(self, merged_sit_list: List[Tuple[str]]) -> None:
+        """Sorts the tuples in the merged situations."""
+        prefix = self.root[0]
+        for idx, merged in enumerate(merged_sit_list):
+            if len(merged) > 1:
+                node_nums = [int(node.split(prefix)[1]) for node in merged]
+                node_nums.sort()
+                merged = tuple(node_nums)
+                merged_sit_list[idx] = tuple(
+                    [f"{prefix}{node_num}" for node_num in node_nums]
+                )
+
     def _calculate_mean_posterior_probs(
         self,
         merged_situations: List,
@@ -598,6 +610,7 @@ class StagedTree(EventTree):
             else:
                 break
 
+        self._sort_merged_sit_tuples(merged_situation_list)
         merged_situation_list = self._sort_list(merged_situation_list)
         for sit in self.situations:
             if sit not in list(chain(*merged_situation_list)):

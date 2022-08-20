@@ -138,13 +138,13 @@ class ChainEventGraph(nx.MultiDiGraph):
         next_set_of_nodes: List = next(node_generator)
 
         while next_set_of_nodes != [self.root]:
-            nodes_to_merge = set()
+            nodes_to_merge = []
             while len(next_set_of_nodes) > 1:
                 node_1 = next_set_of_nodes.pop(0)
                 for node_2 in next_set_of_nodes:
                     mergeable = self._check_nodes_can_be_merged(node_1, node_2)
                     if mergeable:
-                        nodes_to_merge.add((node_1, node_2))
+                        nodes_to_merge.append((node_1, node_2))
 
             if nodes_to_merge:
                 self._merge_nodes(nodes_to_merge)
@@ -154,12 +154,12 @@ class ChainEventGraph(nx.MultiDiGraph):
             except StopIteration:
                 break
 
-    def _merge_nodes(self, nodes_to_merge: Set):
+    def _merge_nodes(self, nodes_to_merge: List[Tuple[str]]):
         """nodes to merge should be a set of 2 element tuples"""
         temp_1 = "temp_1"
         temp_2 = "temp_2"
         while nodes_to_merge:
-            nodes = nodes_to_merge.pop()
+            nodes = nodes_to_merge.pop(0)
             new_node = nodes[0]
             # Copy nodes to temp nodes
             node_map = {nodes[0]: temp_1, nodes[1]: temp_2}
@@ -178,18 +178,18 @@ class ChainEventGraph(nx.MultiDiGraph):
 
             # Some nodes have been removed, we need to update the
             # mergeable list to point to new nodes if required
-            temp_list = list(nodes_to_merge)
+            temp_list = nodes_to_merge.copy()
             for pair in temp_list:
                 if nodes[1] in pair:
                     new_pair = (
-                        # the other node of the pair
-                        pair[pair.index(nodes[1]) - 1],
                         # the new node it will be merged to
                         new_node,
+                        # the other node of the pair
+                        pair[pair.index(nodes[1]) - 1],
                     )
                     nodes_to_merge.remove(pair)
                     if new_pair[0] != new_pair[1]:
-                        nodes_to_merge.add(new_pair)
+                        nodes_to_merge.append(new_pair)
 
     def dot_graph(self, edge_info: str = "probability") -> pdp.Dot:
         """Returns Dot graph representation of the CEG.
@@ -347,21 +347,18 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def _relabel_nodes(self):
         """Relabels nodes whilst maintaining ordering."""
-        num_iterator = it.count(1, 1)
-        nodes_to_rename = list(self.succ[self.root])
-        # first, relabel the successors of this node
-        nodes_to_rename.sort()
-        node_mapping = {}
-        while nodes_to_rename:
-            for node in nodes_to_rename.copy():
-                node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
-                succ_nodes = list(self.succ[node])
-                succ_nodes.sort()
-                for succ in succ_nodes:
-                    if succ != self.sink and succ not in nodes_to_rename:
-                        nodes_to_rename.append(succ)
-                nodes_to_rename.remove(node)
 
+        all_nodes: List[str] = list(self.nodes)
+        all_nodes.remove(self.root)
+        all_nodes.remove(self.sink)
+
+        nodes_num = [int(node.split(self.staged_root[0])[1]) for node in all_nodes]
+        nodes_num.sort()
+        nodes_to_rename = [f"{self.staged_root[0]}{num}" for num in nodes_num]
+        renamed_nodes = [
+            f"{self.node_prefix}{i + 1}" for i in range(len(nodes_to_rename))
+        ]
+        node_mapping = dict(zip(nodes_to_rename, renamed_nodes))
         nx.relabel_nodes(self, node_mapping, copy=False)
 
     def _merge_and_add_edges(

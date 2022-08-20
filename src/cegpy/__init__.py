@@ -18,4 +18,4 @@ from cegpy.trees._staged import StagedTree
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger("cegpy")
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"

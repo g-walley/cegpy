@@ -1,16 +1,5 @@
--- 0.0.2.1
-- Fixed bug with filename in image generation
+-- 1.0.2 Addressed bug with inconsistent naming of nodes in ceg conversion
 
--- 0.0.2
-- Dev fixes for test files
-- Fixed internal references to the package
+-- 1.0.1 Update to readme
 
--- 0.0.1
-- Event Trees can be generated from compatible datasets
-- Event Tree can be printed to a .png file for human readability
-
--- 0.2
-- Var order can now be set at creation of event tree.
-- Stage colours can now be set manually
-- DOT graph has been made accessable for customisation of style.
-- Minor improvements to AHC.
+-- 1.0.0 Cegpy feature complete for initial release!

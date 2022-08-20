@@ -348,13 +348,16 @@ class ChainEventGraph(nx.MultiDiGraph):
     def _relabel_nodes(self):
         """Relabels nodes whilst maintaining ordering."""
         num_iterator = it.count(1, 1)
-        nodes_to_rename = list(self.succ[self.root].keys())
+        nodes_to_rename = list(self.succ[self.root])
         # first, relabel the successors of this node
+        nodes_to_rename.sort()
         node_mapping = {}
         while nodes_to_rename:
             for node in nodes_to_rename.copy():
                 node_mapping[node] = f"{self.node_prefix}{next(num_iterator)}"
-                for succ in self.succ[node].keys():
+                succ_nodes = list(self.succ[node])
+                succ_nodes.sort()
+                for succ in succ_nodes:
                     if succ != self.sink and succ not in nodes_to_rename:
                         nodes_to_rename.append(succ)
                 nodes_to_rename.remove(node)

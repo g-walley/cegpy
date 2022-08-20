@@ -9,7 +9,6 @@ import networkx as nx
 import pandas as pd
 import pytest
 import pytest_mock
-import matplotlib.pyplot as plt
 from cegpy import StagedTree, ChainEventGraph
 from cegpy.graphs._ceg import (
     CegAlreadyGenerated,

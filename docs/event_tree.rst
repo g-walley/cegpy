@@ -1,5 +1,7 @@
 EventTree
 =========
+.. module:: cegpy
+
 .. autoclass:: cegpy.EventTree
     :members:
         create_figure,

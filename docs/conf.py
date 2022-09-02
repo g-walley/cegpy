@@ -9,7 +9,7 @@
 project = "Cegpy"
 copyright = "2022, Gareth Walley, Aditi Shenvi"
 author = "Gareth Walley, Aditi Shenvi"
-release = "1.0"
+release = "1.0.3"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

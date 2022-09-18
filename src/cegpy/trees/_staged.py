@@ -700,51 +700,34 @@ class StagedTree(EventTree):
         }
         return self.ahc_output
 
-    def dot_staged_graph(self, edge_info: str = "count"):
+    def dot_graph(self, edge_info: str = "count", staged: bool = True):
         """Returns Dot graph representation of the staged tree.
+
         :param edge_info: Optional - Chooses which summary measure to be displayed
         on edges. Defaults to "count".
         Options: ["count", "prior", "posterior", "probability"]
-
         :type edge_info: str
+
+        :param staged: if True, returns the coloured staged tree,
+            if False, returns the underlying event tree.
+        :type staged: bool
+
         :return: A graphviz Dot representation of the graph.
         :rtype: pydotplus.Dot"""
-        return self._generate_dot_graph(edge_info=edge_info)
-
-    def create_event_tree_figure(
-        self,
-        filename: Optional[str] = None,
-        edge_info: str = "count",
-    ) -> Union[Image, None]:
-        """Creates event tree from the dataframe.
-
-        :param filename: Optional - When provided, file is saved to the filename,
-            local to the current working directory.
-            e.g. if filename = "output/event_tree.svg", the file will be saved to:
-            cwd/output/event_tree.svg
-            Otherwise, if function is called inside an interactive notebook, image
-            will be displayed in the notebook, even if filename is omitted.
-            Supports any filetype that graphviz supports. e.g: "event_tree.png" or
-            "event_tree.svg" etc.
-
-        :type filename: str
-
-        :param edge_info: Optional - Chooses which summary measure to be displayed on
-            edges. Value can take: "count", "prior", "posterior", "probability"
-        :type edge_info: str
-
-        :return: The event tree Image object.
-        :rtype: IPython.display.Image or None
-        """
-        return super().create_figure(filename, edge_info=edge_info)
-
+        if staged:
+            return self._generate_dot_graph(edge_info=edge_info)
+        else:
+            return super()._generate_dot_graph(
+                fill_colour="lightgrey", edge_info=edge_info)
+        
     def create_figure(
         self,
         filename: Optional[str] = None,
         edge_info: str = "count",
+        staged: bool = True
     ) -> Union[Image, None]:
-        """Draws the coloured staged tree for the process described by
-        the dataset.
+        """Draws the coloured staged tree or the underlying event tree 
+        for the process described by the dataset.
 
         :param filename: Optional - When provided, file is saved to the filename,
             local to the current working directory.
@@ -762,24 +745,31 @@ class StagedTree(EventTree):
             In event trees, only "count" can be displayed, so this can be omitted.
         :type edge_info: str
 
+        :param staged: if True, returns the coloured staged tree,
+            if False, returns the underlying event tree.
+        :type staged: bool
+
         :return: The event tree Image object.
         :rtype: IPython.display.Image or None
         """
-        try:
-            if not self._ahc_output:
-                raise AttributeError
+        if staged:
+            try:
+                if not self._ahc_output:
+                    raise AttributeError
 
-            graph = self.dot_staged_graph(edge_info)
-            graph_image = super()._create_figure(graph, filename)
+                graph = self.dot_graph(edge_info)
+                graph_image = super()._create_figure(graph, filename)
 
-        except AttributeError:
-            logger.error(
-                "----- PLEASE RUN AHC ALGORITHM before trying to"
-                " export a staged tree graph -----"
-            )
-            graph_image = None
+            except AttributeError:
+                logger.error(
+                    "----- PLEASE RUN AHC ALGORITHM before trying to"
+                    " export a staged tree graph -----"
+                )
+                graph_image = None
 
-        return graph_image
+            return graph_image
+        else:
+            return super().create_figure(filename, edge_info=edge_info)
 
     def _apply_mean_posterior_probs(
         self, merged_situations: List, mean_posterior_probs: List

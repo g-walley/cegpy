@@ -266,7 +266,7 @@ class EventTree(nx.MultiDiGraph):
 
         return catagories_per_variable
 
-    def dot_event_graph(self, edge_info: str = "count") -> pdp.Dot:
+    def dot_graph(self, edge_info: str = "count") -> pdp.Dot:
         """Returns Dot graph representation of the event tree.
         :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
         In event trees, only "count" can be displayed, so this can be omitted.
@@ -370,7 +370,7 @@ class EventTree(nx.MultiDiGraph):
         :return: The event tree Image object.
         :rtype: IPython.display.Image or None
         """
-        return self._create_figure(self.dot_event_graph(edge_info=edge_info), filename)
+        return self._create_figure(self.dot_graph(edge_info=edge_info), filename)
 
     def _create_unsorted_paths_dict(self) -> defaultdict:
         """Creates and populates a dictionary of all paths provided in the dataframe,

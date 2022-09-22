@@ -440,22 +440,25 @@ class StagedTree(EventTree):
     def _calculate_bayes_factor(self, prior1, posterior1, prior2, posterior2) -> float:
         """calculates the bayes factor comparing two models which differ in
         only one stage"""
-        new_prior = list(map(add, prior1, prior2))
-        new_posterior = list(map(add, posterior1, posterior2))
-        return (
-            self._calculate_lg_of_sum(new_prior)
-            - self._calculate_lg_of_sum(prior1)
-            - self._calculate_lg_of_sum(prior2)
-            - self._calculate_lg_of_sum(new_posterior)
-            + self._calculate_lg_of_sum(posterior1)
-            + self._calculate_lg_of_sum(posterior2)
-            + self._calculate_sum_of_lg(new_posterior)
-            - self._calculate_sum_of_lg(posterior1)
-            - self._calculate_sum_of_lg(posterior2)
-            - self._calculate_sum_of_lg(new_prior)
-            + self._calculate_sum_of_lg(prior1)
-            + self._calculate_sum_of_lg(prior2)
-        )
+        if all(prior1) == 0 or all(prior2) == 0:
+            return -1.00
+        else:
+            new_prior = list(map(add, prior1, prior2))
+            new_posterior = list(map(add, posterior1, posterior2))
+            return (
+                self._calculate_lg_of_sum(new_prior)
+                - self._calculate_lg_of_sum(prior1)
+                - self._calculate_lg_of_sum(prior2)
+                - self._calculate_lg_of_sum(new_posterior)
+                + self._calculate_lg_of_sum(posterior1)
+                + self._calculate_lg_of_sum(posterior2)
+                + self._calculate_sum_of_lg(new_posterior)
+                - self._calculate_sum_of_lg(posterior1)
+                - self._calculate_sum_of_lg(posterior2)
+                - self._calculate_sum_of_lg(new_prior)
+                + self._calculate_sum_of_lg(prior1)
+                + self._calculate_sum_of_lg(prior2)
+            )
 
     def _sort_list(self, list_of_tuples) -> list:
         """function to sort a list of lists to remove repetitions"""

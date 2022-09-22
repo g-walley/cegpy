@@ -848,18 +848,36 @@ class TestStagedTrees(unittest.TestCase):
             )
 
     def test_new_colours(self) -> None:
-        colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
+        """Tests that new colours specified by the user are applied to
+        the staged tree."""
+        colours = [
+            "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
         self.fall_st.calculate_AHC_transitions(colour_list=colours)
         dot_staged_nodes = self.fall_st.dot_staged_graph().get_nodes()
         staged_node_colours = [
             n.obj_dict["attributes"]["fillcolor"] for n in dot_staged_nodes
         ]
-        assert set(colours + ["lightgrey"]) == set(staged_node_colours)
+        assert set(colours + ["white", "lightgrey"]) == set(staged_node_colours)
 
     def test_new_colours_length(self) -> None:
+        """Tests throwing an error if the number of colours specified
+        by the user is too small."""
         colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072"]
         with pytest.raises(IndexError):
             self.fall_st.calculate_AHC_transitions(colour_list=colours)
+    
+    def test_single_node_stage_colour(self) -> None:
+        """Tests if single-node stages are coloured white"""
+        nodes = ['s0', 's1', 's2', 's3', 's4']
+        self.fall_st.calculate_AHC_transitions()
+        for node in nodes:
+            assert self.fall_st.nodes[node]["colour"] == "white"
+    
+    def test_leaf_nodes_colour(self) -> None:
+        """Tests if the leaf nodes are coloured lightgrey"""
+        self.fall_st.calculate_AHC_transitions()
+        for node in self.fall_st.leaves:
+            assert self.fall_st.nodes[node]["colour"] == "lightgrey"
 
 
 class TestChangingDataFrame(unittest.TestCase):

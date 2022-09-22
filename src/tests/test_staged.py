@@ -828,9 +828,9 @@ class TestStagedTrees(unittest.TestCase):
         """Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey and the nodes in the staged tree
         agree with the result of AHC"""
-        dot_event_nodes = self.med_st.dot_event_graph().get_nodes()
+        dot_event_nodes = self.med_st.dot_graph(staged=False).get_nodes()
         self.med_st.calculate_AHC_transitions()
-        dot_staged_nodes = self.med_st.dot_staged_graph().get_nodes()
+        dot_staged_nodes = self.med_st.dot_graph().get_nodes()
         event_node_colours = [
             n.obj_dict["attributes"]["fillcolor"] for n in dot_event_nodes
         ]
@@ -840,7 +840,7 @@ class TestStagedTrees(unittest.TestCase):
         assert len(set(event_node_colours)) == 1
         assert event_node_colours[0] == "lightgrey"
         assert len(set(staged_node_colours)) > 1
-        g = self.med_st.dot_staged_graph()
+        g = self.med_st.dot_graph()
         for node in self.med_st.nodes():
             assert (
                 g.get_node(node)[0].obj_dict["attributes"]["fillcolor"]
@@ -853,7 +853,7 @@ class TestStagedTrees(unittest.TestCase):
         colours = [
             "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
         self.fall_st.calculate_AHC_transitions(colour_list=colours)
-        dot_staged_nodes = self.fall_st.dot_staged_graph().get_nodes()
+        dot_staged_nodes = self.fall_st.dot_graph().get_nodes()
         staged_node_colours = [
             n.obj_dict["attributes"]["fillcolor"] for n in dot_staged_nodes
         ]

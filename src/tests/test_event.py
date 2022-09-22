@@ -157,7 +157,7 @@ class TestEventTree:
     def test_node_colours(self) -> None:
         """Ensures that all nodes in the event tree dot graph object
         are coloured in lightgrey"""
-        dot_nodes = self.et.dot_event_graph().get_nodes()
+        dot_nodes = self.et.dot_graph().get_nodes()
         event_node_colours = [n.obj_dict["attributes"]["fillcolor"] for n in dot_nodes]
         assert len(set(event_node_colours)) == 1
         assert event_node_colours[0] == "lightgrey"

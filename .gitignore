@@ -34,3 +34,4 @@ data/tic-tac-toe.xlsx
 .coverage.*
 cegpy-binder
 docs/_build/*
+.mypy

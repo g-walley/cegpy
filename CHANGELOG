@@ -1,3 +1,5 @@
+-- 1.0.4 Fixed error occuring when calculating bayesfactor.
+
 -- 1.0.3 Fixed documentation on readthedocs so that api is displayed.
 
 -- 1.0.2 Addressed bug with inconsistent naming of nodes in ceg conversion

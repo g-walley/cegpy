@@ -11,6 +11,9 @@ It is built on top of the Python network modelling package NetworkX.
 ## Documentation
 Documentation is hosted on [read the docs](https://cegpy.readthedocs.io/en/latest/).
 
+We have also written a paper to explain the statistical methods and algorithms included in the package;  
+[ARXIV - cegpy: Modelling with Chain Event Graphs in Python](https://arxiv.org/abs/2211.11366).
+
 ## Example Binder
 Use cases have been demonstrated in a [binder](https://github.com/peterrhysstrong/cegpy-binder).
 

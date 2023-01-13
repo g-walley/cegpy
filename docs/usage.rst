@@ -12,10 +12,17 @@ To use cegpy, first install it using pip:
 
     $ pip install cegpy
 
+The package is hosted at `PyPi <https://pypi.org/project/cegpy/>`_!
+
+
 
 Worked Examples
 ---------------
 
-Examples of typical use cases of the package can be found `in a binder on Github`_.
+Examples of typical use cases of the package have been put together into a `binder. <https://github.com/peterrhysstrong/cegpy-binder>`_.
 
-.. _in a binder on Github: https://github.com/peterrhysstrong/cegpy-binder
+
+Getting Started
+---------------
+
+The following pages show how to use the package. Firstly, we start with how to use the StagedTree class!

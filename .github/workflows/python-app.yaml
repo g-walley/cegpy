@@ -24,7 +24,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install wheel
-        pip install flake8 pytest pandas pydotplus pathlib IPython openpyxl colorutils networkx
+        pip install flake8 pytest pandas pydotplus IPython colorutils networkx
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
     - name: Test with pytest
       run: |

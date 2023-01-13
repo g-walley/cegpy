@@ -20,6 +20,9 @@ It is built on top of the Python network modelling package NetworkX.
 .. toctree::
 
    usage
+   quickstart_staged_tree
+   quickstart_chain_event_graph
+   quickstart_chain_event_graph_reducer
    api
 
 Indices and tables

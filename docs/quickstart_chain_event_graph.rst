@@ -5,4 +5,4 @@ Quick Start ChainEventGraph
    :maxdepth: 2
    :caption: Contents:
 
-   quickstart_staged_tree.ipynb
+   quickstart_staged_tree_notebook.ipynb

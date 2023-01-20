@@ -1,8 +1,8 @@
 # cegpy
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
+
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/dwyl/esta/issues)
+[![Documentation Status](https://readthedocs.org/projects/cegpy/badge/?version=latest)](https://cegpy.readthedocs.io/en/latest/)
+[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg)](#contributors-)
 
 Cegpy (/segpaɪ/) is a Python package for working with Chain Event Graphs. It supports learning the graphical structure of a Chain Event Graph from data, encoding of parametric and structural priors, estimating its parameters, and performing inference.
 

@@ -13,7 +13,7 @@ logo: logo.png
 # to install GraphViz on the readthedocs build server. Instead, all notebooks should
 # be executed locally before commit, and they will cache the results.
 execute:
-  execute_notebooks: 'off'
+  execute_notebooks: force
 
 # Define the name of the latex output file for PDF builds
 latex:

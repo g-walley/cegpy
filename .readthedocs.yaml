@@ -17,7 +17,7 @@ build:
   jobs:
     pre_build:
     # Generate on-the-fly Sphinx configuration from Jupyter Book's _config.yml
-      - "sudo apt-get install graphviz"
+      - "apt-get install graphviz"
       - "jupyter-book config sphinx docs/"
 
 formats:

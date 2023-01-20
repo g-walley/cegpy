@@ -4,7 +4,18 @@
 format: jb-book
 root: intro
 parts:
-- caption: Basic examples 🪄
+- caption: Quick Start
+  chapters:
+  - file: quickstart/quickstart_st
+  - file: quickstart/quickstart_ceg
+  - file: quickstart/quickstart_cegr
+- caption: API
+  chapters:
+  - file: api/event_tree.rst
+  - file: api/staged_tree.rst
+  - file: api/chain_event_graph.rst
+  - file: api/chain_event_graph_reducer.rst
+- caption: FOR REFERENCE WHILST EDITING - Basic examples 🪄
   chapters:
   - file: markdown
   - file: notebooks

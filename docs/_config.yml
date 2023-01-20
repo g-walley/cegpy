@@ -72,4 +72,9 @@ sphinx:
     - sphinx_proof
     - sphinx_examples
     - hoverxref.extension
+    - sphinx.ext.autodoc
+    - sphinx.ext.viewcode
+    - sphinx.ext.duration
 
+autodoc_member_order:
+  "bysource"

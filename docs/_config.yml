@@ -2,8 +2,8 @@
 # Learn more at https://jupyterbook.org/customize/config.html
 # Comprehensive example: https://github.com/executablebooks/jupyter-book/blob/master/docs/_config.yml
 
-title: Example Jupyter Book for Read the Docs
-author: Read the Docs team
+title: Cegpy
+author: Gareth Walley and Aditi Shenvi
 logo: logo.png
 
 # Force re-execution of notebooks on each build.
@@ -22,7 +22,7 @@ bibtex_bibfiles:
 
 # Information about where the book exists on the web
 repository:
-  url: https://github.com/readthedocs-examples/example-jupyter-book  # Online location of your book
+  url: https://github.com/g-walley/cegpy  # Online location of your book
   path_to_book: docs  # Optional path to your book, relative to the repository root
   branch: main  # Which branch of the repository should be used when creating links (optional)
 
@@ -65,7 +65,7 @@ sphinx:
           "floor": ["\\lfloor#1\\rfloor", 1]
           "bmat": ["\\left[\\begin{array}"]
           "emat": ["\\end{array}\\right]"]
-        
+
   extra_extensions:
     - sphinx.ext.intersphinx
     - sphinx_inline_tabs

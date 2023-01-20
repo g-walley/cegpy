@@ -1,7 +1,3 @@
 jupyter-book
-matplotlib
-numpy
-sphinx-inline-tabs
-sphinx-examples
-sphinx-proof
-sphinx-hoverxref
+pandoc
+cegpy

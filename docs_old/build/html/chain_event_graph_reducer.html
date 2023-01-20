@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChainEventGraphReducer &mdash; Cegpy 1.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="ChainEventGraph" href="chain_event_graph.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> Cegpy
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="api.html">API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="event_tree.html">EventTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="staged_tree.html">StagedTree</a></li>
+<li class="toctree-l2"><a class="reference internal" href="chain_event_graph.html">ChainEventGraph</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">ChainEventGraphReducer</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">Cegpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="api.html">API</a> &raquo;</li>
+      <li>ChainEventGraphReducer</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/chain_event_graph_reducer.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="chaineventgraphreducer">
+<h1>ChainEventGraphReducer<a class="headerlink" href="#chaineventgraphreducer" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">cegpy.</span></span><span class="sig-name descname"><span class="pre">ChainEventGraphReducer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ceg</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="chain_event_graph.html#cegpy.ChainEventGraph" title="cegpy.graphs._ceg.ChainEventGraph"><span class="pre">ChainEventGraph</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer" title="Permalink to this definition"></a></dt>
+<dd><p>Reduces Chain Event Graphs given certain and/or uncertain evidence.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ceg</strong> (<a class="reference internal" href="chain_event_graph.html#cegpy.ChainEventGraph" title="cegpy.ChainEventGraph"><em>ChainEventGraph</em></a>) – Chain event graph object to reduce.</p>
+</dd>
+</dl>
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.certain_edges">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">certain_edges</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.certain_edges" title="Permalink to this definition"></a></dt>
+<dd><p>A list of all edges of the ChainEventGraph that have been observed.</p>
+<p><cite>certain_edges</cite> is a list of edge tuples of the form:
+<cite>[edge_1, edge_2, … edge_n]</cite></p>
+<p>Each edge tuple takes the form:
+<cite>(“source_node_name”, “destination_node_name”, “edge_label”)</cite></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.uncertain_edges">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uncertain_edges</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.uncertain_edges" title="Permalink to this definition"></a></dt>
+<dd><p>A list of sets of edges of the ChainEventGraph which might have occured.
+<cite>uncertain_edges</cite> is a list of sets of edge tuples of the form:</p>
+<p><cite>[{(a, b, label), (a, c, label)}, {(x, y, label), (x, z, label)}]</cite></p>
+<p>Each edge tuple takes the form:</p>
+<p><cite>(“source_node_name”, “destination_node_name”, “edge_label”)</cite></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.certain_nodes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">certain_nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.certain_nodes" title="Permalink to this definition"></a></dt>
+<dd><p>A set of all nodes of the ChainEventGraph that have been observed.</p>
+<p><cite>certain_nodes</cite> is a set of nodes of the form:
+<cite>{“node_1”, “node_2”, “node_3”, … “node_n”}</cite></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.uncertain_nodes">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">uncertain_nodes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.uncertain_nodes" title="Permalink to this definition"></a></dt>
+<dd><p>A list of sets of nodes of the ChainEventGraph where there is uncertainty
+which of the nodes in each set happened.
+<cite>uncertain_nodes</cite> is a list of sets of nodes of the form:
+<cite>[{“node_1”, “node_2”}, {“node_3”, “node_4”}, …]</cite></p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.paths">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">paths</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.paths" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A list of all paths through the reduced ChainEventGraph.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.graph">
+<em class="property"><span class="pre">property</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">graph</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="chain_event_graph.html#cegpy.ChainEventGraph" title="cegpy.graphs._ceg.ChainEventGraph"><span class="pre">ChainEventGraph</span></a></em><a class="headerlink" href="#cegpy.ChainEventGraphReducer.graph" title="Permalink to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>The reduced graph once all evidence has been taken into account.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p><a class="reference internal" href="chain_event_graph.html#cegpy.ChainEventGraph" title="cegpy.ChainEventGraph">ChainEventGraph</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.clear_all_evidence">
+<span class="sig-name descname"><span class="pre">clear_all_evidence</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.clear_all_evidence" title="Permalink to this definition"></a></dt>
+<dd><p>Resets the evidence provided.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_certain_edge">
+<span class="sig-name descname"><span class="pre">add_certain_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_certain_edge" title="Permalink to this definition"></a></dt>
+<dd><p>Specify an edge that has been observed.
+:param src: Edge source node label
+:type src: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dst</strong> (<em>str</em>) – Edge destination node label</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – Label of certain edge</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_certain_edge">
+<span class="sig-name descname"><span class="pre">remove_certain_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">src</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dst</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_certain_edge" title="Permalink to this definition"></a></dt>
+<dd><p>Specify an edge to remove from the certain edges.
+:param src: Edge source node label
+:type src: str</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dst</strong> (<em>str</em>) – Edge destination node label</p></li>
+<li><p><strong>label</strong> (<em>str</em>) – Label of certain edge</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_certain_edge_list">
+<span class="sig-name descname"><span class="pre">add_certain_edge_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_certain_edge_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of edges that have all been observed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edges</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_certain_edge_list">
+<span class="sig-name descname"><span class="pre">remove_certain_edge_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_certain_edge_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of edges that in the certain edge list
+to remove.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edges</strong> (<em>List</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em>) – List of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_uncertain_edge_set">
+<span class="sig-name descname"><span class="pre">add_uncertain_edge_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_uncertain_edge_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a set of edges where one of the edges has
+occured, but you are uncertain of which one it is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edge_set</strong> (<em>Set</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Set of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_uncertain_edge_set">
+<span class="sig-name descname"><span class="pre">remove_uncertain_edge_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_uncertain_edge_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a set of edges to remove from the uncertain edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edge_set</strong> (<em>Set</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em>) – Set of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_uncertain_edge_set_list">
+<span class="sig-name descname"><span class="pre">add_uncertain_edge_set_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_uncertain_edge_set_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of sets of edges where one of the edges has
+occured, but you are uncertain of which one it is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edge_set</strong> (<em>List</em><em>[</em><em>Set</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – List of sets of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_uncertain_edge_set_list">
+<span class="sig-name descname"><span class="pre">remove_uncertain_edge_set_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_uncertain_edge_set_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of sets of edges to remove from the evidence list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>edge_set</strong> (<em>List</em><em>[</em><em>Set</em><em>[</em><em>Tuple</em><em>[</em><em>str</em><em>]</em><em>]</em><em>]</em>) – List of sets of edge tuples of the form (“src”, “dst”, “label”)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_certain_node">
+<span class="sig-name descname"><span class="pre">add_certain_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_certain_node" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a node in the graph that has been observed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>str</em>) – A node label e.g. “w4”</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_certain_node">
+<span class="sig-name descname"><span class="pre">remove_certain_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_certain_node" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a node to be removed from the certain nodes list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>node</strong> (<em>str</em>) – A node label e.g. “w4”</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_certain_node_set">
+<span class="sig-name descname"><span class="pre">add_certain_node_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_certain_node_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a set of nodes that have been observed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>Set</em><em>[</em><em>str</em><em>]</em>) – A set of node labels e.g. {“w4”, “w8”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_certain_node_set">
+<span class="sig-name descname"><span class="pre">remove_certain_node_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_certain_node_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of nodes to remove from the list of nodes that have
+been observed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>Set</em><em>[</em><em>str</em><em>]</em>) – A set of node labels e.g. {“w4”, “w8”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_uncertain_node_set">
+<span class="sig-name descname"><span class="pre">add_uncertain_node_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_uncertain_node_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a set of nodes where one of the nodes has
+occured, but you are uncertain of which one it is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>Set</em><em>[</em><em>str</em><em>]</em>) – A set of node labels e.g. {“w4”, “w8”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_uncertain_node_set">
+<span class="sig-name descname"><span class="pre">remove_uncertain_node_set</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_set</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_uncertain_node_set" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a set of nodes to be removed from the uncertain
+nodes set list.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>Set</em><em>[</em><em>str</em><em>]</em>) – A set of node labels e.g. {“w4”, “w8”}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.add_uncertain_node_set_list">
+<span class="sig-name descname"><span class="pre">add_uncertain_node_set_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.add_uncertain_node_set_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of sets of nodes where in each set, one of
+the nodes has occured, but you are uncertain of which one it is.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>List</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A collection of sets of uncertain nodes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="cegpy.ChainEventGraphReducer.remove_uncertain_node_set_list">
+<span class="sig-name descname"><span class="pre">remove_uncertain_node_set_list</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">node_sets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Set</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#cegpy.ChainEventGraphReducer.remove_uncertain_node_set_list" title="Permalink to this definition"></a></dt>
+<dd><p>Specify a list of sets nodes to remove from the list of uncertain
+sets of nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>nodes</strong> (<em>List</em><em>[</em><em>Set</em><em>[</em><em>str</em><em>]</em><em>]</em>) – A collection of sets of uncertain nodes.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="chain_event_graph.html" class="btn btn-neutral float-left" title="ChainEventGraph" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Gareth Walley, Aditi Shenvi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

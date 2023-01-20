@@ -8,8 +8,12 @@ logo: logo.png
 
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
+
+# Notebooks are not being executed at build time, because Gareth couldn't find a way
+# to install GraphViz on the readthedocs build server. Instead, all notebooks should
+# be executed locally before commit, and they will cache the results.
 execute:
-  execute_notebooks: force
+  execute_notebooks: 'off'
 
 # Define the name of the latex output file for PDF builds
 latex:

@@ -7,7 +7,7 @@ parts:
 - caption: Quick Start
   chapters:
   - file: quickstart/quickstart_staged_tree_notebook
-  - file: quickstart/quickstart_ceg
+  - file: quickstart/quickstart_ceg_notebook
   - file: quickstart/quickstart_cegr
 - caption: API
   chapters:

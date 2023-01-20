@@ -66,7 +66,8 @@ class ChainEventGraphReducer:
 
     @property
     def certain_edges(self) -> List[Tuple[str]]:
-        """A list of all edges of the ChainEventGraph that have been observed.
+        """
+        :return: A list of all edges of the ChainEventGraph that have been observed.
 
         `certain_edges` is a list of edge tuples of the form:
         `[edge_1, edge_2, ... edge_n]`
@@ -78,7 +79,8 @@ class ChainEventGraphReducer:
 
     @property
     def uncertain_edges(self) -> List[Tuple[str]]:
-        """A list of sets of edges of the ChainEventGraph which might have occured.
+        """
+        :return: A list of sets of edges of the ChainEventGraph which might have occured.
         `uncertain_edges` is a list of sets of edge tuples of the form:
 
         `[{(a, b, label), (a, c, label)}, {(x, y, label), (x, z, label)}]`
@@ -91,7 +93,8 @@ class ChainEventGraphReducer:
 
     @property
     def certain_nodes(self) -> Set[str]:
-        """A set of all nodes of the ChainEventGraph that have been observed.
+        """
+        :return: A set of all nodes of the ChainEventGraph that have been observed.
 
         `certain_nodes` is a set of nodes of the form:
         `{"node_1", "node_2", "node_3", ... "node_n"}`"""
@@ -99,7 +102,8 @@ class ChainEventGraphReducer:
 
     @property
     def uncertain_nodes(self) -> List[Set[str]]:
-        """A list of sets of nodes of the ChainEventGraph where there is uncertainty
+        """
+        :return: A list of sets of nodes of the ChainEventGraph where there is uncertainty
         which of the nodes in each set happened.
         `uncertain_nodes` is a list of sets of nodes of the form:
         `[{"node_1", "node_2"}, {"node_3", "node_4"}, ...]`"""
@@ -140,6 +144,7 @@ class ChainEventGraphReducer:
     def add_certain_edge(self, src: str, dst: str, label: str) -> None:
         """
         Specify an edge that has been observed.
+
         :param src: Edge source node label
         :type src: str
 
@@ -160,6 +165,7 @@ class ChainEventGraphReducer:
     def remove_certain_edge(self, src: str, dst: str, label: str) -> None:
         """
         Specify an edge to remove from the certain edges.
+
         :param src: Edge source node label
         :type src: str
 

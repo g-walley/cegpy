@@ -25,3 +25,7 @@ ChainEventGraphReducer
         remove_uncertain_node_set,
         add_uncertain_node_set_list,
         remove_uncertain_node_set_list,
+    :undoc-members:
+    :member-order: bysource
+    :show-inheritance:
+    :exclude-members: __init__

@@ -13,4 +13,8 @@ EventTree
         leaves,
         edge_counts,
         categories_per_variable
+    :undoc-members:
+    :member-order: bysource
+    :show-inheritance:
+    :exclude-members: __init__
 

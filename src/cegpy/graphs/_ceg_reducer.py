@@ -80,13 +80,12 @@ class ChainEventGraphReducer:
     @property
     def uncertain_edges(self) -> List[Tuple[str]]:
         """
-        :return: A list of sets of edges of the ChainEventGraph which might have occured.
-        `uncertain_edges` is a list of sets of edge tuples of the form:
+        :return: A list of sets of edges of the ChainEventGraph which might have occurred.
 
+        `uncertain_edges` is a list of sets of edge tuples of the form:
         `[{(a, b, label), (a, c, label)}, {(x, y, label), (x, z, label)}]`
 
         Each edge tuple takes the form:
-
         `("source_node_name", "destination_node_name", "edge_label")`
         """
         return self._uncertain_edges
@@ -97,22 +96,25 @@ class ChainEventGraphReducer:
         :return: A set of all nodes of the ChainEventGraph that have been observed.
 
         `certain_nodes` is a set of nodes of the form:
-        `{"node_1", "node_2", "node_3", ... "node_n"}`"""
+        `{"node_1", "node_2", "node_3", ... "node_n"}`
+        """
         return self._certain_nodes
 
     @property
     def uncertain_nodes(self) -> List[Set[str]]:
         """
-        :return: A list of sets of nodes of the ChainEventGraph where there is uncertainty
-        which of the nodes in each set happened.
+        :return: A list of sets of nodes of the ChainEventGraph where there is uncertainty which of the nodes in each set happened.
+
         `uncertain_nodes` is a list of sets of nodes of the form:
-        `[{"node_1", "node_2"}, {"node_3", "node_4"}, ...]`"""
+        `[{"node_1", "node_2"}, {"node_3", "node_4"}, ...]`
+        """
         return self._uncertain_nodes
 
     @property
     def paths(self) -> List[List[Tuple[str]]]:
         """
-        :return: A list of all paths through the reduced ChainEventGraph."""
+        :return: A list of all paths through the reduced ChainEventGraph.
+        """
         return self._path_list
 
     @property
@@ -207,7 +209,7 @@ class ChainEventGraphReducer:
     def add_uncertain_edge_set(self, edge_set: Set[Tuple[str]]) -> None:
         """
         Specify a set of edges where one of the edges has
-        occured, but you are uncertain of which one it is.
+        occurred, but you are uncertain of which one it is.
 
         :param edge_set: Set of edge tuples of the form ("src", "dst", "label")
         :type edge_set: Set[Tuple[str]]
@@ -237,7 +239,7 @@ class ChainEventGraphReducer:
     def add_uncertain_edge_set_list(self, edge_sets: List[Set[Tuple[str]]]) -> None:
         """
         Specify a list of sets of edges where one of the edges has
-        occured, but you are uncertain of which one it is.
+        occurred, but you are uncertain of which one it is.
 
         :param edge_set: List of sets of edge tuples of the form ("src", "dst", "label")
         :type edge_set: List[Set[Tuple[str]]]
@@ -305,7 +307,7 @@ class ChainEventGraphReducer:
     def add_uncertain_node_set(self, node_set: Set[str]) -> None:
         """
         Specify a set of nodes where one of the nodes has
-        occured, but you are uncertain of which one it is.
+        occurred, but you are uncertain of which one it is.
 
         :param nodes: A set of node labels e.g. {"w4", "w8"}
         :type nodes: Set[str]
@@ -336,10 +338,11 @@ class ChainEventGraphReducer:
     def add_uncertain_node_set_list(self, node_sets: List[Set[str]]) -> None:
         """
         Specify a list of sets of nodes where in each set, one of
-        the nodes has occured, but you are uncertain of which one it is.
+        the nodes has occurred, but you are uncertain of which one it is.
 
         :param nodes: A collection of sets of uncertain nodes.
-        :type nodes: List[Set[str]]"""
+        :type nodes: List[Set[str]]
+        """
         for node_set in node_sets:
             self.add_uncertain_node_set(node_set)
 

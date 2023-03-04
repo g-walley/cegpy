@@ -1,1 +1,0 @@
-# Reducing Chain Event Graphs

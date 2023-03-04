@@ -7,8 +7,8 @@ parts:
 - caption: Quick Start
   chapters:
   - file: quickstart/quickstart_staged_tree_notebook
-  - file: quickstart/quickstart_ceg
-  - file: quickstart/quickstart_cegr
+  - file: quickstart/quickstart_ceg_notebook
+  - file: quickstart/quickstart_cegr_notebook
   - file: quickstart/quickstart_dot_graph_modification
 - caption: API
   chapters:
@@ -16,15 +16,3 @@ parts:
   - file: api/staged_tree.rst
   - file: api/chain_event_graph.rst
   - file: api/chain_event_graph_reducer.rst
-- caption: FOR REFERENCE WHILST EDITING - Basic examples 🪄
-  chapters:
-  - file: markdown
-  - file: notebooks
-  - file: markdown-notebooks
-- caption: Cool extensions 🕶️
-  chapters:
-  - file: intersphinx
-  - file: sphinx-examples
-  - file: sphinx-hoverxref
-  - file: sphinx-proof
-

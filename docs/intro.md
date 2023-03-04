@@ -18,7 +18,7 @@ To use cegpy, first install it using pip:
 $ pip install cegpy
 ```
 
-The package is hotest at [PyPi](https://pypi.org/project/cegpy/ "cegpy")!
+The package is hosted on [PyPi](https://pypi.org/project/cegpy/ "cegpy")!
 
 ## Table of Contents
 

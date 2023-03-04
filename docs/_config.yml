@@ -75,6 +75,7 @@ sphinx:
     - sphinx.ext.autodoc
     - sphinx.ext.viewcode
     - sphinx.ext.duration
+    - sphinx.ext.graphviz
 
 autodoc_member_order:
   "bysource"

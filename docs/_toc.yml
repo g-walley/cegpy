@@ -6,9 +6,10 @@ root: intro
 parts:
 - caption: Quick Start
   chapters:
-  - file: quickstart/quickstart_st
+  - file: quickstart/quickstart_staged_tree_notebook
   - file: quickstart/quickstart_ceg
   - file: quickstart/quickstart_cegr
+  - file: quickstart/quickstart_dot_graph_modification
 - caption: API
   chapters:
   - file: api/event_tree.rst

@@ -8,7 +8,7 @@ parts:
   chapters:
   - file: quickstart/quickstart_staged_tree_notebook
   - file: quickstart/quickstart_ceg_notebook
-  - file: quickstart/quickstart_cegr
+  - file: quickstart/quickstart_cegr_notebook
   - file: quickstart/quickstart_dot_graph_modification
 - caption: API
   chapters:

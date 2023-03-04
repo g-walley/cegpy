@@ -35,3 +35,4 @@ data/tic-tac-toe.xlsx
 cegpy-binder
 docs/_build/*
 .mypy
+build

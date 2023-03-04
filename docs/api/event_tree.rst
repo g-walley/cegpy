@@ -5,7 +5,7 @@ EventTree
 .. autoclass:: cegpy.EventTree
     :members:
         create_figure,
-        dot_event_graph,
+        dot_graph,
         root,
         variables,
         sampling_zeros,

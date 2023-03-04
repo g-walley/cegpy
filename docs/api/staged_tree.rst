@@ -3,9 +3,8 @@ StagedTree
 .. autoclass:: cegpy.StagedTree
     :members:
         create_figure,
-        dot_event_graph,
+        dot_graph,
         calculate_AHC_transitions,
-        create_event_tree_figure,
         prior,
         prior_list,
         posterior,

@@ -709,9 +709,7 @@ class StagedTree(EventTree):
     def dot_graph(self, edge_info: str = "count", staged: bool = True):
         """Returns Dot graph representation of the staged tree.
 
-        :param edge_info: Optional - Chooses which summary measure to be displayed
-        on edges. Defaults to "count".
-        Options: ["count", "prior", "posterior", "probability"]
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability"]
         :type edge_info: str
 
         :param staged: if True, returns the coloured staged tree,
@@ -719,20 +717,22 @@ class StagedTree(EventTree):
         :type staged: bool
 
         :return: A graphviz Dot representation of the graph.
-        :rtype: pydotplus.Dot"""
+        :rtype: pydotplus.Dot
+        """
         if staged:
             return self._generate_dot_graph(edge_info=edge_info)
         else:
             return super()._generate_dot_graph(
-                fill_colour="lightgrey", edge_info=edge_info)
-        
+                fill_colour="lightgrey", edge_info=edge_info
+            )
+
     def create_figure(
         self,
         filename: Optional[str] = None,
         edge_info: str = "count",
-        staged: bool = True
+        staged: bool = True,
     ) -> Union[Image, None]:
-        """Draws the coloured staged tree or the underlying event tree 
+        """Draws the coloured staged tree or the underlying event tree
         for the process described by the dataset.
 
         :param filename: Optional - When provided, file is saved to the filename,

@@ -1,12 +1,10 @@
 """Utilities for use throughout the package."""
 
 from collections import defaultdict
-import os
 from pathlib import Path
 import math
-from typing import List, Union
-import colorutils
-from colorutils import Color as Colour
+from typing import List, Tuple, Union
+from colorutils import Color as Colour, color_run
 
 ST_OUTPUT = {
     "Merged Situations": [],
@@ -81,7 +79,7 @@ def generate_colour_run(number, starts, ends) -> list:
 
     for idx, end in enumerate(ends):
         if jumps[idx] > 0:
-            colours += colorutils.color_run(starts[idx], end, jumps[idx], to_color=True)
+            colours += color_run(starts[idx], end, jumps[idx], to_color=True)
         else:
             colours.append(end)
     hex_colours = []
@@ -91,7 +89,7 @@ def generate_colour_run(number, starts, ends) -> list:
     return hex_colours
 
 
-def generate_filename_and_mkdir(filename: Union[str, Path]) -> str:
+def generate_filename_and_mkdir(filename: Union[str, Path]) -> Tuple[Path, str]:
     """Creates a filename."""
     if filename is not Path:
         filename = Path(filename)
@@ -101,7 +99,7 @@ def generate_filename_and_mkdir(filename: Union[str, Path]) -> str:
         filename.joinpath(".png")
         filetype = "png"
 
-    os.makedirs(filename.parent, exist_ok=True)
+    filename.parent.mkdir(parents=True, exist_ok=True)
     return filename, filetype
 
 

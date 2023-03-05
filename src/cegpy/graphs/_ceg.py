@@ -207,7 +207,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         if edge_info in self._edge_attributes:
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
-            logger.warning(
+            logger.info(
                 "edge_info '%s' does not exist for the %s class. "
                 "Using the default of 'probability' values "
                 "on edges instead. For more information, see the "

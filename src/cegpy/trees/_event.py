@@ -232,7 +232,7 @@ class EventTree(nx.MultiDiGraph):
         """
 
         def display_nan_warning():
-            logger.warning(
+            logger.info(
                 textwrap.dedent(
                     """   --- NaNs found in the dataframe!! ---
                     cegpy assumes that NaNs are either structural zeros or
@@ -283,7 +283,7 @@ class EventTree(nx.MultiDiGraph):
         if edge_info in self._edge_attributes:
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
-            logger.warning(
+            logger.info(
                 "edge_info '%s' does not exist for the "
                 "%s class. Using the default of 'count' values "
                 "on edges instead. For more information, see the "

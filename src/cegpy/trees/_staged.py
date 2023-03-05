@@ -283,16 +283,14 @@ class StagedTree(EventTree):
         if prior:
             if alpha:
                 self.alpha = None
-                logging.warning(
-                    "Params Warning!! When prior is given, alpha is not required!"
-                )
+                logger.info("When prior is given, alpha is not required!")
             self._check_prior(prior)
             self.prior = prior
         else:
             if alpha is None:
                 self.alpha = self._calculate_default_alpha()
-                logging.warning(
-                    "Params Warning!! Neither prior nor alpha "
+                logger.info(
+                    "Neither prior nor alpha "
                     "were provided. Using default alpha "
                     "value of %d.",
                     self.alpha,

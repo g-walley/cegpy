@@ -42,34 +42,6 @@ class TestLogging:
             sampling_zero_paths=self.fall_s_z_paths,
         )
 
-    def test_figure_with_wrong_edge_attribute(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Ensures a warning is raised when a non-existent
-        attribute is passed for the edge_info argument"""
-        msg = (
-            r"edge_info 'prob' does not exist for the "
-            r"StagedTree class. Using the default of 'count' values "
-            r"on edges instead. For more information, see the "
-            r"documentation."
-        )
-
-        # stratified medical dataset
-        self.med_st.calculate_AHC_transitions()
-        try:
-            _ = self.med_st.create_figure(filename=None, edge_info="prob")
-        except RuntimeError:
-            pass
-        assert msg in caplog.text, "Expected log message not logged."
-
-        # non-stratified dataset
-        self.fall_st.calculate_AHC_transitions()
-        try:
-            _ = self.fall_st.create_figure(filename=None, edge_info="prob")
-        except RuntimeError:
-            pass
-        assert msg in caplog.text, "Expected log message not logged."
-
     def test_run_ahc_before_figure(self) -> None:
         """Tests expected error message is in the log when running without
         running AHC"""

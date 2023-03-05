@@ -8,7 +8,6 @@ Chain Event Graphs.
 See documentation of more information.
 
 """
-import logging
 
 from cegpy.graphs._ceg import ChainEventGraph
 from cegpy.graphs._ceg_reducer import ChainEventGraphReducer

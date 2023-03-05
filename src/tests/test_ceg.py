@@ -69,12 +69,14 @@ class TestUnitCEG(unittest.TestCase):
     def test_create_figure(self):
         """.create_figure() called with no filename"""
         ceg = ChainEventGraph(self.staged, generate=False)
-        with self.assertLogs("cegpy", level="INFO") as log_cm:
+        with self.assertRaisesRegex(
+            RuntimeError,
+            (
+                "Cannot display graph in notebook. "
+                "Please provide a filename to save the graph to."
+            ),
+        ):
             assert ceg.create_figure() is None
-        self.assertEqual(
-            ["WARNING:cegpy.chain_event_graph:No filename. Figure not saved."],
-            log_cm.output,
-        )
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):
@@ -554,44 +556,6 @@ class TestDistanceToSink(unittest.TestCase):
         for dist, nodes in expected_nodes.items():
             actual_node_list = next(nodes_gen)
             self.assertEqual(actual_node_list.sort(), nodes.sort())
-
-
-class TestEdgeInfoAttributes:
-    """Test edge_info argument."""
-
-    med_s_z_paths: List[Tuple]
-    med_df: pd.DataFrame
-    med_st: StagedTree
-
-    def setup(self):
-        """Test Setup"""
-        med_df_path = (
-            Path(__file__)
-            .resolve()
-            .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
-        )
-        self.med_s_z_paths = None
-        self.med_df = pd.read_excel(med_df_path)
-        self.med_st = StagedTree(
-            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
-        )
-
-    def test_figure_with_wrong_edge_attribute(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Ensures a warning is raised when a non-existent
-        attribute is passed for the edge_info argument"""
-        msg = (
-            r"edge_info 'prob' does not exist for the "
-            r"ChainEventGraph class. Using the default of 'probability' values "
-            r"on edges instead. For more information, see the "
-            r"documentation."
-        )
-
-        # stratified medical dataset
-        ceg = ChainEventGraph(self.med_st, generate=False)
-        _ = ceg.create_figure(filename=None, edge_info="prob")
-        assert msg in caplog.text, "Expected log message not logged."
 
 
 @patch.object(ChainEventGraph, "_relabel_nodes")

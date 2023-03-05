@@ -42,36 +42,16 @@ class TestLogging:
             sampling_zero_paths=self.fall_s_z_paths,
         )
 
-    def test_figure_with_wrong_edge_attribute(
-        self, caplog: pytest.LogCaptureFixture
-    ) -> None:
-        """Ensures a warning is raised when a non-existent
-        attribute is passed for the edge_info argument"""
-        msg = (
-            r"edge_info 'prob' does not exist for the "
-            r"StagedTree class. Using the default of 'count' values "
-            r"on edges instead. For more information, see the "
-            r"documentation."
-        )
-
-        # stratified medical dataset
-        self.med_st.calculate_AHC_transitions()
-        _ = self.med_st.create_figure(filename=None, edge_info="prob")
-        assert msg in caplog.text, "Expected log message not logged."
-
-        # non-stratified dataset
-        self.fall_st.calculate_AHC_transitions()
-        _ = self.fall_st.create_figure(filename=None, edge_info="prob")
-        assert msg in caplog.text, "Expected log message not logged."
-
-    def test_run_ahc_before_figure(self, caplog) -> None:
+    def test_run_ahc_before_figure(self) -> None:
         """Tests expected error message is in the log when running without
         running AHC"""
         try:
             self.med_st.create_figure()
-            assert "PLEASE RUN AHC" in caplog.text
-        except InvocationException:
+
+        except (InvocationException):
             pass
+        except RuntimeError as err:
+            assert "PLEASE RUN AHC" in err.args[0], "Expected log message not logged."
 
 
 class TestStagedTrees(unittest.TestCase):
@@ -850,8 +830,7 @@ class TestStagedTrees(unittest.TestCase):
     def test_new_colours(self) -> None:
         """Tests that new colours specified by the user are applied to
         the staged tree."""
-        colours = [
-            "#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
+        colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072", "#80b1d3", "#fdb462"]
         self.fall_st.calculate_AHC_transitions(colour_list=colours)
         dot_staged_nodes = self.fall_st.dot_graph().get_nodes()
         staged_node_colours = [
@@ -865,14 +844,14 @@ class TestStagedTrees(unittest.TestCase):
         colours = ["#8dd3c7", "#ffffb3", "#bebada", "#fb8072"]
         with pytest.raises(IndexError):
             self.fall_st.calculate_AHC_transitions(colour_list=colours)
-    
+
     def test_single_node_stage_colour(self) -> None:
         """Tests if single-node stages are coloured white"""
-        nodes = ['s0', 's1', 's2', 's3', 's4']
+        nodes = ["s0", "s1", "s2", "s3", "s4"]
         self.fall_st.calculate_AHC_transitions()
         for node in nodes:
             assert self.fall_st.nodes[node]["colour"] == "white"
-    
+
     def test_leaf_nodes_colour(self) -> None:
         """Tests if the leaf nodes are coloured lightgrey"""
         self.fall_st.calculate_AHC_transitions()

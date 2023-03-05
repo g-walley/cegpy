@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 from typing import Dict, List, Mapping, Optional, Tuple, Union
-import logging
 import textwrap
 import numpy as np
 import pydotplus as pdp
@@ -14,9 +13,6 @@ from cegpy.utilities._util import (
     generate_filename_and_mkdir,
     create_sampling_zeros,
 )
-
-# create logger object for this module
-logger = logging.getLogger("cegpy.event_tree")
 
 
 class EventTree(nx.MultiDiGraph):
@@ -138,7 +134,6 @@ class EventTree(nx.MultiDiGraph):
         )
 
         self._construct_event_tree()
-        logger.info("Initialisation complete!")
 
     @property
     def root(self) -> str:
@@ -155,8 +150,6 @@ class EventTree(nx.MultiDiGraph):
         :rtype: List[str]
         """
         variables = list(self.dataframe.columns)
-        logger.info("Variables extracted from dataframe were:")
-        logger.info(variables)
         return variables
 
     @property
@@ -169,11 +162,6 @@ class EventTree(nx.MultiDiGraph):
 
         :rtype: List[Tuple[str]] or None
         """
-        if self._sampling_zero_paths is None:
-            logger.info(
-                "EventTree.sampling_zero_paths \
-                    has not been set."
-            )
         return self._sampling_zero_paths
 
     @sampling_zeros.setter
@@ -231,23 +219,8 @@ class EventTree(nx.MultiDiGraph):
         :rtype: Dict[str, Int]
         """
 
-        def display_nan_warning():
-            logger.warning(
-                textwrap.dedent(
-                    """   --- NaNs found in the dataframe!! ---
-                    cegpy assumes that NaNs are either structural zeros or
-                    structural missing values.
-                    Any non-structural missing values must be dealt with
-                    prior to providing the dataset to any of the cegpy
-                    functions. Any non-structural zeros should be explicitly
-                    added into the cegpy objects.
-                    --- See documentation for more information. ---"""
-                )
-            )
-
         categories_to_ignore = {"N/A", "NA", "n/a", "na", "NAN", "nan"}
         catagories_per_variable = {}
-        nans_filtered = False
 
         for var in self.variables:
             categories = set(self.dataframe[var].unique().tolist())
@@ -256,13 +229,8 @@ class EventTree(nx.MultiDiGraph):
 
             # remove any string nans that might have made it in.
             filtered_cats = pd_filtered_categories - categories_to_ignore
-            if pd_filtered_categories != filtered_cats:
-                nans_filtered = True
 
             catagories_per_variable[var] = len(filtered_cats)
-
-        if nans_filtered:
-            display_nan_warning()
 
         return catagories_per_variable
 
@@ -283,14 +251,6 @@ class EventTree(nx.MultiDiGraph):
         if edge_info in self._edge_attributes:
             edge_info_dict = nx.get_edge_attributes(self, edge_info)
         else:
-            logger.warning(
-                "edge_info '%s' does not exist for the "
-                "%s class. Using the default of 'count' values "
-                "on edges instead. For more information, see the "
-                "documentation.",
-                edge_info,
-                self.__class__.__name__,
-            )
             edge_info_dict = nx.get_edge_attributes(self, "count")
 
         for edge, attribute in edge_info_dict.items():
@@ -330,20 +290,18 @@ class EventTree(nx.MultiDiGraph):
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
-        if filename is None:
-            logger.warning("No filename. Figure not saved.")
-        else:
-            filename, filetype = generate_filename_and_mkdir(filename)
-            logger.info("--- generating graph ---")
-            logger.info("--- writing %s file ---", filetype)
-            graph.write(str(filename), format=filetype)
-            graph_image = None
 
         if get_ipython() is not None:
-            logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())
-        else:
+        elif filename:
+            filename, filetype = generate_filename_and_mkdir(filename)
+            graph.write(str(filename), format=filetype)
             graph_image = None
+        else:
+            raise RuntimeError(
+                "Cannot display graph in notebook. "
+                "Please provide a filename to save the graph to."
+            )
 
         return graph_image
 
@@ -457,7 +415,6 @@ class EventTree(nx.MultiDiGraph):
         """Constructs event_tree DiGraph.
         Takes the paths, and adds all the nodes and edges to the Graph"""
 
-        logger.info("Starting construction of event tree")
         self._create_path_dict_entries()
         # Taking a list of a networkx graph object (self) provides a list
         # of all the nodes

@@ -2,7 +2,6 @@
 from copy import deepcopy
 from fractions import Fraction
 from itertools import combinations, chain
-import logging
 from operator import add, sub, itemgetter
 from typing import Dict, List, Optional, Tuple, Union
 import networkx as nx
@@ -11,8 +10,6 @@ from IPython.display import Image
 
 from cegpy.trees._event import EventTree
 from cegpy.utilities._util import generate_colours
-
-logger = logging.getLogger("cegpy.staged_tree")
 
 
 # pylint: disable=too-many-instance-attributes
@@ -93,7 +90,6 @@ class StagedTree(EventTree):
         self._sort_count = 0
         self._colours_for_situations = []
         self._ahc_output = {}
-        logger.debug("Starting Staged Tree")
 
     @property
     def prior(self) -> Dict[Tuple[str], List[Fraction]]:
@@ -283,20 +279,11 @@ class StagedTree(EventTree):
         if prior:
             if alpha:
                 self.alpha = None
-                logging.warning(
-                    "Params Warning!! When prior is given, alpha is not required!"
-                )
             self._check_prior(prior)
             self.prior = prior
         else:
             if alpha is None:
                 self.alpha = self._calculate_default_alpha()
-                logging.warning(
-                    "Params Warning!! Neither prior nor alpha "
-                    "were provided. Using default alpha "
-                    "value of %d.",
-                    self.alpha,
-                )
             else:
                 self.alpha = alpha
 
@@ -313,7 +300,6 @@ class StagedTree(EventTree):
         """If no alpha is given, a default value is calculated.
         The value is calculated by determining the maximum number
         of categories that any one variable has"""
-        logger.info("Calculating default prior")
         max_count = max(list(self.categories_per_variable.values()))
         return max_count
 
@@ -326,7 +312,6 @@ class StagedTree(EventTree):
         edges of a specific situation.
         Indexed same as self.situations & self.egde_countset"""
 
-        logger.info("Generating default prior")
         default_prior = [0] * len(self.situations)
         sample_size_at_node = {}
 
@@ -372,7 +357,6 @@ class StagedTree(EventTree):
         in the hyperstage.
         The default is to allow all situations with the same number of
         outgoing edges and the same edge labels to be in a common list."""
-        logger.info("Creating default hyperstage")
         hyperstage = []
         info_of_edges = []
 
@@ -399,7 +383,6 @@ class StagedTree(EventTree):
     def _create_edge_countset(self) -> list:
         """Each element of list contains a list with counts along edges emanating from
         a specific situation. Indexed same as self.situations"""
-        logger.info("Creating edge countset")
         edge_countset = []
 
         for node in self.situations:
@@ -422,7 +405,6 @@ class StagedTree(EventTree):
     def _calculate_initial_loglikelihood(self, prior, posterior) -> float:
         """calculating log likelihood given a prior and posterior"""
         # Calculate prior contribution
-        logger.info("Calculating initial loglikelihood")
 
         pri_lg_of_sum = [self._calculate_lg_of_sum(elem) for elem in prior]
         pri_sum_of_lg = [self._calculate_sum_of_lg(elem) for elem in prior]
@@ -690,7 +672,6 @@ class StagedTree(EventTree):
         :return: The output from the AHC algorithm, specified above.
         :rtype: Dict
         """
-        logger.info("\n\n --- Starting AHC Algorithm ---")
 
         self._store_params(prior, alpha, hyperstage)
 
@@ -766,16 +747,15 @@ class StagedTree(EventTree):
                 graph = self.dot_graph(edge_info)
                 graph_image = super()._create_figure(graph, filename)
 
-            except AttributeError:
-                logger.error(
+            except AttributeError as err:
+                raise RuntimeError(
                     "----- PLEASE RUN AHC ALGORITHM before trying to"
                     " export a staged tree graph -----"
-                )
-                graph_image = None
+                ) from err
 
             return graph_image
-        else:
-            return super().create_figure(filename, edge_info=edge_info)
+
+        return super().create_figure(filename, edge_info=edge_info)
 
     def _apply_mean_posterior_probs(
         self, merged_situations: List, mean_posterior_probs: List

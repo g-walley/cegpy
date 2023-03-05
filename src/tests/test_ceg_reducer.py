@@ -71,11 +71,6 @@ class TestCEGReducer(unittest.TestCase):
         self.rceg._ceg.edges["w4", "w_infinity", "r"]["probability"] = 0.1
         self.rceg._ceg.edges["w0", "w3", "s"]["probability"] = 0.1
 
-        try:
-            self.rceg._ceg.create_figure("out/test_propation_pre.pdf")
-        except InvocationException:
-            pass
-
     def test_repr(self):
         rep = repr(self.rceg)
 

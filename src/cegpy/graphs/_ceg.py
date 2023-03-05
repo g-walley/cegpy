@@ -277,9 +277,7 @@ class ChainEventGraph(nx.MultiDiGraph):
         :rtype: IPython.display.Image or None
         """
         graph = self.dot_graph(edge_info=edge_info)
-        if filename is None:
-            logger.warning("No filename. Figure not saved.")
-        else:
+        if filename:
             filename, filetype = generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
             logger.info("--- writing %s file ---", filetype)
@@ -290,6 +288,10 @@ class ChainEventGraph(nx.MultiDiGraph):
             graph_image = Image(graph.create_png())  # pylint: disable=no-member
         else:
             graph_image = None
+            raise RuntimeError(
+                "Cannot display graph in notebook. "
+                "Please provide a filename to save the graph to."
+            )
 
         return graph_image
 

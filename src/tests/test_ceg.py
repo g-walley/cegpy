@@ -69,12 +69,14 @@ class TestUnitCEG(unittest.TestCase):
     def test_create_figure(self):
         """.create_figure() called with no filename"""
         ceg = ChainEventGraph(self.staged, generate=False)
-        with self.assertLogs("cegpy", level="INFO") as log_cm:
+        with self.assertRaisesRegex(
+            RuntimeError,
+            (
+                "Cannot display graph in notebook. "
+                "Please provide a filename to save the graph to."
+            ),
+        ):
             assert ceg.create_figure() is None
-        self.assertEqual(
-            ["WARNING:cegpy.chain_event_graph:No filename. Figure not saved."],
-            log_cm.output,
-        )
 
 
 class TestCEGHelpersTestCases(unittest.TestCase):

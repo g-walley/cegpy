@@ -277,23 +277,23 @@ class ChainEventGraph(nx.MultiDiGraph):
         :rtype: IPython.display.Image or None
         """
         graph = self.dot_graph(edge_info=edge_info)
-        if filename:
-            filename, filetype = generate_filename_and_mkdir(filename)
-            logger.info("--- generating graph ---")
-            logger.info("--- writing %s file ---", filetype)
-            graph.write(str(filename), format=filetype)
 
         if get_ipython() is not None:
             logger.info("--- Exporting graph to notebook ---")
             graph_image = Image(graph.create_png())  # pylint: disable=no-member
+            return graph_image
+        elif filename:
+            filename, filetype = generate_filename_and_mkdir(filename)
+            logger.info("--- generating graph ---")
+            logger.info("--- writing %s file ---", filetype)
+            graph.write(str(filename), format=filetype)
         else:
-            graph_image = None
             raise RuntimeError(
                 "Cannot display graph in notebook. "
                 "Please provide a filename to save the graph to."
             )
 
-        return graph_image
+        return None
 
     def _trim_leaves_from_graph(self):
         """Trims all the leaves from the graph, and points each incoming

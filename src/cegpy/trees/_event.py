@@ -330,20 +330,21 @@ class EventTree(nx.MultiDiGraph):
         and saves it to "<filename>.filetype". Supports any filetype that
         graphviz supports. e.g: "event_tree.png" or "event_tree.svg" etc.
         """
-        if filename is None:
-            logger.warning("No filename. Figure not saved.")
-        else:
+
+        if get_ipython() is not None:
+            logger.info("--- Exporting graph to notebook ---")
+            graph_image = Image(graph.create_png())
+        elif filename:
             filename, filetype = generate_filename_and_mkdir(filename)
             logger.info("--- generating graph ---")
             logger.info("--- writing %s file ---", filetype)
             graph.write(str(filename), format=filetype)
             graph_image = None
-
-        if get_ipython() is not None:
-            logger.info("--- Exporting graph to notebook ---")
-            graph_image = Image(graph.create_png())
         else:
-            graph_image = None
+            raise RuntimeError(
+                "Cannot display graph in notebook. "
+                "Please provide a filename to save the graph to."
+            )
 
         return graph_image
 

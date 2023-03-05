@@ -145,7 +145,10 @@ class TestEventTree:
     ) -> None:
         """Ensures a warning is raised when a non-existent
         attribute is passed for the edge_info argument"""
-        _ = self.et.create_figure(filename=None, edge_info="probability")
+        try:
+            _ = self.et.create_figure(filename=None, edge_info="probability")
+        except RuntimeError:
+            pass
         msg = (
             r"edge_info 'probability' does not exist for the "
             r"EventTree class. Using the default of 'count' values "

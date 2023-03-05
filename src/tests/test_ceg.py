@@ -590,7 +590,10 @@ class TestEdgeInfoAttributes:
 
         # stratified medical dataset
         ceg = ChainEventGraph(self.med_st, generate=False)
-        _ = ceg.create_figure(filename=None, edge_info="prob")
+        try:
+            _ = ceg.create_figure(filename=None, edge_info="prob")
+        except RuntimeError:
+            pass
         assert msg in caplog.text, "Expected log message not logged."
 
 

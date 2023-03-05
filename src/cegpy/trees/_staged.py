@@ -766,16 +766,15 @@ class StagedTree(EventTree):
                 graph = self.dot_graph(edge_info)
                 graph_image = super()._create_figure(graph, filename)
 
-            except AttributeError:
-                logger.error(
+            except AttributeError as err:
+                raise RuntimeError(
                     "----- PLEASE RUN AHC ALGORITHM before trying to"
                     " export a staged tree graph -----"
-                )
-                graph_image = None
+                ) from err
 
             return graph_image
-        else:
-            return super().create_figure(filename, edge_info=edge_info)
+
+        return super().create_figure(filename, edge_info=edge_info)
 
     def _apply_mean_posterior_probs(
         self, merged_situations: List, mean_posterior_probs: List

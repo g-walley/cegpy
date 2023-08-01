@@ -518,7 +518,9 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
-    def _execute_ahc(self, hyperstage=None) -> Tuple[List, float, List]:
+    def _execute_ahc(
+        self, hyperstage=None, initial_staging=None
+    ) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:
             hyperstage = deepcopy(self.hyperstage)
@@ -528,7 +530,10 @@ class StagedTree(EventTree):
 
         loglikelihood = self._calculate_initial_loglikelihood(priors, posteriors)
 
-        merged_situation_list = []
+        if initial_staging:
+            merged_situation_list = initial_staging
+        else:
+            merged_situation_list = []
 
         # Which list in hyperstage have only 1 edge coming out of them
         # For that list, add the list to the merged situation list, and
@@ -647,7 +652,12 @@ class StagedTree(EventTree):
                     self.nodes[node]["colour"] = "white"
 
     def calculate_AHC_transitions(
-        self, prior=None, alpha=None, hyperstage=None, colour_list=None
+        self,
+        prior=None,
+        alpha=None,
+        hyperstage=None,
+        colour_list=None,
+        initial_staging=None,
     ) -> Dict:
         """Bayesian Agglommerative Hierarchical Clustering algorithm
         implementation. It returns a list of lists of the situations which
@@ -675,7 +685,9 @@ class StagedTree(EventTree):
 
         self._store_params(prior, alpha, hyperstage)
 
-        loglikelihood, merged_situations = self._execute_ahc()
+        loglikelihood, merged_situations = self._execute_ahc(
+            initial_staging=initial_staging
+        )
 
         self._mark_nodes_with_stage_number(merged_situations)
 

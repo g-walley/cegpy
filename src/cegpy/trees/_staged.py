@@ -206,11 +206,23 @@ class StagedTree(EventTree):
         :rtype: List[List[str]]
         """
         return self._hyperstage
-
+    
+    
     @hyperstage.setter
     def hyperstage(self, value):
         self._hyperstage = value
-
+    
+    
+    @property
+    def initial_staging(self) -> List[List[str]]:
+        return self._initial_staging
+    
+    
+    @initial_staging.setter
+    def initial_staging(self, value):
+        self._initial_staging = value
+    
+    
     @property
     def edge_countset(self) -> List[List]:
         """
@@ -273,7 +285,7 @@ class StagedTree(EventTree):
                 if node_prior < 0:
                     raise ValueError("All priors must be non-negative.")
 
-    def _store_params(self, prior, alpha, hyperstage) -> None:
+    def _store_params(self, prior, alpha, hyperstage, initial_staging) -> None:
         """User has passed in AHC params, this function processes them,
         and generates any default AHC params if required."""
         if prior:
@@ -295,6 +307,14 @@ class StagedTree(EventTree):
         else:
             self._check_hyperstages(hyperstage)
             self.hyperstage = hyperstage
+        
+        if hyperstage and initial_staging:
+            if not self._validate_hyperstage(initial_staging, hyperstage):
+                raise ValueError(
+                    "initial_staging is not contained within the hyperstage."
+                )
+        self.initial_staging = initial_staging
+        
 
     def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
@@ -650,7 +670,18 @@ class StagedTree(EventTree):
                     self.nodes[node]["colour"] = stage_colours[stage]
                 except KeyError:
                     self.nodes[node]["colour"] = "white"
-
+    
+    def _validate_hyperstage(initial_staging, hyperstage):
+        for init_stage in initial_staging:
+            found = 0
+            # init_stage is a subset of only one stage in hyperstages
+            for h_stage in hyperstage:
+                if set(init_stage).issubset(h_stage):
+                    found += 1
+            if found == 0:
+                return False
+        return True
+    
     def calculate_AHC_transitions(
         self,
         prior=None,
@@ -683,7 +714,7 @@ class StagedTree(EventTree):
         :rtype: Dict
         """
 
-        self._store_params(prior, alpha, hyperstage)
+        self._store_params(prior, alpha, hyperstage, initial_staging)
 
         loglikelihood, merged_situations = self._execute_ahc(
             initial_staging=initial_staging

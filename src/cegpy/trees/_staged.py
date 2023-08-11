@@ -206,23 +206,23 @@ class StagedTree(EventTree):
         :rtype: List[List[str]]
         """
         return self._hyperstage
-    
-    
+
+
     @hyperstage.setter
     def hyperstage(self, value):
         self._hyperstage = value
-    
-    
+
+
     @property
     def initial_staging(self) -> List[List[str]]:
         return self._initial_staging
-    
-    
+
+
     @initial_staging.setter
     def initial_staging(self, value):
         self._initial_staging = value
-    
-    
+
+
     @property
     def edge_countset(self) -> List[List]:
         """
@@ -307,14 +307,14 @@ class StagedTree(EventTree):
         else:
             self._check_hyperstages(hyperstage)
             self.hyperstage = hyperstage
-        
+
         if hyperstage and initial_staging:
             if not self._validate_hyperstage(initial_staging, hyperstage):
                 raise ValueError(
                     "initial_staging is not contained within the hyperstage."
                 )
         self.initial_staging = initial_staging
-        
+
 
     def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
@@ -539,7 +539,7 @@ class StagedTree(EventTree):
         return new_hyperstages
 
     def _execute_ahc(
-        self, hyperstage=None, initial_staging=None
+        self, hyperstage=None, initial_staging=Optional[List[List[str]]]
     ) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:
@@ -550,10 +550,6 @@ class StagedTree(EventTree):
 
         loglikelihood = self._calculate_initial_loglikelihood(priors, posteriors)
 
-        if initial_staging:
-            merged_situation_list = initial_staging
-        else:
-            merged_situation_list = []
 
         # Which list in hyperstage have only 1 edge coming out of them
         # For that list, add the list to the merged situation list, and
@@ -581,9 +577,45 @@ class StagedTree(EventTree):
 
                 hyperstage.remove(sub_hyper)
 
+
+
         hyperstage_combinations = [
             item for sub_hyper in hyperstage for item in combinations(sub_hyper, 2)
         ]
+
+        merged_situation_list = []
+        if initial_staging:
+            initial_staging_combinations = [
+                (sub_initial[0], node) for sub_initial in initial_staging for node in sub_initial[1:]
+            ]
+
+            for situ_pair in initial_staging_combinations:
+                score = self._calculate_bayes_factor(
+                    priors[self.situations.index(situ_pair[0])],
+                    posteriors[self.situations.index(situ_pair[0])],
+                    priors[self.situations.index(situ_pair[1])],
+                    posteriors[self.situations.index(situ_pair[1])],
+                )
+                pair_indexes = (
+                    self.situations.index(situ_pair[0]),
+                    self.situations.index(situ_pair[1]),
+                )
+                merged_situation_list.append(situ_pair)
+
+                priors[pair_indexes[0]] = list(
+                    map(add, priors[pair_indexes[0]], priors[pair_indexes[1]])
+                )
+                posteriors[pair_indexes[0]] = list(
+                    map(add, posteriors[pair_indexes[0]], posteriors[pair_indexes[1]])
+                )
+                priors[pair_indexes[1]] = [0] * len(priors[pair_indexes[0]])
+                posteriors[pair_indexes[1]] = [0] * len(posteriors[pair_indexes[0]])
+
+                loglikelihood += score
+
+                for comb in deepcopy(hyperstage_combinations):
+                    if situ_pair[1] in comb:
+                        hyperstage_combinations.remove(comb)
 
         while True:
             newscores_list = [
@@ -670,7 +702,7 @@ class StagedTree(EventTree):
                     self.nodes[node]["colour"] = stage_colours[stage]
                 except KeyError:
                     self.nodes[node]["colour"] = "white"
-    
+
     def _validate_hyperstage(initial_staging, hyperstage):
         for init_stage in initial_staging:
             found = 0
@@ -681,7 +713,7 @@ class StagedTree(EventTree):
             if found == 0:
                 return False
         return True
-    
+
     def calculate_AHC_transitions(
         self,
         prior=None,

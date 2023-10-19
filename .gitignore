@@ -36,3 +36,4 @@ cegpy-binder
 docs/_build/*
 .mypy
 build
+*venv

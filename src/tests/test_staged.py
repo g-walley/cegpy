@@ -30,32 +30,6 @@ class TestLogging:
         )
         return med_st
 
-    # def setup(self):
-    #     """Test setup"""
-    #     # pylint: disable=attribute-defined-outside-init
-    #     # stratified dataset
-    #     med_df_path = (
-    #         Path(__file__)
-    #         .resolve()
-    #         .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
-    #     )
-    #     self.med_s_z_paths = None
-    #     self.med_df = pd.read_excel(med_df_path)
-    #     self.med_st = StagedTree(
-    #         dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
-    #     )
-
-    #     # non-stratified dataset
-    #     fall_df_path = (
-    #         Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
-    #     )
-    #     self.fall_s_z_paths = None
-    #     self.fall_df = pd.read_excel(fall_df_path)
-    #     self.fall_st = StagedTree(
-    #         dataframe=self.fall_df,
-    #         sampling_zero_paths=self.fall_s_z_paths,
-    #     )
-
     def test_run_ahc_before_figure(self, med_st) -> None:
         """Tests expected error message is in the log when running without
         running AHC"""

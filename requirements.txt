@@ -12,3 +12,4 @@ scipy>=1.7.0
 colorutils>=0.3.0
 xlsxwriter>=3.0.0
 tox>=4.2.8
+networkx>=3.3

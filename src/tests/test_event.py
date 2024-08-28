@@ -38,8 +38,8 @@ class TestEventTreeAPI(unittest.TestCase):
         )
 
 
-class TestEventTree:
-    def setup(self):
+class TestEventTree(unittest.TestCase):
+    def setUp(self):
         df_path = (
             Path(__file__)
             .resolve()
@@ -148,8 +148,8 @@ class TestEventTree:
         assert event_node_colours[0] == "lightgrey"
 
 
-class TestIntegration:
-    def setup(self):
+class TestIntegration(unittest.TestCase):
+    def setUp(self):
         # stratified dataset
         med_df_path = (
             Path(__file__)
@@ -198,8 +198,8 @@ def check_list_contains_strings(str_list) -> bool:
         assert isinstance(elem, str)
 
 
-class TestUsecase:
-    def setup(self):
+class TestUsecase(unittest.TestCase):
+    def setUp(self):
         # stratified dataset
         med_df_path = (
             Path(__file__)
@@ -232,88 +232,95 @@ class TestUsecase:
 
 
 class TestChangingDataFrame:
-    def setup(self):
+    @pytest.fixture
+    def med_df(self):
         # stratified dataset
         med_df_path = (
             Path(__file__)
             .resolve()
             .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
-        self.med_s_z_paths = None
-        self.med_df = pd.read_excel(med_df_path)
-        self.med_et = EventTree(
-            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
-        )
 
+        return pd.read_excel(med_df_path)
+
+    @pytest.fixture
+    def med_et(self, med_df):
+        med_s_z_paths = None
+        med_et = EventTree(dataframe=med_df, sampling_zero_paths=med_s_z_paths)
+        return med_et
+
+    @pytest.fixture
+    def fall_df(self):
         # non-stratified dataset
         fall_df_path = (
             Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
         )
-        self.fall_s_z_paths = None
-        self.fall_df = pd.read_excel(fall_df_path)
-        self.fall_et = EventTree(
-            dataframe=self.fall_df, sampling_zero_paths=self.fall_s_z_paths
-        )
+        return pd.read_excel(fall_df_path)
 
-    def test_add_empty_column(self) -> None:
+    @pytest.fixture
+    def fall_et(self, fall_df):
+        self.fall_s_z_paths = None
+        return EventTree(dataframe=fall_df, sampling_zero_paths=self.fall_s_z_paths)
+
+    def test_add_empty_column(self, fall_et, med_df, med_et, fall_df) -> None:
         # adding empty column
-        med_empty_column_df = self.med_df
+        med_empty_column_df = med_df
         med_empty_column_df["extra"] = ""
         med_empty_column_et = EventTree(dataframe=med_empty_column_df)
-        assert med_empty_column_et.adj == self.med_et.adj
+        assert med_empty_column_et.adj == med_et.adj
 
-        fall_empty_column_df = self.fall_df
+        fall_empty_column_df = fall_df
         fall_empty_column_df["extra"] = ""
         fall_empty_column_et = EventTree(dataframe=fall_empty_column_df)
-        assert fall_empty_column_et.adj == self.fall_et.adj
+        assert fall_empty_column_et.adj == fall_et.adj
 
-    def test_add_NA_column(self) -> None:
+    def test_add_NA_column(self, fall_et, med_df, med_et, fall_df) -> None:
         # adding NA column
-        med_add_NA_df = self.med_df
+        med_add_NA_df = med_df
         med_add_NA_df["extra"] = np.nan
         med_add_NA_et = EventTree(dataframe=med_add_NA_df)
-        assert med_add_NA_et.adj == self.med_et.adj
+        assert med_add_NA_et.adj == med_et.adj
 
-        fall_add_NA_df = self.fall_df
+        fall_add_NA_df = fall_df
         fall_add_NA_df["extra"] = np.nan
         fall_add_NA_et = EventTree(dataframe=fall_add_NA_df)
-        assert fall_add_NA_et.adj == self.fall_et.adj
+        assert fall_add_NA_et.adj == fall_et.adj
 
-    def test_add_same_column(self) -> None:
+    def test_add_same_column(self, fall_et, med_df, med_et, fall_df) -> None:
         # adding column with no more information
-        med_add_same_df = self.med_df
+        med_add_same_df = med_df
         med_add_same_df["extra"] = "same for all"
         med_add_same_et = EventTree(dataframe=med_add_same_df)
-        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
+        assert len(med_add_same_et.leaves) == len(med_et.leaves)
 
-        fall_add_same_df = self.fall_df
+        fall_add_same_df = fall_df
         fall_add_same_df["extra"] = "same for all"
         fall_add_same_et = EventTree(dataframe=fall_add_same_df)
-        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
+        assert len(fall_add_same_et.leaves) == len(fall_et.leaves)
 
-    def test_add_same_column_int(self) -> None:
+    def test_add_same_column_int(self, fall_et, med_df, med_et, fall_df) -> None:
         # adding column with no more information
-        med_add_same_df = self.med_df
+        med_add_same_df = med_df
         med_add_same_df["extra"] = 1
         med_add_same_et = EventTree(dataframe=med_add_same_df)
         try:
             med_add_same_et.create_figure("et_fig_path.pdf")
         except InvocationException:
             pass
-        assert len(med_add_same_et.leaves) == len(self.med_et.leaves)
+        assert len(med_add_same_et.leaves) == len(med_et.leaves)
 
-        fall_add_same_df = self.fall_df
+        fall_add_same_df = fall_df
         fall_add_same_df["extra"] = 1
         fall_add_same_et = EventTree(dataframe=fall_add_same_df)
         try:
             fall_add_same_et.create_figure("et_fig_path.pdf")
         except InvocationException:
             pass
-        assert len(fall_add_same_et.leaves) == len(self.fall_et.leaves)
+        assert len(fall_add_same_et.leaves) == len(fall_et.leaves)
 
 
-class TestMissingLabels:
-    def setup(self):
+class TestMissingLabels(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -525,8 +532,8 @@ class TestMissingLabels:
         assert df_et.dataframe.equals(expected_df) is True
 
 
-class TestVariablesFiltered:
-    def setup(self):
+class TestVariablesFiltered(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -535,7 +542,7 @@ class TestVariablesFiltered:
             np.array(["1", "Trt1", "Recover"]),
             np.array(["1", "Trt2", "Recover"]),
             np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", np.NaN, "Dont Recover"]),
+            np.array(["1", np.nan, "Dont Recover"]),
         ]
 
         self.df = pd.DataFrame(array)
@@ -562,8 +569,8 @@ class TestVariablesFiltered:
         assert df_et.categories_per_variable == expected_categories
 
 
-class TestStageColours:
-    def setup(self):
+class TestStageColours(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -572,7 +579,7 @@ class TestStageColours:
             np.array(["1", "Trt1", "Recover"]),
             np.array(["1", "Trt2", "Recover"]),
             np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", np.NaN, "Dont Recover"]),
+            np.array(["1", np.nan, "Dont Recover"]),
         ]
 
         self.df = pd.DataFrame(array)

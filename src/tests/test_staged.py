@@ -16,37 +16,23 @@ from cegpy.trees._staged import _calculate_mean_posterior_probs
 class TestLogging:
     """Tests logging in stagedtree"""
 
-    def setup(self):
-        """Test setup"""
-        # pylint: disable=attribute-defined-outside-init
-        # stratified dataset
+    @pytest.fixture
+    def med_st(self):
         med_df_path = (
             Path(__file__)
             .resolve()
             .parent.parent.joinpath("../data/medical_dm_modified.xlsx")
         )
-        self.med_s_z_paths = None
-        self.med_df = pd.read_excel(med_df_path)
-        self.med_st = StagedTree(
-            dataframe=self.med_df, sampling_zero_paths=self.med_s_z_paths
-        )
+        med_s_z_paths = None
+        med_df = pd.read_excel(med_df_path)
+        med_st = StagedTree(dataframe=med_df, sampling_zero_paths=med_s_z_paths)
+        return med_st
 
-        # non-stratified dataset
-        fall_df_path = (
-            Path(__file__).resolve().parent.parent.joinpath("../data/Falls_Data.xlsx")
-        )
-        self.fall_s_z_paths = None
-        self.fall_df = pd.read_excel(fall_df_path)
-        self.fall_st = StagedTree(
-            dataframe=self.fall_df,
-            sampling_zero_paths=self.fall_s_z_paths,
-        )
-
-    def test_run_ahc_before_figure(self) -> None:
+    def test_run_ahc_before_figure(self, med_st) -> None:
         """Tests expected error message is in the log when running without
         running AHC"""
         try:
-            self.med_st.create_figure()
+            med_st.create_figure()
 
         except (InvocationException):
             pass

@@ -753,6 +753,12 @@ class TestStagedTrees(unittest.TestCase):
             for situ in stage:
                 assert situ not in self.med_st.leaves
 
+    def test_s0_s15_not_merged(self) -> None:
+        """Test assumes that these two nodes are not being merged"""
+        self.med_st.calculate_AHC_transitions()
+        self.assertIn(("s0", ), self.med_st.ahc_output["Merged Situations"])
+        self.assertIn(("s15", ), self.med_st.ahc_output["Merged Situations"])
+
     def test_merged_leaves_fall(self) -> None:
         self.fall_st.calculate_AHC_transitions()
         for stage in self.fall_st.ahc_output["Merged Situations"]:

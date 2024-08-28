@@ -549,7 +549,7 @@ class StagedTree(EventTree):
         posteriors = deepcopy(self.posterior_list)
 
         loglikelihood = self._calculate_initial_loglikelihood(priors, posteriors)
-
+        merged_situation_list = []
 
         # Which list in hyperstage have only 1 edge coming out of them
         # For that list, add the list to the merged situation list, and
@@ -583,7 +583,6 @@ class StagedTree(EventTree):
             item for sub_hyper in hyperstage for item in combinations(sub_hyper, 2)
         ]
 
-        merged_situation_list = []
         if initial_staging:
             initial_staging_combinations = [
                 (sub_initial[0], node) for sub_initial in initial_staging for node in sub_initial[1:]

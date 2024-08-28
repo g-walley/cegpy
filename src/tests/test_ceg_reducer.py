@@ -443,8 +443,8 @@ class TestCEGReducer(unittest.TestCase):
             assert str(node) in str_rep
 
 
-class TestReducedCEGTwo(object):
-    def setup(self):
+class TestReducedCEGTwo(unittest.TestCase):
+    def setUp(self):
         G = nx.MultiDiGraph()
         self.init_nodes = ["w0", "w1", "w2", "w3", "w4", "w5", "w6", "w_infinity"]
         self.init_edges = [

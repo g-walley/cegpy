@@ -2,13 +2,11 @@
 # pylint: disable=protected-access
 import re
 from pathlib import Path
-from typing import Dict, List, Mapping, Tuple
+from typing import Dict, Mapping
 import unittest
 from unittest.mock import Mock, patch
 import networkx as nx
 import pandas as pd
-import pytest
-import pytest_mock
 from cegpy import StagedTree, ChainEventGraph
 from cegpy.graphs._ceg import (
     CegAlreadyGenerated,
@@ -16,14 +14,14 @@ from cegpy.graphs._ceg import (
 )
 
 
-class TestMockedCEGMethods:
+class TestMockedCEGMethods(unittest.TestCase):
     """Tests that Mock functions in ChainEventGraph"""
 
     node_prefix = "w"
     sink_suffix = "&infin;"
     staged: StagedTree
 
-    def setup(self):
+    def setUp(self):
         """Test setup"""
         df_path = (
             Path(__file__)
@@ -34,12 +32,12 @@ class TestMockedCEGMethods:
         self.staged = StagedTree(dataframe=pd.read_excel(df_path))
         self.staged.calculate_AHC_transitions()
 
-    def test_generate_argument(self, mocker: pytest_mock.MockerFixture):
+    @patch("cegpy.graphs._ceg.ChainEventGraph.generate", autospec=True)
+    def test_generate_argument(self, generate_mock: Mock):
         """When ChainEventGraph called with generate, the .generate()
         method is called."""
-        mocker.patch("cegpy.graphs._ceg.ChainEventGraph.generate")
-        ceg = ChainEventGraph(self.staged, generate=True)
-        ceg.generate.assert_called_once()  # pylint: disable=no-member
+        ChainEventGraph(self.staged, generate=True)
+        generate_mock.assert_called_once()  # pylint: disable=no-member
 
 
 class TestUnitCEG(unittest.TestCase):

@@ -215,6 +215,12 @@ class StagedTree(EventTree):
 
     @property
     def initial_staging(self) -> List[List[str]]:
+        """
+        Specifies groups of nodes which are forced to be in the same stage before
+        the AHC selection algorithm is run.
+
+        :return: The List of all the non-singleton initial stages
+        :rtype: List[List[str]]"""
         return self._initial_staging
 
 

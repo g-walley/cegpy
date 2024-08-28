@@ -25,9 +25,7 @@ class TestLogging:
         )
         med_s_z_paths = None
         med_df = pd.read_excel(med_df_path)
-        med_st = StagedTree(
-            dataframe=med_df, sampling_zero_paths=med_s_z_paths
-        )
+        med_st = StagedTree(dataframe=med_df, sampling_zero_paths=med_s_z_paths)
         return med_st
 
     def test_run_ahc_before_figure(self, med_st) -> None:

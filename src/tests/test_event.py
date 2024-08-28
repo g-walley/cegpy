@@ -38,8 +38,8 @@ class TestEventTreeAPI(unittest.TestCase):
         )
 
 
-class TestEventTree:
-    def setup(self):
+class TestEventTree(unittest.TestCase):
+    def setUp(self):
         df_path = (
             Path(__file__)
             .resolve()
@@ -148,8 +148,8 @@ class TestEventTree:
         assert event_node_colours[0] == "lightgrey"
 
 
-class TestIntegration:
-    def setup(self):
+class TestIntegration(unittest.TestCase):
+    def setUp(self):
         # stratified dataset
         med_df_path = (
             Path(__file__)
@@ -198,8 +198,8 @@ def check_list_contains_strings(str_list) -> bool:
         assert isinstance(elem, str)
 
 
-class TestUsecase:
-    def setup(self):
+class TestUsecase(unittest.TestCase):
+    def setUp(self):
         # stratified dataset
         med_df_path = (
             Path(__file__)
@@ -232,7 +232,6 @@ class TestUsecase:
 
 
 class TestChangingDataFrame:
-
     @pytest.fixture
     def med_df(self):
         # stratified dataset
@@ -247,9 +246,7 @@ class TestChangingDataFrame:
     @pytest.fixture
     def med_et(self, med_df):
         med_s_z_paths = None
-        med_et = EventTree(
-            dataframe=med_df, sampling_zero_paths=med_s_z_paths
-        )
+        med_et = EventTree(dataframe=med_df, sampling_zero_paths=med_s_z_paths)
         return med_et
 
     @pytest.fixture
@@ -263,10 +260,7 @@ class TestChangingDataFrame:
     @pytest.fixture
     def fall_et(self, fall_df):
         self.fall_s_z_paths = None
-        return EventTree(
-            dataframe=fall_df, sampling_zero_paths=self.fall_s_z_paths
-        )
-
+        return EventTree(dataframe=fall_df, sampling_zero_paths=self.fall_s_z_paths)
 
     def test_add_empty_column(self, fall_et, med_df, med_et, fall_df) -> None:
         # adding empty column
@@ -325,8 +319,8 @@ class TestChangingDataFrame:
         assert len(fall_add_same_et.leaves) == len(fall_et.leaves)
 
 
-class TestMissingLabels:
-    def setup(self):
+class TestMissingLabels(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -538,8 +532,8 @@ class TestMissingLabels:
         assert df_et.dataframe.equals(expected_df) is True
 
 
-class TestVariablesFiltered:
-    def setup(self):
+class TestVariablesFiltered(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -548,7 +542,7 @@ class TestVariablesFiltered:
             np.array(["1", "Trt1", "Recover"]),
             np.array(["1", "Trt2", "Recover"]),
             np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", np.NaN, "Dont Recover"]),
+            np.array(["1", np.nan, "Dont Recover"]),
         ]
 
         self.df = pd.DataFrame(array)
@@ -575,8 +569,8 @@ class TestVariablesFiltered:
         assert df_et.categories_per_variable == expected_categories
 
 
-class TestStageColours:
-    def setup(self):
+class TestStageColours(unittest.TestCase):
+    def setUp(self):
         array = [
             np.array(["1", "NotANum", "Recover"]),
             np.array(["1", "Trt1", "NotANum"]),
@@ -585,7 +579,7 @@ class TestStageColours:
             np.array(["1", "Trt1", "Recover"]),
             np.array(["1", "Trt2", "Recover"]),
             np.array(["1", "Trt2", "Dont Recover"]),
-            np.array(["1", np.NaN, "Dont Recover"]),
+            np.array(["1", np.nan, "Dont Recover"]),
         ]
 
         self.df = pd.DataFrame(array)

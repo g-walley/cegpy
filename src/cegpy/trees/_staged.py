@@ -739,9 +739,10 @@ class StagedTree(EventTree):
         implementation. It returns a list of lists of the situations which
         have been merged together, the likelihood of the final model.
 
-        :param prior: Optional - A mapping of priors keyed by edge. Keys are
-            3-tuples of the form: (src, dst, edge_label).
-        :type prior: Dict[Tuple[str], List[Fraction]]
+        :param prior: Optional - For each node in the event tree, ordered by node index,
+            a list of prior parameters for each outgoing edge, in alphabetical order by
+            edge label.
+        :type prior: List[List[Fraction]]
 
         :param alpha: Optional - The equivalent sample size set for the root node
             which is then uniformly propagated through the tree.

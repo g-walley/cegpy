@@ -316,6 +316,11 @@ class StagedTree(EventTree):
                 raise ValueError(
                     "initial_staging is not contained within the hyperstage."
                 )
+        if initial_staging:
+            if not self._validate_initial_staging_mutually_exclusive(initial_staging):
+                raise ValueError(
+                    "All groups of nodes in initial_staging must be mutually exclusive."
+                )
         self.initial_staging = initial_staging
 
     def _calculate_default_alpha(self) -> int:

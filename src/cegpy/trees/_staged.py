@@ -207,11 +207,9 @@ class StagedTree(EventTree):
         """
         return self._hyperstage
 
-
     @hyperstage.setter
     def hyperstage(self, value):
         self._hyperstage = value
-
 
     @property
     def initial_staging(self) -> List[List[str]]:
@@ -223,11 +221,9 @@ class StagedTree(EventTree):
         :rtype: List[List[str]]"""
         return self._initial_staging
 
-
     @initial_staging.setter
     def initial_staging(self, value):
         self._initial_staging = value
-
 
     @property
     def edge_countset(self) -> List[List]:
@@ -320,7 +316,6 @@ class StagedTree(EventTree):
                     "initial_staging is not contained within the hyperstage."
                 )
         self.initial_staging = initial_staging
-
 
     def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
@@ -583,15 +578,15 @@ class StagedTree(EventTree):
 
                 hyperstage.remove(sub_hyper)
 
-
-
         hyperstage_combinations = [
             item for sub_hyper in hyperstage for item in combinations(sub_hyper, 2)
         ]
 
         if initial_staging:
             initial_staging_combinations = [
-                (sub_initial[0], node) for sub_initial in initial_staging for node in sub_initial[1:]
+                (sub_initial[0], node)
+                for sub_initial in initial_staging
+                for node in sub_initial[1:]
             ]
 
             for situ_pair in initial_staging_combinations:

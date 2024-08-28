@@ -651,8 +651,8 @@ class StagedTree(EventTree):
             else:
                 break
 
-        self._sort_merged_sit_tuples(merged_situation_list)
         merged_situation_list = self._sort_list(merged_situation_list)
+        self._sort_merged_sit_tuples(merged_situation_list)
         for sit in self.situations:
             if sit not in list(chain(*merged_situation_list)):
                 merged_situation_list.append((sit,))

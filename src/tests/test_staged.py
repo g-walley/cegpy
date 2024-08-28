@@ -759,6 +759,10 @@ class TestStagedTrees(unittest.TestCase):
         self.assertIn(("s0", ), self.med_st.ahc_output["Merged Situations"])
         self.assertIn(("s15", ), self.med_st.ahc_output["Merged Situations"])
 
+    def test_s0_s15_merged_when_in_initial_staging(self) -> None:
+        self.med_st.calculate_AHC_transitions(initial_staging=[["s0", "s15"]])
+        self.assertIn(("s0", "s15"), self.med_st.ahc_output["Merged Situations"])
+
     def test_merged_leaves_fall(self) -> None:
         self.fall_st.calculate_AHC_transitions()
         for stage in self.fall_st.ahc_output["Merged Situations"]:

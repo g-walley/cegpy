@@ -1086,3 +1086,35 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
         }
         for edge, probability in edges.items():
             self.assertEqual(self.staged.edges[edge]["probability"], probability)
+
+class TestValidateHyperstage(unittest.TestCase):
+
+    def test_simplest_failure(self):
+        self.assertFalse(StagedTree._validate_hyperstage(
+            initial_staging=[["s0", "s1"]],
+            hyperstage=[["s0"], ["s1"]]
+        ))
+
+    def test_simplest_success(self):
+        self.assertTrue(StagedTree._validate_hyperstage(
+            initial_staging=[["s0", "s1"]],
+            hyperstage=[["s0", "s1"]]
+        ))
+
+    def test_extended_hyperstage_failure(self):
+        self.assertFalse(StagedTree._validate_hyperstage(
+            initial_staging=[["s0", "s1"]],
+            hyperstage=[["s0"], ["s1"], ["s2", "s3"], ["s4", "s5", "s6"]]
+        ))
+
+    def test_initial_staging_contains_unknown_node(self):
+        self.assertFalse(StagedTree._validate_hyperstage(
+            initial_staging=[["s0", "s1", "s2"]],
+            hyperstage=[["s0", "s1"]]
+        ))
+
+    def test_initial_staging_empty(self):
+        self.assertTrue(StagedTree._validate_hyperstage(
+            initial_staging=[],
+            hyperstage=[["s0", "s1"]]
+        ))

@@ -1128,3 +1128,9 @@ class TestValidateHyperstage(unittest.TestCase):
             initial_staging=[],
             hyperstage=[["s0", "s1"]]
         ))
+
+    def test_initial_staging_mutually_exclusive(self):
+        self.assertFalse(StagedTree._validate_hyperstage(
+            initial_staging=[["s1", "s2"], ["s1", "s3"]],
+            hyperstage=[["s1", "s2", "s3"]],
+        ))

@@ -756,8 +756,8 @@ class TestStagedTrees(unittest.TestCase):
     def test_s0_s15_not_merged(self) -> None:
         """Test assumes that these two nodes are not being merged"""
         self.med_st.calculate_AHC_transitions()
-        self.assertIn(("s0", ), self.med_st.ahc_output["Merged Situations"])
-        self.assertIn(("s15", ), self.med_st.ahc_output["Merged Situations"])
+        self.assertIn(("s0",), self.med_st.ahc_output["Merged Situations"])
+        self.assertIn(("s15",), self.med_st.ahc_output["Merged Situations"])
 
     def test_s0_s15_merged_when_in_initial_staging(self) -> None:
         self.med_st.calculate_AHC_transitions(initial_staging=[["s0", "s15"]])
@@ -1097,40 +1097,56 @@ class TestPosteriorProbabilityCalculations(unittest.TestCase):
         for edge, probability in edges.items():
             self.assertEqual(self.staged.edges[edge]["probability"], probability)
 
-class TestValidateHyperstage(unittest.TestCase):
 
+class TestValidateHyperstage(unittest.TestCase):
     def test_simplest_failure(self):
-        self.assertFalse(StagedTree._validate_hyperstage(
-            initial_staging=[["s0", "s1"]],
-            hyperstage=[["s0"], ["s1"]]
-        ))
+        self.assertFalse(
+            StagedTree._validate_hyperstage(
+                initial_staging=[["s0", "s1"]], hyperstage=[["s0"], ["s1"]]
+            )
+        )
 
     def test_simplest_success(self):
-        self.assertTrue(StagedTree._validate_hyperstage(
-            initial_staging=[["s0", "s1"]],
-            hyperstage=[["s0", "s1"]]
-        ))
+        self.assertTrue(
+            StagedTree._validate_hyperstage(
+                initial_staging=[["s0", "s1"]], hyperstage=[["s0", "s1"]]
+            )
+        )
 
     def test_extended_hyperstage_failure(self):
-        self.assertFalse(StagedTree._validate_hyperstage(
-            initial_staging=[["s0", "s1"]],
-            hyperstage=[["s0"], ["s1"], ["s2", "s3"], ["s4", "s5", "s6"]]
-        ))
+        self.assertFalse(
+            StagedTree._validate_hyperstage(
+                initial_staging=[["s0", "s1"]],
+                hyperstage=[["s0"], ["s1"], ["s2", "s3"], ["s4", "s5", "s6"]],
+            )
+        )
 
     def test_initial_staging_contains_unknown_node(self):
-        self.assertFalse(StagedTree._validate_hyperstage(
-            initial_staging=[["s0", "s1", "s2"]],
-            hyperstage=[["s0", "s1"]]
-        ))
+        self.assertFalse(
+            StagedTree._validate_hyperstage(
+                initial_staging=[["s0", "s1", "s2"]], hyperstage=[["s0", "s1"]]
+            )
+        )
 
     def test_initial_staging_empty(self):
-        self.assertTrue(StagedTree._validate_hyperstage(
-            initial_staging=[],
-            hyperstage=[["s0", "s1"]]
-        ))
+        self.assertTrue(
+            StagedTree._validate_hyperstage(
+                initial_staging=[], hyperstage=[["s0", "s1"]]
+            )
+        )
 
-    def test_initial_staging_mutually_exclusive(self):
-        self.assertFalse(StagedTree._validate_hyperstage(
-            initial_staging=[["s1", "s2"], ["s1", "s3"]],
-            hyperstage=[["s1", "s2", "s3"]],
-        ))
+
+class TestValidateInitialStagingMutuallyExclusive(unittest.TestCase):
+    def test_initial_staging_is_not_mutually_exclusive(self):
+        self.assertFalse(
+            StagedTree._validate_initial_staging_mutually_exclusive(
+                initial_staging=[["s1", "s2"], ["s1", "s3"]]
+            )
+        )
+
+    def test_initial_stating_is_mutually_exclusive(self):
+        self.assertTrue(
+            StagedTree._validate_initial_staging_mutually_exclusive(
+                initial_staging=[["s1", "s2"], ["s3", "s4"]]
+            )
+        )

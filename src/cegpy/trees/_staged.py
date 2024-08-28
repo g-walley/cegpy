@@ -2,6 +2,7 @@
 from copy import deepcopy
 from fractions import Fraction
 from itertools import combinations, chain
+import itertools
 from operator import add, sub, itemgetter
 from typing import Dict, List, Optional, Tuple, Union
 import networkx as nx
@@ -253,7 +254,7 @@ class StagedTree(EventTree):
         missing = situations_set.difference(hyper_situations_set)
         if missing:
             raise ValueError(
-                f"Situation(s) {missing} are missing from the list of " "hyperstages."
+                f"Situation(s) {missing} are missing from the list of hyperstages."
             )
         # Check if all situations provided exist
         extra = hyper_situations_set.difference(situations_set)
@@ -704,7 +705,7 @@ class StagedTree(EventTree):
                     self.nodes[node]["colour"] = "white"
 
     @staticmethod
-    def _validate_hyperstage(initial_staging, hyperstage):
+    def _validate_hyperstage(initial_staging: List, hyperstage):
         for init_stage in initial_staging:
             found = 0
             # init_stage is a subset of only one stage in hyperstages
@@ -713,6 +714,12 @@ class StagedTree(EventTree):
                     found += 1
             if found == 0:
                 return False
+        return True
+
+    @staticmethod
+    def _validate_initial_staging_mutually_exclusive(initial_staging: List):
+        if len(set(chain(*initial_staging))) != len(list(chain(*initial_staging))):
+            return False
         return True
 
     def calculate_AHC_transitions(

@@ -722,7 +722,7 @@ class StagedTree(EventTree):
         return True
 
     @staticmethod
-    def _validate_initial_staging_mutually_exclusive(initial_staging: List):
+    def _validate_initial_staging_mutually_exclusive(initial_staging: List) -> bool:
         if len(set(chain(*initial_staging))) != len(list(chain(*initial_staging))):
             return False
         return True

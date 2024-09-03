@@ -710,7 +710,7 @@ class StagedTree(EventTree):
                     self.nodes[node]["colour"] = "white"
 
     @staticmethod
-    def _validate_hyperstage(initial_staging: List, hyperstage):
+    def _validate_hyperstage(initial_staging: List, hyperstage) -> bool:
         for init_stage in initial_staging:
             found = 0
             # init_stage is a subset of only one stage in hyperstages

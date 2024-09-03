@@ -11,6 +11,7 @@ StagedTree
         posterior_list,
         alpha,
         hyperstage,
+        initial_staging,
         edge_countset,
         ahc_output
     :undoc-members:

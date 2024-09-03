@@ -2,6 +2,7 @@
 from copy import deepcopy
 from fractions import Fraction
 from itertools import combinations, chain
+import itertools
 from operator import add, sub, itemgetter
 from typing import Dict, List, Optional, Tuple, Union
 import networkx as nx
@@ -212,6 +213,20 @@ class StagedTree(EventTree):
         self._hyperstage = value
 
     @property
+    def initial_staging(self) -> List[List[str]]:
+        """
+        Specifies groups of nodes which are forced to be in the same stage before
+        the AHC selection algorithm is run.
+
+        :return: The List of all the non-singleton initial stages
+        :rtype: List[List[str]]"""
+        return self._initial_staging
+
+    @initial_staging.setter
+    def initial_staging(self, value):
+        self._initial_staging = value
+
+    @property
     def edge_countset(self) -> List[List]:
         """
         Indexed the same as situations.
@@ -239,7 +254,7 @@ class StagedTree(EventTree):
         missing = situations_set.difference(hyper_situations_set)
         if missing:
             raise ValueError(
-                f"Situation(s) {missing} are missing from the list of " "hyperstages."
+                f"Situation(s) {missing} are missing from the list of hyperstages."
             )
         # Check if all situations provided exist
         extra = hyper_situations_set.difference(situations_set)
@@ -273,7 +288,7 @@ class StagedTree(EventTree):
                 if node_prior < 0:
                     raise ValueError("All priors must be non-negative.")
 
-    def _store_params(self, prior, alpha, hyperstage) -> None:
+    def _store_params(self, prior, alpha, hyperstage, initial_staging) -> None:
         """User has passed in AHC params, this function processes them,
         and generates any default AHC params if required."""
         if prior:
@@ -295,6 +310,18 @@ class StagedTree(EventTree):
         else:
             self._check_hyperstages(hyperstage)
             self.hyperstage = hyperstage
+
+        if hyperstage and initial_staging:
+            if not self._validate_hyperstage(initial_staging, hyperstage):
+                raise ValueError(
+                    "initial_staging is not contained within the hyperstage."
+                )
+        if initial_staging:
+            if not self._validate_initial_staging_mutually_exclusive(initial_staging):
+                raise ValueError(
+                    "All groups of nodes in initial_staging must be mutually exclusive."
+                )
+        self.initial_staging = initial_staging
 
     def _calculate_default_alpha(self) -> int:
         """If no alpha is given, a default value is calculated.
@@ -518,7 +545,9 @@ class StagedTree(EventTree):
 
         return new_hyperstages
 
-    def _execute_ahc(self, hyperstage=None) -> Tuple[List, float, List]:
+    def _execute_ahc(
+        self, hyperstage: Optional[List[List[str]]] = None, initial_staging: Optional[List[List[str]]] = None
+    ) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:
             hyperstage = deepcopy(self.hyperstage)
@@ -527,7 +556,6 @@ class StagedTree(EventTree):
         posteriors = deepcopy(self.posterior_list)
 
         loglikelihood = self._calculate_initial_loglikelihood(priors, posteriors)
-
         merged_situation_list = []
 
         # Which list in hyperstage have only 1 edge coming out of them
@@ -559,6 +587,41 @@ class StagedTree(EventTree):
         hyperstage_combinations = [
             item for sub_hyper in hyperstage for item in combinations(sub_hyper, 2)
         ]
+
+        if initial_staging:
+            initial_staging_combinations = [
+                (sub_initial[0], node)
+                for sub_initial in initial_staging
+                for node in sub_initial[1:]
+            ]
+
+            for situ_pair in initial_staging_combinations:
+                score = self._calculate_bayes_factor(
+                    priors[self.situations.index(situ_pair[0])],
+                    posteriors[self.situations.index(situ_pair[0])],
+                    priors[self.situations.index(situ_pair[1])],
+                    posteriors[self.situations.index(situ_pair[1])],
+                )
+                pair_indexes = (
+                    self.situations.index(situ_pair[0]),
+                    self.situations.index(situ_pair[1]),
+                )
+                merged_situation_list.append(situ_pair)
+
+                priors[pair_indexes[0]] = list(
+                    map(add, priors[pair_indexes[0]], priors[pair_indexes[1]])
+                )
+                posteriors[pair_indexes[0]] = list(
+                    map(add, posteriors[pair_indexes[0]], posteriors[pair_indexes[1]])
+                )
+                priors[pair_indexes[1]] = [0] * len(priors[pair_indexes[0]])
+                posteriors[pair_indexes[1]] = [0] * len(posteriors[pair_indexes[0]])
+
+                loglikelihood += score
+
+                for comb in deepcopy(hyperstage_combinations):
+                    if situ_pair[1] in comb:
+                        hyperstage_combinations.remove(comb)
 
         while True:
             newscores_list = [
@@ -595,8 +658,8 @@ class StagedTree(EventTree):
             else:
                 break
 
-        self._sort_merged_sit_tuples(merged_situation_list)
         merged_situation_list = self._sort_list(merged_situation_list)
+        self._sort_merged_sit_tuples(merged_situation_list)
         for sit in self.situations:
             if sit not in list(chain(*merged_situation_list)):
                 merged_situation_list.append((sit,))
@@ -646,16 +709,40 @@ class StagedTree(EventTree):
                 except KeyError:
                     self.nodes[node]["colour"] = "white"
 
+    @staticmethod
+    def _validate_hyperstage(initial_staging: List, hyperstage) -> bool:
+        for init_stage in initial_staging:
+            found = 0
+            # init_stage is a subset of only one stage in hyperstages
+            for h_stage in hyperstage:
+                if set(init_stage).issubset(h_stage):
+                    found += 1
+            if found == 0:
+                return False
+        return True
+
+    @staticmethod
+    def _validate_initial_staging_mutually_exclusive(initial_staging: List) -> bool:
+        if len(set(chain(*initial_staging))) != len(list(chain(*initial_staging))):
+            return False
+        return True
+
     def calculate_AHC_transitions(
-        self, prior=None, alpha=None, hyperstage=None, colour_list=None
+        self,
+        prior=None,
+        alpha=None,
+        hyperstage=None,
+        colour_list=None,
+        initial_staging=None,
     ) -> Dict:
         """Bayesian Agglommerative Hierarchical Clustering algorithm
         implementation. It returns a list of lists of the situations which
         have been merged together, the likelihood of the final model.
 
-        :param prior: Optional - A mapping of priors keyed by edge. Keys are
-            3-tuples of the form: (src, dst, edge_label).
-        :type prior: Dict[Tuple[str], List[Fraction]]
+        :param prior: Optional - For each node in the event tree, ordered by node index,
+            a list of prior parameters for each outgoing edge, in alphabetical order by
+            edge label.
+        :type prior: List[List[Fraction]]
 
         :param alpha: Optional - The equivalent sample size set for the root node
             which is then uniformly propagated through the tree.
@@ -673,9 +760,11 @@ class StagedTree(EventTree):
         :rtype: Dict
         """
 
-        self._store_params(prior, alpha, hyperstage)
+        self._store_params(prior, alpha, hyperstage, initial_staging)
 
-        loglikelihood, merged_situations = self._execute_ahc()
+        loglikelihood, merged_situations = self._execute_ahc(
+            initial_staging=initial_staging
+        )
 
         self._mark_nodes_with_stage_number(merged_situations)
 

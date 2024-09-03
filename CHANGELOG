@@ -1,3 +1,6 @@
+-- 1.1.0 Added initial staging to staged trees.
+  - Thanks to Jack Carter for contributing this feature.
+  
 -- 1.0.5 Updated documentation:
     Added binders to show how to use cegpy.
     Updated formatting of documentation to use MyST.

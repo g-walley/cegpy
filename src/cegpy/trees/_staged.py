@@ -546,7 +546,7 @@ class StagedTree(EventTree):
         return new_hyperstages
 
     def _execute_ahc(
-        self, hyperstage=None, initial_staging=Optional[List[List[str]]]
+        self, hyperstage: Optional[List[List[str]]] = None, initial_staging: Optional[List[List[str]]] = None
     ) -> Tuple[List, float, List]:
         """finds all subsets and scores them"""
         if hyperstage is None:

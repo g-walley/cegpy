@@ -756,6 +756,11 @@ class StagedTree(EventTree):
             Otherwise, colours evenly spaced around the colour spectrum are used.
         :type colour_list: List[str]
 
+        :param initial_staging: Optional - Specifies groups of nodes which are forced to 
+            be in the same stage before the AHC selection algorithm is run. Each list is 
+            a list of node names e.g. "s0".
+        :type initial_staging: List[List[str]]
+
         :return: The output from the AHC algorithm, specified above.
         :rtype: Dict
         """

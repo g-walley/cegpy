@@ -209,6 +209,8 @@ class ChainEventGraph(nx.MultiDiGraph):
         for (src, dst, label), attribute in edge_info_dict.items():
             if edge_info == "count":
                 edge_details = str(label) + "\n" + str(attribute)
+            elif edge_info == "none":
+                edge_details = str(label)
             else:
                 edge_details = f"{label}\n{float(attribute):.2f}"
 

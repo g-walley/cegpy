@@ -256,6 +256,8 @@ class EventTree(nx.MultiDiGraph):
         for edge, attribute in edge_info_dict.items():
             if edge_info == "count":
                 edge_details = str(edge[2]) + "\n" + str(attribute)
+            elif edge_info == "none":
+                edge_details = str(edge[2])
             else:
                 edge_details = f"{edge[2]}\n{float(attribute):.2f}"
 

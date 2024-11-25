@@ -190,11 +190,9 @@ class ChainEventGraph(nx.MultiDiGraph):
 
     def dot_graph(self, edge_info: str = "probability") -> pdp.Dot:
         """Returns Dot graph representation of the CEG.
-        :param edge_info: Optional - Chooses which summary measure to be displayed
-        on edges. Defaults to "count".
-        Options: ["count", "prior", "posterior", "probability"]
-
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability", "none"]
         :type edge_info: str
+        
         :return: A graphviz Dot representation of the graph.
         :rtype: pydotplus.Dot"""
         return self._generate_dot_graph(edge_info=edge_info)
@@ -260,8 +258,7 @@ class ChainEventGraph(nx.MultiDiGraph):
 
         :type filename: str
 
-        :param edge_info: Optional - Chooses which summary measure to be displayed on
-            edges. Value can take: "count", "prior", "posterior", "probability"
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability", "none"]
         :type edge_info: str
 
         :return: The event tree Image object.

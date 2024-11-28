@@ -623,7 +623,7 @@ class StagedTree(EventTree):
                     if situ_pair[1] in comb:
                         hyperstage_combinations.remove(comb)
 
-        while True:
+        while len(hyperstage_combinations) != 0:
             newscores_list = [
                 self._calculate_bayes_factor(
                     priors[self.situations.index(sub_hyper[0])],

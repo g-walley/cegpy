@@ -784,7 +784,7 @@ class StagedTree(EventTree):
     def dot_graph(self, edge_info: str = "count", staged: bool = True):
         """Returns Dot graph representation of the staged tree.
 
-        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability"]
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability", "no_info"]
         :type edge_info: str
 
         :param staged: if True, returns the coloured staged tree,
@@ -822,8 +822,7 @@ class StagedTree(EventTree):
 
         :type filename: str
 
-        :param edge_info: Optional - Chooses which summary measure to be displayed on edges.
-            In event trees, only "count" can be displayed, so this can be omitted.
+        :param edge_info: Optional - Chooses which summary measure to be displayed on edges. Defaults to "count". Options: ["count", "prior", "posterior", "probability", "no_info"]
         :type edge_info: str
 
         :param staged: if True, returns the coloured staged tree,

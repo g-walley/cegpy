@@ -90,13 +90,18 @@ def generate_colour_run(number, starts, ends) -> list:
 
 
 def generate_filename_and_mkdir(filename: Union[str, Path]) -> Tuple[Path, str]:
-    """Creates a filename."""
-    if filename is not Path:
+    """Create a filename ensuring the directory exists.
+
+    If *filename* has no suffix a ``.png`` suffix is appended and the
+    corresponding filetype returned.
+    """
+
+    if not isinstance(filename, Path):
         filename = Path(filename)
 
-    filetype = filename.suffix.strip(".")
-    if filename.suffix == filetype:
-        filename.joinpath(".png")
+    filetype = filename.suffix.lstrip(".")
+    if not filetype:
+        filename = filename.with_suffix(".png")
         filetype = "png"
 
     filename.parent.mkdir(parents=True, exist_ok=True)

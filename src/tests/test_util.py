@@ -1,10 +1,13 @@
 """Tests cegpy.utilities"""
 from collections import defaultdict
+from tempfile import TemporaryDirectory
+from pathlib import Path
 import unittest
 from cegpy.utilities import (
     check_list_contains_strings,
     check_tuple_contains_strings,
     create_sampling_zeros,
+    generate_filename_and_mkdir,
 )
 
 
@@ -55,3 +58,18 @@ class TestCegUtil(unittest.TestCase):
         self.assertFalse(check_tuple_contains_strings(("string thing")))
         self.assertTrue(check_tuple_contains_strings(("string one", "string two")))
         self.assertFalse(check_tuple_contains_strings((1, "2")))
+
+    def test_generate_filename_and_mkdir(self) -> None:
+        """Ensure filenames are normalised and directories created."""
+        with TemporaryDirectory() as tmpdir:
+            path_no_ext = Path(tmpdir) / "out" / "fig"
+            filename, filetype = generate_filename_and_mkdir(str(path_no_ext))
+            self.assertTrue(filename.parent.exists())  # directory exists
+            self.assertEqual(filename.suffix, ".png")
+            self.assertEqual(filetype, "png")
+
+            path_with_ext = Path(tmpdir) / "out2" / "fig.svg"
+            filename2, filetype2 = generate_filename_and_mkdir(path_with_ext)
+            self.assertTrue(filename2.parent.exists())
+            self.assertEqual(filename2.suffix, ".svg")
+            self.assertEqual(filetype2, "svg")
